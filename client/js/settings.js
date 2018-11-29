@@ -1145,8 +1145,6 @@ class GlobalFilter {
 
 	static add(globalFilters) {
 
-		const datalist = [];
-		debugger
 		globalFilters.datasetsMultiselect.clear();
 
 		globalFilters.container.querySelector('#global-filters-form h1').textContent = 'Add new Global Filter';
@@ -1195,16 +1193,11 @@ class GlobalFilter {
 
 		e.preventDefault();
 
-		if(globalFilters.form.default_type.value == 'default_value') {
+		if(globalFilters.form.default_type.value != 'offset') {
 			globalFilters.form.offset.value = '';
 		}
 
-		else if(globalFilters.form.default_type.value == 'offset') {
-			globalFilters.form.default_value.value = '';
-		}
-
-		else {
-			globalFilters.form.offset.value = '';
+		if(globalFilters.form.default_type.value != 'default_value') {
 			globalFilters.form.default_value.value = '';
 		}
 
@@ -1270,8 +1263,6 @@ class GlobalFilter {
 
 	async edit() {
 
-		const datalist = [];
-
 		this.globalFilters.form.reset();
 
 		for(const element of this.globalFilters.form.elements) {
@@ -1288,7 +1279,7 @@ class GlobalFilter {
 		this.globalFilters.form.on('submit', GlobalFilter.submitListener = e => this.update(e));
 
 		await Sections.show('global-filters-form');
-		debugger
+
 		const
 			default_value = this.globalFilters.form.default_value.value,
 			default_value_offset = this.globalFilters.form.offset.value;
@@ -1325,16 +1316,11 @@ class GlobalFilter {
 
 		e.preventDefault();
 
-		if(this.globalFilters.form.default_type.value == 'default_value') {
+		if(this.globalFilters.form.default_type.value != 'offset') {
 			this.globalFilters.form.offset.value = '';
 		}
 
-		else if(this.globalFilters.form.default_type.value == 'offset') {
-			this.globalFilters.form.default_value.value = '';
-		}
-
-		else {
-			this.globalFilters.form.offset.value = '';
+		if(this.globalFilters.form.default_type.value != 'default_value') {
 			this.globalFilters.form.default_value.value = '';
 		}
 
