@@ -577,13 +577,13 @@ Page.class = class Dashboards extends Page {
 
 		this.container.querySelector('#reports .global-filters').classList.add('hidden');
 
-		if (!report.container.contains(report.menu))
-			report.container.appendChild(report.menu);
+		if(visualization)
+			[report.visualizations.selected] = report.visualizations.filter(v => v.visualization_id == id);
 
 		report.menu.classList.remove('hidden');
 
-		if(visualization)
-			[report.visualizations.selected] = report.visualizations.filter(v => v.visualization_id == id);
+		if (!report.container.contains(report.menu))
+			report.container.appendChild(report.menu);
 
 		container.appendChild(report.container);
 

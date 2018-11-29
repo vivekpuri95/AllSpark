@@ -101,6 +101,9 @@ main .dataset {
 			cursor: default;
 			box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
 		}
+		.data-source > header h2.edit {
+			padding: 6px 10px;
+		}
 		.data-source > header h2::-webkit-scrollbar {
 			display: none;
 		}
@@ -1690,12 +1693,16 @@ main .dataset {
 		}
 .canvas {
 	position: relative;
+	display: flex;
+	flex-direction: column;
 }
-	.canvas .edit {
-		position: absolute;
-		right: 0;
-		z-index: 6;
+	.canvas .menu {
+		margin-left: auto;
 	}
+		.canvas .menu button {
+			outline: 0;
+			cursor: pointer;
+		}
 	.canvas > .list {
 		display: grid;
 		grid-template-columns: repeat(32, 1.25fr);
@@ -1707,15 +1714,40 @@ main .dataset {
 		margin-bottom: 200px;
 	}
 		.canvas .list .resize-dimentions {
-			position: absolute;
-			bottom: 10px;
-			right: 10px;
-			z-index: 5;
-			color: #999;
-			background: rgba(0, 0, 0, 0.05);
-			padding: calc(var(--gap) * 2);
-			font-size: 125%;
+			padding: calc(var(--gap) * 1);
+			display: grid;
+			grid-template-columns: repeat(3, 60px);
+			grid-template-rows: max-content max-content;
+			grid-gap: calc(var(--gap) * 2);
+			justify-content: center;
+			align-content: center;
+			background-image: radial-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0));
 		}
+			.canvas .list .resize-dimentions span {
+				justify-content: center;
+				display: flex;
+			}
+			.canvas .list .resize-dimentions input {
+				width: 50px;
+				border: none;
+				background: transparent;
+				outline: 0;
+				font-size: 125%;
+				text-align: center;
+				color: var(--grey);
+				cursor: pointer;
+				padding: 0;
+			}
+			.canvas .list .resize-dimentions > i {
+				font-size: 100%;
+			}
+			.canvas .list .resize-dimentions input[type=number]::-webkit-inner-spin-button,
+			.canvas .list .resize-dimentionsinput[type=number]::-webkit-outer-spin-button {
+				-webkit-appearance: none;
+				-moz-appearance: none;
+				appearance: none;
+				margin: 0;
+			}
 		.canvas .resize {
 			position: absolute;
 			cursor: nwse-resize;

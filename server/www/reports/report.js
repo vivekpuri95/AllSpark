@@ -516,7 +516,14 @@ exports.list = class extends API {
                         relatedVisualizationMapping[visualization.owner_id] = [];
 					}
 
-                    relatedVisualizationMapping[visualization.owner_id].push(visualization);
+                    relatedVisualizationMapping[visualization.owner_id].push({
+	                    id: visualization.id,
+	                    query_id: visualization.query_id,
+	                    owner_id: visualization.owner_id,
+	                    owner: visualization.owner,
+	                    visualization_id: visualization.visualization_id,
+	                    format: visualization.format
+                    });
 				}
 
 				allVisualizations.push(visualization);

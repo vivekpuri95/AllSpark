@@ -7741,7 +7741,7 @@ class RelatedVisualizations extends Set {
 		}
 
 		const container = this.containerElement = document.createElement('div');
-		container.classList.add('configuration-section', 'sub-visualizations');
+		container.classList.add('configuration-section', 'related-visualizations');
 
 		container.innerHTML = `
 			<h3><i class="fas fa-angle-right"></i> Related Visualizations <span class="count"></span></h3>
@@ -7750,7 +7750,7 @@ class RelatedVisualizations extends Set {
 			
 				<div class="list"></div>
 				
-				<form class="add-sub-visualizations">
+				<form class="add">
 				
 					<fieldset>
 					
@@ -7764,17 +7764,17 @@ class RelatedVisualizations extends Set {
 
 							<label>
 								<span>Position</span>
-								<input name="position" min="1" type="number" class="item">
+								<input name="position" type="number" class="item" placeholder="1">
 							</label>
 							
 							<label>
 								<span>Width</span>
-								<input name="width" min="1" type="number" class="item" placeholder="32">
+								<input name="width" min="2" type="number" step="1" class="item" placeholder="32" max="32">
 							</label>
 							
 							<label>
 								<span>Height</span>
-								<input name="height" min="1" type="number" class="item" placeholder="10">
+								<input name="height" min="1" type="number" step="1" class="item" placeholder="10" max="10">
 							</label>
 
 							<label>
@@ -7795,7 +7795,7 @@ class RelatedVisualizations extends Set {
 		});
 
 		this.relatedVisualizationsMultiSelect = new MultiSelect({multiple: false, dropDownPosition: 'top'});
-		this.container.querySelector('.add-sub-visualizations .visualization').appendChild(this.relatedVisualizationsMultiSelect.container);
+		this.container.querySelector('.add .visualization').appendChild(this.relatedVisualizationsMultiSelect.container);
 
 		return container;
 	}
@@ -7881,7 +7881,7 @@ class RelatedVisualizations extends Set {
 	async insert() {
 
 		const
-			form = this.container.querySelector('.add-sub-visualizations'),
+			form = this.container.querySelector('.add'),
 			visualization_id = parseInt(this.relatedVisualizationsMultiSelect.value[0]);
 
 		if(Array.from(this).some(d => d.visualization_id == visualization_id)) {
@@ -7912,7 +7912,7 @@ class RelatedVisualizations extends Set {
 				owner_id: this.stage.visualization.visualization_id,
 				visualization_id: visualization_id,
 				format: JSON.stringify({
-					position: parseInt(form.position.value),
+					position: parseInt(form.position.value) || 1,
 					width: parseInt(form.width.value) || 32,
 					height: parseInt(form.height.value) || 10
 				})
@@ -7954,7 +7954,7 @@ class RelatedVisualization {
 
 		try {
 
-			this.format = typeof this.format == 'object' ? this.format : JSON.parse(this.format);
+			this.format = typeof this.format == 'object' ? this.format || {} : JSON.parse(this.format);
 		}
 		catch(e) {
 
@@ -7982,17 +7982,17 @@ class RelatedVisualization {
 
 			<label>
 				<span>Position</span>
-				<input type="number" name="position" min="1" value="${this.format.position || ''}" class="item">
+				<input type="number" name="position" value="${this.format.position || ''}" class="item" placeholder="1">
 			</label>
 			
 			<label>
 				<span>Width</span>
-				<input name="width" type="number" min="1" value="${this.format.width || ''}" class="item">
+				<input name="width" type="number" min="2" value="${this.format.width || ''}" class="item" placeholder="32" step="1" max="32">
 			</label>
 			
 			<label>
 				<span>Height</span>
-				<input name="height" type="number" min="1" value="${this.format.height || ''}" class="item">
+				<input name="height" type="number" min="1" value="${this.format.height || ''}" class="item" placeholder="10" step="1" max="10">
 			</label>
 
 			<label class="save">
@@ -8075,15 +8075,15 @@ class RelatedVisualization {
 		if(!visualization_id) {
 
 			return new SnackBar({
-				message: 'Related visualization cannot be null',
+				message: 'Selecting a visualization is required.',
 				type: 'warning'
 			});
 		}
 
 		this.format = {
-			position: this.form.position.value,
-			width: this.form.width.value,
-			height: this.form.height.value
+			position: this.form.position.value || 1,
+			width: this.form.width.value || 32,
+			height: this.form.height.value || 10
 		};
 
 		const
