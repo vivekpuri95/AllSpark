@@ -1145,8 +1145,6 @@ class GlobalFilter {
 
 	static add(globalFilters) {
 
-		const datalist = [];
-
 		globalFilters.datasetsMultiselect.clear();
 
 		globalFilters.container.querySelector('#global-filters-form h1').textContent = 'Add new Global Filter';
@@ -1158,12 +1156,48 @@ class GlobalFilter {
 
 		Sections.show('global-filters-form');
 
+		GlobalFilter.updateDefaultType(globalFilters);
+
+		globalFilters.form.type.removeEventListener('change', GlobalFilter.typeChangeListener);
+
+		globalFilters.form.on('change', GlobalFilter.typeChangeListener = () => GlobalFilter.changeFilterType(globalFilters));
+
+		globalFilters.form.default_type.on('change', () => GlobalFilter.updateDefaultType(globalFilters));
+
 		globalFilters.form.name.focus();
+	}
+
+	static updateDefaultType(globalFilters) {
+
+		const default_type = globalFilters.form.default_type;
+
+		globalFilters.form.default_value.classList.toggle('hidden', default_type.value != 'default_value');
+		globalFilters.form.offset.classList.toggle('hidden', default_type.value != 'offset');
+	}
+
+	static changeFilterType(globalFilters) {
+
+		const types = ['hidden', 'column', 'literal'];
+
+		if(globalFilters.form.type.value == 'datetime')
+			globalFilters.form.default_value.type = 'datetime-local';
+
+		else if(types.includes(globalFilters.form.type.value))
+			globalFilters.form.default_value.type = 'text';
+
+		else
+			globalFilters.form.default_value.type = globalFilters.form.type.value;
 	}
 
 	static async insert(e, globalFilters) {
 
 		e.preventDefault();
+
+		if(globalFilters.form.default_type.value != 'offset')
+			globalFilters.form.offset.value = '';
+
+		if(globalFilters.form.default_type.value != 'default_value')
+			globalFilters.form.default_value.value = '';
 
 		const options = {
 			method: 'POST',
@@ -1227,8 +1261,6 @@ class GlobalFilter {
 
 	async edit() {
 
-		const datalist = [];
-
 		this.globalFilters.form.reset();
 
 		for(const element of this.globalFilters.form.elements) {
@@ -1246,12 +1278,47 @@ class GlobalFilter {
 
 		await Sections.show('global-filters-form');
 
+		const
+			default_value = this.globalFilters.form.default_value.value,
+			default_value_offset = this.globalFilters.form.offset.value;
+
+		if(this.globalFilters.form.default_value.value)
+			this.globalFilters.form.default_type.value = 'default_value';
+
+		else if(this.globalFilters.form.offset.value)
+			this.globalFilters.form.default_type.value = 'offset';
+
+		else
+			this.globalFilters.form.default_type.value = 'none';
+
+		GlobalFilter.changeFilterType(this.globalFilters);
+
+		this.globalFilters.form.type.removeEventListener('change', GlobalFilter.typeChangeListener);
+
+		this.globalFilters.form.type.on('change', GlobalFilter.typeChangeListener = () => {
+
+			GlobalFilter.changeFilterType(this.globalFilters);
+
+			this.globalFilters.form.default_value.value = default_value;
+			this.globalFilters.form.offset.value = default_value_offset;
+		});
+
+		GlobalFilter.updateDefaultType(this.globalFilters);
+
+		this.globalFilters.form.default_type.on('change', () => GlobalFilter.updateDefaultType(this.globalFilters));
+
 		this.globalFilters.form.name.focus();
 	}
 
 	async update(e) {
 
 		e.preventDefault();
+
+		if(this.globalFilters.form.default_type.value != 'offset')
+			this.globalFilters.form.offset.value = '';
+
+		if(this.globalFilters.form.default_type.value != 'default_value')
+			this.globalFilters.form.default_value.value = '';
 
 		const
 			parameter = {

@@ -4536,6 +4536,145 @@ DataSourceTransformation.types.set('restrict-columns', class DataSourceTransform
 	}
 });
 
+DataSourceTransformation.types.set('linear-regression', class DataSourceTransformationRestrictColumns extends DataSourceTransformation {
+
+	get name() {
+
+		return 'Linear Regression';
+	}
+
+	async execute(response = []) {
+
+		if (!(this.columns.x || this.columns.y)) {
+
+			return response;
+		}
+
+		this.xs = [], this.ys = [];
+
+		try {
+			if (Date.parse(response[0][this.columns.x])) {
+
+				this.isDateX = true;
+			}
+		}
+		catch (e) {
+		}
+
+		for (const row of response) {
+
+			this.xs.push(this.isDateX ? +new Date(row[this.columns.x]) : parseFloat(row[this.columns.x]));
+			this.ys.push(parseFloat(row[this.columns.y]));
+		}
+
+		const slope = this.slope();
+		this.lineSlope = slope;
+		this.yInterceptPoint = this.yIntercept(slope);
+
+		for (const row of response) {
+
+			row[`${this.columns.name} Linear Regression`] = slope * (this.isDateX ? +new Date(row[this.columns.x]) : row[this.columns.x]) + this.yInterceptPoint;
+		}
+
+		if (this.columns.extrapolate) {
+
+			response = this.extrapolate(response);
+		}
+
+		return response;
+	}
+
+	mean(arr) {
+
+		return +((arr.reduce((x, y) => +x + +y)) / arr.length).toFixed(2);
+	}
+
+	slope() {
+		/*
+			 mean(x) * mean(y) - mean(x * y)
+			---------------------------------
+			 mean(x) * mean(x) - mean(x * x)
+	    */
+
+		const
+			meanX = this.mean(this.xs),
+			meanXmeanY = meanX * this.mean(this.ys),
+			meanXY = this.mean(this.xs.map((x, j) => x * this.ys[j])),
+			meanXmeanX = meanX * meanX,
+			meanXX = this.mean(this.xs.map(x => x * x))
+
+		return (meanXmeanY - meanXY) / (meanXmeanX - meanXX);
+	}
+
+	yIntercept() {
+
+		/*
+		* Y = mX + c => c = Y - mX */
+
+		return this.mean(this.ys) - this.lineSlope * this.mean(this.xs);
+	}
+
+	extrapolate(response) {
+
+		const units = parseInt(this.columns.extrapolate);
+
+		let
+			extrapolatedData = [],
+			lastRow = response[response.length - 1],
+			otherColumns = Object.keys(response[0]).filter(x => ![this.columns.x, this.columns.x].includes(x)),
+			asc = response.length > 1 ? response[response.length - 1][this.columns.x] > response[response.length - 2][this.columns.x] : false
+		;
+
+		switch ((this.source.columns.get(this.columns.x).type || {name: 'string'}).name) {
+
+			case "date":
+			case 'string':
+
+				const timingUnitSeconds = this.isDateX ? 24 * 60 * 60 * 1000 : (response[3] - resposne[0]) / 3;
+
+				for (let y = 1; y <= units; y++) {
+
+					const ip = (this.isDateX ? +new Date(lastRow[this.columns.x]) : +lastRow[this.columns.x]) + (y * timingUnitSeconds);
+					const op = (this.lineSlope * ip) + this.yInterceptPoint;
+
+					const row = {};
+
+					row[this.columns.x] = new Date(ip).toISOString();
+					row[`${this.columns.name} Linear Regression`] = op;
+
+					otherColumns.forEach(x => row[x] = row[x] ? row[x] : 0);
+					extrapolatedData.push(row);
+				}
+
+				break;
+
+			case 'month':
+
+				for (let x = 1; x <= units; x++) {
+
+					let ip = new Date(lastRow[this.columns.x]);
+					ip = ip.setMonth(ip.getMonth() + x);
+					const op = this.lineSlope * ip + this.yInterceptPoint;
+
+					const row = {};
+
+					row[this.columns.x] = ip;
+					row[`${this.columns.name} Linear Regression`] = op;
+
+					otherColumns.forEach(x => row[x] = row[x] ? row[x] : 0);
+					extrapolatedData.push(row);
+				}
+
+				break;
+		}
+
+		response = response.concat(asc ? extrapolatedData : extrapolatedData.reverse());
+
+		return response;
+	}
+
+});
+
 DataSourcePostProcessors.processors = new Map;
 
 DataSourcePostProcessors.processors.set('Orignal', class extends DataSourcePostProcessor {
