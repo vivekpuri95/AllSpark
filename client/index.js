@@ -28,6 +28,8 @@ class HTMLAPI extends API {
 			'/js/main.js',
 			'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ace.js',
 		];
+
+ 		this.modules = [];
 	}
 
 	async body() {
@@ -92,7 +94,8 @@ class HTMLAPI extends API {
 					<link id="favicon" rel="shortcut icon" type="image/png" href="" />
 
 					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="' + s + '?' + this.checksum + '">\n\t\t\t\t\t').join('')}
-					${this.scripts.map(s => '<script src="' + s + '?' + this.checksum + '"></script>\n\t\t\t\t\t').join('')}
+					${!this.modules.length ? this.scripts.map(s => '<script src="' + s + '?' + this.checksum + '"></script>\n\t\t\t\t\t').join('') : ''}
+					${this.modules.length ? this.modules.map(s => '<script src="' + s + '?' + this.checksum + '" type="module"></script>\n\t\t\t\t\t').join('') : ''}
 
 					<link rel="manifest" href="/manifest.webmanifest">
 					${ga}
@@ -144,6 +147,46 @@ router.get('/js/custom.js', API.serve(class extends HTMLAPI {
 		this.response.setHeader('Content-Type', 'text/javascript');
 
 		return this.account.settings.get('custom_js') || '';
+	}
+}));
+
+router.get('/js/main-modules.js', API.serve(class extends HTMLAPI {
+
+	async body() {
+
+		this.response.setHeader('Content-Type', 'text/javascript');
+
+		let javascript = `
+			import {DataSourceColumnFilter} from '/js/reports-modules.js';
+		`;
+
+		javascript += fs.readFileSync('./client/js/main.js');
+
+		javascript += `
+			export { Page, API, Format, SnackBar, Storage, Sections, MultiSelect, DialogBox, SearchColumnFilters }
+		`;
+
+		return javascript;
+	}
+}));
+
+router.get('/js/reports-modules.js', API.serve(class extends HTMLAPI {
+
+	async body() {
+
+		this.response.setHeader('Content-Type', 'text/javascript');
+
+		let javascript = `
+			import {API} from '/js/main-modules.js';
+		`;
+
+		javascript += fs.readFileSync('./client/js/reports.js');
+
+		javascript += `
+			export { DataSource, DataSourceColumnFilter }
+		`;
+
+		return javascript;
 	}
 }));
 
@@ -428,7 +471,9 @@ router.get('/user/settings/:id?', API.serve(class extends HTMLAPI {
 		return `
 
 			<div class="change-password">
+
 				<h3>Change Password</h3>
+
 				<form class="block form">
 
 					<label>
@@ -1630,6 +1675,21 @@ router.get('/tasks/:id?/:define?', API.serve(class extends HTMLAPI {
 				</header>
 			</section>
 		`;
+	}
+}));
+
+router.get('/merge-requests?', API.serve(class extends HTMLAPI {
+
+	constructor() {
+
+		super();
+
+		this.stylesheets.push('/css/merge-requests/index.css');
+		this.modules.push('/js/merge-requests/index.js');
+	}
+
+	main() {
+		return ``;
 	}
 }));
 

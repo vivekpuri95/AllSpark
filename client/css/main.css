@@ -116,6 +116,7 @@ button > i {
 	margin-right: calc(var(--gap) * 1);
 }
 
+button[type=submit],
 input[type=submit] {
 	background: var(--color-secondary);
 	color: var(--color-secondary-text);
@@ -1213,7 +1214,7 @@ body {
 	display: flex;
 	justify-content: space-between;
 }
-@media (max-width:750px) {
+@media (max-width: 750px) {
 	.search-column-filters {
 		display: grid;
 		grid-gap: calc(var(--gap) * 2);

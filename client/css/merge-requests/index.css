@@ -1,0 +1,85 @@
+.merge-requests .section > h1 i {
+	margin-right: var(--gap);
+	color: var(--color-secondary);
+}
+.report-picker {
+	display: grid;
+	grid-template-columns: repeat(3, max-content);
+	justify-content: space-evenly;
+	grid-gap: calc(var(--gap) * 2);
+}
+	.report-picker .report-picker-arrow {
+		align-self: center;
+		font-size: 400%;
+	}
+	.report-picker label {
+		max-width: 100%;
+	}
+
+@media (max-width: 750px) {
+
+	.report-picker {
+		grid-template-columns: 1fr;
+	}
+		.report-picker .report-picker-arrow {
+			display: none;
+		}
+}
+
+.merge-requests #merge-request-list > .list {
+	display: grid;
+	grid-gap: calc(var(--gap) * 2);
+	overflow: hidden;
+}
+	.merge-requests #merge-request-list > .toolbar {
+		grid-template-columns: max-content 1fr repeat(2, max-content);
+		overflow: auto;
+	}
+	.merge-requests #merge-request-list > .toolbar::-webkit-scrollbar {
+		display: none;
+	}
+	.merge-requests #merge-request-list > .information-bar {
+		margin-bottom: calc(var(--gap) * 2);
+		display: grid;
+		grid-auto-flow: column;
+		width: max-content;
+		grid-gap: calc(var(--gap) * 2);
+	}
+	.merge-requests .merge-request {
+		padding: calc(var(--gap) * 2) calc(var(--gap) * 2)  calc(var(--gap) * 2) calc(var(--gap) * 4);
+		display: grid;
+		grid-gap: calc(var(--gap) * 2);
+	}
+	.merge-requests .merge-request.open {
+		box-shadow: inset 10px 0 var(--color-secondary);
+	}
+	.merge-requests .merge-request.merged {
+		box-shadow: inset 10px 0 var(--color-green);
+	}
+	.merge-requests .merge-request.closed {
+		box-shadow: inset 10px 0 var(--color-red);
+	}
+		.merge-requests .merge-request h2 {
+			font-size: 120%;
+			margin: 0;
+			display: grid;
+			grid-auto-flow: column;
+			max-width: max-content;
+			grid-gap: 15px;
+			align-items: center;
+			cursor: pointer;
+			white-space: nowrap;
+			overflow: auto;
+		}
+		.merge-requests .merge-request h2::-webkit-scrollbar {
+			display: none;
+		}
+		.merge-requests .merge-request > .NA {
+			display: grid;
+			grid-auto-flow: column;
+			width: max-content;
+			grid-gap: var(--gap);
+		}
+			.merge-requests .merge-request > .NA a {
+				color: inherit;
+			}

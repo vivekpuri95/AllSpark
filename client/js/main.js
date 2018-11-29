@@ -375,6 +375,11 @@ class PageHeader {
 					icon: 'fa fa-server',
 				},
 				{
+					url: '/merge-requests',
+					name: 'Merge Requests',
+					icon: 'fas fa-code-branch',
+				},
+				{
 					url: '/settings',
 					name: 'Settings',
 					privileges: ['administrator', 'category.insert', 'category.update', 'category.delete'],
@@ -388,7 +393,7 @@ class PageHeader {
 
 		for(const item of navList) {
 
-			if((item.privileges.every(p => !this.page.user.privileges.has(p)) && item.privileges.length))
+			if(item.privileges && (item.privileges.every(p => !this.page.user.privileges.has(p)) && item.privileges.length))
 				continue;
 
 			nav.insertAdjacentHTML('beforeend',`

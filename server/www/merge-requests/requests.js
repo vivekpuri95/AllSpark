@@ -1,28 +1,36 @@
-const API = require('../utils/api');
-const auth = require("../utils/auth");
-const report = require("./reports/report");
+const API = require('../../utils/api');
+const auth = require("../../utils/auth");
+const report = require("./../reports/report");
 
-class MergeRequests extends API {
+class Requests extends API {
 
-	async list() {
+	async list({status = 'open'} = {}) {
+
+		this.account.features.needs('merge-requests-module');
 
 		const [mergeRequestList, mergeRequestApprovals] = await Promise.all([
 			this.mysql.query(`
 				select
-					m.*
+					m.*,
+					CONCAT_WS(' ', u.first_name, u.middle_name, u.last_name) user_name
 				from
-					tb_merge_requests m 
-				join 
+					tb_merge_requests m
+				join
 					tb_query q
 				on
-					m.owner_id = q.query_id
-				where 
+					m.source_id = q.query_id
+				join
+					tb_users u
+				on
+					m.added_by = u.user_id AND m.account_id
+				where
 					q.account_id = ?
 					and m.account_id = ?
 					and q.is_deleted = 0
-					and m.owner = "query"
+					and m.source = "report"
+					and (m.status = ? or ? = '')
 		`,
-				[this.account.account_id, this.account.account_id]),
+				[this.account.account_id, this.account.account_id, status, status]),
 
 			this.mysql.query(`
 				SELECT
@@ -33,15 +41,15 @@ class MergeRequests extends API {
 					tb_merge_requests_approvals ma
 				ON
 					m.id = ma.merge_request_id
-				JOIN 
+				JOIN
 					tb_query q
 				ON
-					m.owner_id = q.query_id
-				WHERE 
+					m.source_id = q.query_id
+				WHERE
 					q.account_id = ?
 					AND m.account_id = ?
 					AND q.is_deleted = 0
-					AND m.owner = "query"
+					AND m.source = "report"
 			`,
 				[this.account.account_id, this.account.account_id])
 
@@ -56,37 +64,40 @@ class MergeRequests extends API {
 		const reportObj = new report.list();
 		Object.assign(reportObj, this);
 
-
 		const visibleReports = new Set((await reportObj.list()).map(x => x.query_id));
 
-		return Object.values(mergeRequestObj).filter(x => visibleReports.has(x.owner_id) && visibleReports.has(x.target_id));
+		return Object.values(mergeRequestObj).filter(x => visibleReports.has(x.source_id) && visibleReports.has(x.destination_id));
 	}
 
 	async insert() {
 
+		this.account.features.needs('merge-requests-module');
+
 		this.user.privilege.needs('report.insert', 'ignore');
 
 		const columns = [
-			"owner",
-			"owner_id",
-			"target_id",
+			"source",
+			"source_id",
+			"destination_id",
 		];
 
 		this.assert(columns.every(x => x in this.request.body), columns.join(', ') + ' required');
 
+		this.assert(this.request.body.source_id != this.request.body.destination_id, 'Source cannot be the same as Destination');
+
 		this.validateMergeRequestOwner({
-			owner: this.request.body.owner,
-			owner_id: this.request.body.owner_id,
-			target_id: this.request.body.target_id,
+			source: this.request.body.source,
+			source_id: this.request.body.source_id,
+			destination_id: this.request.body.destination_id,
 		})
 
 		return await this.mysql.query(`
-			insert into 
+			insert into
 				tb_merge_requests
 				(
-					owner,
-					owner_id,
-					target_id,
+					source,
+					source_id,
+					destination_id,
 					account_id,
 					added_by
 				)
@@ -98,6 +109,8 @@ class MergeRequests extends API {
 
 	async update({id}) {
 
+		this.account.features.needs('merge-requests-module');
+
 		this.assert(id, "No Id found to Update");
 
 		const [mergeRequest] = await this.mysql.query(`select * from tb_merge_requests where id = ?`, [id]);
@@ -107,8 +120,9 @@ class MergeRequests extends API {
 		await this.validateMergeRequestOwner(mergeRequest);
 
 		const columns = [
-			'owner',
-			'target_id',
+			'source',
+			'source_id',
+			'destination_id',
 			'status'
 		];
 
@@ -126,13 +140,15 @@ class MergeRequests extends API {
 
 		return await this.mysql.query(`
 			update tb_merge_requests
-			set ? where id = ?
-		`,
+			set ? where id = ?`,
 			[filteredRequest, id],
-			"write");
+			"write"
+		);
 	}
 
 	async delete({id}) {
+
+		this.account.features.needs('merge-requests-module');
 
 		this.assert(id, "No Id found to delete");
 
@@ -148,41 +164,41 @@ class MergeRequests extends API {
 	async validateMergeRequestOwner(row) {
 
 		const ownerAuthMapping = {
-			'query': auth.report,
+			'report': auth.report,
 		};
 
 		const authResponse = await Promise.all([
 
-			ownerAuthMapping[row.owner](row.owner_id, this.user),
-			ownerAuthMapping[row.owner](row.target_id, this.user),
+			ownerAuthMapping[row.source](row.source_id, this.user),
+			ownerAuthMapping[row.source](row.destination_id, this.user),
 		]);
 
 		this.assert(authResponse.every(x => !x.error), authResponse.filter(x => x.error).map(x => x.message).join(", "));
 
 		const approvers = await this.mysql.query(`
-			select 
-				m.* 
-			from 
+			select
+				m.*
+			from
 				tb_merge_requests_approvers m
 			join
-				tb_users u 
+				tb_users u
 				using(user_id)
 			where
 				u.status = 1
-				and u.account_id = ? 
+				and u.account_id = ?
 				and user_id = ?
 		`,
 			[this.account.account_id, this.user.user_id]
 		);
 
 		this.assert(
-			approvers.length || this.user.privileges.has('superadmin') || row.added_by == this.user.user_id,
+			approvers.length || this.user.privilege.has('superadmin') || row.added_by == this.user.user_id,
 			"User is neither a superadmin, approver or created this pull request"
 		);
 	}
 }
 
-exports.list = MergeRequests;
-exports.insert = MergeRequests;
-exports.update = MergeRequests;
-exports.delete = MergeRequests;
+exports.list = Requests;
+exports.insert = Requests;
+exports.update = Requests;
+exports.delete = Requests;
