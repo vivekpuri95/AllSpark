@@ -6599,6 +6599,136 @@ ReportTransformation.types.set('sort', class ReportTransformationSort extends Re
 	}
 });
 
+ReportTransformation.types.set('linear-regression', class ReportTransformationRestrictColumns extends ReportTransformation {
+
+	constructor(...parameters) {
+
+		super(...parameters);
+
+		this.multiSelectX = new MultiSelect({multiple: false, expand: true});
+		this.multiSelectY = new MultiSelect({multiple: false, expand: true});
+
+		if (!this.columns) {
+
+			this.columns = {
+				x: '',
+				y: '',
+				extrapolate: 0
+			}
+		}
+
+		if (!this.extrapolateUnits) {
+
+			this.extrapolateUnits = document.createElement('input');
+			this.extrapolateUnits.type = 'number';
+			this.extrapolateUnits.min = 0;
+			this.extrapolateUnits.step = 1;
+
+			this.extrapolateUnits.value = this.columns.extrapolate || 0;
+		}
+	}
+
+	get key() {
+
+		return 'linear-regression';
+	}
+
+	get container() {
+
+		if (this.containerElement) {
+
+			return this.containerElement;
+		}
+
+		const container = super.container.querySelector('.transformation');
+
+
+		const labelX = document.createElement('label');
+		const spanX = document.createElement('span');
+		spanX.textContent = 'Feature (X-Axis)';
+
+		labelX.appendChild(spanX);
+		labelX.appendChild(this.multiSelectX.container);
+
+		const labelY = document.createElement('label');
+		const spanY = document.createElement('span');
+		spanY.textContent = 'Label (Y-Axis)';
+
+		labelY.appendChild(spanY);
+		labelY.appendChild(this.multiSelectY.container);
+
+		container.appendChild(labelX);
+		container.appendChild(labelY);
+		container.appendChild(this.extrapolateUnits);
+
+		this.render();
+
+		return super.container;
+	}
+
+	render() {
+
+		const
+			datalist = [];
+
+		for (const column of this.incoming.columns.values()) {
+
+			datalist.push({
+				name: column.name,
+				value: column.key,
+			});
+		}
+
+		this.multiSelectX.datalist = datalist;
+
+		this.multiSelectX.render();
+
+		if (this.columns.x && this.multiSelectX.datalist.filter(x => x.value == this.columns.x)) {
+
+			this.multiSelectX.value = this.columns.x;
+		}
+
+		this.multiSelectY.datalist = JSON.parse(JSON.stringify(datalist)).filter(x => x.value != this.columns.x);
+
+		this.multiSelectY.render();
+
+		if (this.columns.y && this.multiSelectY.datalist.filter(x => x.value == this.columns.y)) {
+
+			this.multiSelectY.value = this.columns.y;
+		}
+
+		this.multiSelectX.on('change', () => {
+
+			if (!(this.multiSelectX.value && this.multiSelectX.value.length)) {
+
+				return;
+			}
+
+			const multiselectXValue = this.multiSelectX.value;
+			this.multiSelectY.datalist = this.multiSelectX.datalist.filter(x => x.value != multiselectXValue);
+
+			this.multiSelectY.render();
+			this.multiSelectY.value = this.multiSelectY.value || this.columns.y;
+
+		});
+	}
+
+	get json() {
+
+		const value = this.multiSelectY.value[0]
+
+		return {
+			type: this.key,
+			columns: {
+				x: this.multiSelectX.value[0],
+				y: this.multiSelectY.value[0],
+				name: value ? (this.multiSelectY.datalist.filter(x => value == x.value))[0].name : '',
+				extrapolate: this.extrapolateUnits.value
+			},
+		};
+	};
+});
+
 class ReportVisualizationDashboards extends Set {
 
 	constructor(stage) {
