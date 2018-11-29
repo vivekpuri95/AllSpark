@@ -1193,13 +1193,11 @@ class GlobalFilter {
 
 		e.preventDefault();
 
-		if(globalFilters.form.default_type.value != 'offset') {
+		if(globalFilters.form.default_type.value != 'offset')
 			globalFilters.form.offset.value = '';
-		}
 
-		if(globalFilters.form.default_type.value != 'default_value') {
+		if(globalFilters.form.default_type.value != 'default_value')
 			globalFilters.form.default_value.value = '';
-		}
 
 		const options = {
 			method: 'POST',
@@ -1316,13 +1314,11 @@ class GlobalFilter {
 
 		e.preventDefault();
 
-		if(this.globalFilters.form.default_type.value != 'offset') {
+		if(this.globalFilters.form.default_type.value != 'offset')
 			this.globalFilters.form.offset.value = '';
-		}
 
-		if(this.globalFilters.form.default_type.value != 'default_value') {
+		if(this.globalFilters.form.default_type.value != 'default_value')
 			this.globalFilters.form.default_value.value = '';
-		}
 
 		const
 			parameter = {

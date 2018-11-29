@@ -1432,14 +1432,17 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 							<span>Name <span class="red">*</span></span>
 							<input type="text" name="name" required>
 						</label>
+
 						<label>
 							<span>Placeholder <span class="red">*</span></span>
 							<input type="text" name="placeholder" required>
 						</label>
+
 						<label>
 							<span>Type <span class="red">*</span></span>
 							<select name="type" required></select>
 						</label>
+
 						<label>
 							<span>Default</span>
 							<select name="default_type">
@@ -1452,9 +1455,11 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 
 							<input type="number" name="offset">
 						</label>
+
 						<label class="datasets">
 							<span>Dataset</span>
 						</label>
+
 						<label>
 							<span>Multiple</span>
 							<select name="multiple">
@@ -1462,7 +1467,6 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 								<option value="1">Yes</option>
 							</select>
 						</label>
-
 					</form>
 				</section>
 			</div>
