@@ -9,6 +9,8 @@ Page.class = class ResetPassword extends Page {
 		this.form = this.container.querySelector('form');
 		this.message = this.container.querySelector('#message');
 
+		this.URLSearchParams = new URLSearchParams(window.location.search);
+
 		this.form.on('submit', e => this.submit(e));
 
 		if(!account) {
@@ -33,7 +35,7 @@ Page.class = class ResetPassword extends Page {
 		this.message.textContent = null;
 
 		const parameters = {
-			reset_token: new URLSearchParams(window.location.search).get('reset_token')
+			reset_token: this.URLSearchParams.get('reset_token')
 		};
 
 		const options = {
@@ -45,7 +47,7 @@ Page.class = class ResetPassword extends Page {
 
 			const response = await API.call('authentication/reset', parameters, options);
 
-			window.location = '/login?passwordReset=true'
+			window.location = `/login?passwordReset=true&email=${this.URLSearchParams.get('email')}`
 		}
 
 		catch(error) {

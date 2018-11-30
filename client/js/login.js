@@ -26,6 +26,12 @@ Page.class = class Login extends Page {
 		if(urlSearchParam.has('passwordReset') && urlSearchParam.get('passwordReset') == 'true')
 			this.message('Password reset successful', 'notice');
 
+		if(urlSearchParam.has('email') && urlSearchParam.get('email').length) {
+
+			this.container.querySelector('#accept-email form').email.value = urlSearchParam.get('email');
+			this.loadAccounts();
+		}
+
 		document.querySelector('body > header').classList.add('hidden');
 
 		const logo = this.container.querySelector('.logo img');
