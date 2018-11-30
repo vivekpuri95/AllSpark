@@ -1924,7 +1924,9 @@ class Format {
 					delete formatWhiteList[format];
 			}
 
-			result = parseFloat(Format.number(number, {...formatWhiteList, useGrouping: false}));
+			formatWhiteList.useGrouping = false;
+
+			result = parseFloat(Format.number(number, formatWhiteList));
 		}
 
 		{
@@ -1936,7 +1938,9 @@ class Format {
 		}
 
 		{
-			const {roundOff: _, ...formatBlacklist} = JSON.parse(JSON.stringify(format));
+			const formatBlacklist = JSON.parse(JSON.stringify(format));
+
+			delete formatBlacklist.roundOff
 
 			return Format.number(result, formatBlacklist);
 		}
@@ -2807,7 +2811,13 @@ class ObjectRoles {
 
 			for (const categoryId of row.category_id) {
 
-				this.alreadyVisible.push({...row, category_id: categoryId});
+				const newRow = {};
+
+				Object.assign(newRow, row);
+
+				newRow.category_id = categoryId;
+
+				this.alreadyVisible.push(newRow);
 			}
 		}
 
@@ -3195,7 +3205,11 @@ class ObjectRoles {
 
 			if (!groupIdMapping.hasOwnProperty(row.group_id)) {
 
-				groupIdMapping[row.group_id] = {...row, category_id: []}
+				groupIdMapping[row.group_id] = {};
+
+				Object.assign(groupIdMapping[row.group_id], row);
+
+				groupIdMapping[row.group_id].category_id = [];
 			}
 
 			groupIdMapping[row.group_id].category_id.push(row.category_id);

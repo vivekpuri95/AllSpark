@@ -21,10 +21,14 @@ Page.class = class Login extends Page {
 		if(!this.account)
 			return this.message('Account not found!', 'warning');
 
-		const urlSearchParam = new URLSearchParams(window.location.search);
-
-		if(urlSearchParam.has('passwordReset') && urlSearchParam.get('passwordReset') == 'true')
+		if(this.urlSearchParameters.has('passwordReset') && this.urlSearchParameters.get('passwordReset') == 'true')
 			this.message('Password reset successful', 'notice');
+
+		if(this.urlSearchParameters.get('email')) {
+
+			this.container.querySelector('#accept-email form').email.value = this.urlSearchParameters.get('email');
+			this.loadAccounts();
+		}
 
 		document.querySelector('body > header').classList.add('hidden');
 
@@ -101,10 +105,11 @@ Page.class = class Login extends Page {
 		Sections.show('loading');
 
 		const
-			parameters = {},
+			parameters = {
+				email: this.container.querySelector('#accept-email form').email.value,
+			},
 			options = {
 				method: 'POST',
-				form: new FormData(this.container.querySelector('#accept-email form')),
 				redirectOnLogout: false,
 			};
 

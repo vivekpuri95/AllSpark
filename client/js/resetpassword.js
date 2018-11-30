@@ -33,7 +33,7 @@ Page.class = class ResetPassword extends Page {
 		this.message.textContent = null;
 
 		const parameters = {
-			reset_token: new URLSearchParams(window.location.search).get('reset_token')
+			reset_token: this.urlSearchParameters.get('reset_token')
 		};
 
 		const options = {
@@ -45,7 +45,7 @@ Page.class = class ResetPassword extends Page {
 
 			const response = await API.call('authentication/reset', parameters, options);
 
-			window.location = '/login?passwordReset=true'
+			window.location = `/login?passwordReset=true&email=${this.urlSearchParameters.get('email')}`
 		}
 
 		catch(error) {
