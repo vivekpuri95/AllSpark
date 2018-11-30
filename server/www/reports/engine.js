@@ -300,13 +300,7 @@ class report extends API {
 
 			if(filter.type == 'time') {
 
-				const
-					temp_date = new Date(date.getTime() + 1000 * parseFloat(filter.offset)),
-					temp_hours = (temp_date.getHours() < 10 ? '0' : '') + temp_date.getHours(),
-					temp_minutes = (temp_date.getMinutes() < 10 ? '0' : '') + temp_date.getMinutes(),
-					temp_seconds = (temp_date.getSeconds() < 10 ? '0' : '') + temp_date.getSeconds();
-
-				filter.default_value = temp_hours + ':' + temp_minutes + ':' + temp_seconds;
+				filter.default_value = new Date(date.getTime() + (1000 * filter.offset)).toTimeString().substring(0, 8);
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
 
 				if (filter.value >= new Date().toISOString().slice(11, 19)) {

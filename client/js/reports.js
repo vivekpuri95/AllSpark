@@ -1521,16 +1521,8 @@ class DataSourceFilter {
 			if(this.type == 'year')
 				value = date.getFullYear() + parseFloat(this.offset);
 
-			if(this.type == 'time') {
-
-				const
-					temp_date = new Date(date.getTime() + 1000 * parseFloat(this.offset)),
-					temp_hours = (temp_date.getHours() < 10 ? '0' : '') + temp_date.getHours(),
-					temp_minutes = (temp_date.getMinutes() < 10 ? '0' : '') + temp_date.getMinutes(),
-					temp_seconds = (temp_date.getSeconds() < 10 ? '0' : '') + temp_date.getSeconds();
-
-				value = temp_hours + ':' + temp_minutes + ':' + temp_seconds;
-			}
+			if(this.type == 'time')
+				value = new Date(date.getTime() + (1000 * this.offset)).toTimeString().substring(0, 8);
 		}
 
 		// If an offset and a default value was provided for the offset then create a new default value
