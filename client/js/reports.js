@@ -843,7 +843,7 @@ class DataSource {
 				const line = [];
 
 				for(const value of row.values())
-					line.push(JSON.stringify(String(value === null ? '' : value)));
+					line.push(JSON.stringify(String(value === null ? '' : value).replace(/"/g,"'")));
 
 				str.push(line.join());
 			}
@@ -886,7 +886,7 @@ class DataSource {
 						data[index] = '';
 					}
 
-					line.push(JSON.stringify(String(data[index])));
+					line.push(JSON.stringify(String(data[index]).replace(/"/g,"'")));
 				}
 
 				str.push(line.join());
