@@ -2052,6 +2052,7 @@ class DataSourceColumn {
 					</optgroup>
 					<option value="timeelapsed">Time Elapsed</option>
 					<option value="html">HTML</option>
+					<option value="json">JSON</option>
 				</select>
 			</label>
 
@@ -5900,7 +5901,15 @@ Visualization.list.set('table', class Table extends Visualization {
 
 					td.innerHTML = typedValue;
 				}
-				else if(rowJson && typeof rowJson == 'object') {
+
+				else if((column.type && column.type.name == 'json') || rowJson && typeof rowJson == 'object') {
+
+					try {
+
+						if(typeof rowJson == 'string')
+							rowJson = JSON.parse(rowJson);
+					}
+					catch(e) {};
 
 					td.innerHTML = `
 						<span class="value">${Array.isArray(rowJson) ? '[ Array: ' + rowJson.length + ' ]' : '{ Object: ' + Object.keys(rowJson).length + ' }'}</span>
