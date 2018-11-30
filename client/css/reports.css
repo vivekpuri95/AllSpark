@@ -720,7 +720,7 @@ main .dataset {
 			height: 100%;
 		}
 			.data-source .visualization.table .container td.json {
-				color: #666;
+				color: var(--color-grey);
 				padding: 4px;
 				user-select: none;
 				transition: background var(--transition-duration);

@@ -5919,7 +5919,9 @@ Visualization.list.set('table', class Table extends Visualization {
 
 					const tdValue = td.querySelector('.value');
 
-					td.on('click', () => {
+					td.on('click', (e) => {
+
+						e.stopPropagation();
 
 						tdValue.classList.add('hidden');
 
