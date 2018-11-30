@@ -12413,7 +12413,7 @@ class VisualizationsCanvas {
         container.classList.add('canvas');
 
         container.innerHTML = `
-			<div class="menu">
+			<div class="menu hidden">
         		<button type="button" class="edit">Edit</button>
         		<button type="button" class="reorder">Reorder</button>
 			</div>
@@ -12422,8 +12422,13 @@ class VisualizationsCanvas {
 
         this.list = container.querySelector('.list');
 
-        container.querySelector('.edit').on('click', () => this.edit());
-        container.querySelector('.reorder').on('click', () => this.reorder());
+	    if (this.page.user.privileges.has('report')) {
+
+		    container.querySelector('.menu').classList.remove('hidden');
+
+		    container.querySelector('.edit').on('click', () => this.edit());
+		    container.querySelector('.reorder').on('click', () => this.reorder());
+	    }
 
         return container;
     }
