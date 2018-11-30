@@ -64,8 +64,8 @@ exports.resetlink = class extends API {
 						Hi ${full_name}, <br/><br/>
 						<span style="color: #666;"> Please click on the link below to reset your password.</span>
 					</div>
-					<a href="https://${emailUrl}/login/reset?reset_token=${token}" style="font-size: 16px; text-decoration: none; padding: 20px;display:block;background: #eee;border: 1px solid #ccc;margin: 20px 0;text-align: center; " target="_blank">
-						https://${emailUrl}/login/reset?reset_token=${token}
+					<a href="https://${emailUrl}/login/reset?reset_token=${token}&email=${this.request.body.email}" style="font-size: 16px; text-decoration: none; padding: 20px;display:block;background: #eee;border: 1px solid #ccc;margin: 20px 0;text-align: center; " target="_blank">
+						https://${emailUrl}/login/reset?reset_token=${token}&email=${this.request.body.email}
 					</a>
 
 					<div style="font-size:14px;color:#666">Thank You.</div>
