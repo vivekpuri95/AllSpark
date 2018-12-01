@@ -1464,7 +1464,7 @@ class API extends AJAX {
 	static loadFormData(parameters, formData) {
 
 		if(!(formData instanceof FormData))
-			throw new Page.exception('The form object is not an instance of FormDat class!');
+			throw new Page.exception('The form object is not an instance of FormData class!');
 
 		for(const key of formData.keys()) {
 
@@ -2485,7 +2485,7 @@ class MultiSelect {
 		options.querySelector('header .all').on('click', () => this.all());
 		options.querySelector('header .clear').on('click', () => this.clear());
 
-		document.body.on('click', () => {
+		document.on('click', () => {
 
 			if(!this.expand)
 				options.classList.add('hidden');

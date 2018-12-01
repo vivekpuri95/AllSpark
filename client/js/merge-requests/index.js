@@ -30,13 +30,17 @@ class MergeRequests extends Map {
 
 		this.page = page;
 
-		this.sourceMultiSelect = new AllSpark.MultiSelect({multiple: false, expand: true});
-		this.destinationMultiSelect = new AllSpark.MultiSelect({multiple: false, expand: true});
+		this.sourceMultiSelect = new AllSpark.MultiSelect({multiple: false});
+		this.destinationMultiSelect = new AllSpark.MultiSelect({multiple: false});
 
 		const filters = [
 			{
 				key: 'ID',
 				rowValue: row => [row.id],
+			},
+			{
+				key: 'Source Type',
+				rowValue: row => [row.source],
 			},
 			{
 				key: 'Source ID',
@@ -126,7 +130,7 @@ class MergeRequests extends Map {
 		container.textContent = null;
 
 		for(const mergeRequest of data)
-			container.appendChild(mergeRequest.container);
+			container.appendChild(mergeRequest.row);
 
 		if(!data.length)
 			container.innerHTML = '<div class="NA">No Merge Requests Found</div>';
@@ -153,13 +157,16 @@ class MergeRequests extends Map {
 				<h1><i class="fas fa-code-branch"></i> Merge Requests</h1>
 
 				<div class="toolbar">
+
 					<button class="new-merge-request-button"><i class="fa fa-plus"></i> New Merge Requests</button>
+
 					<div></div>
+
 					<select class="status-filter">
 						<option value="open">Open</option>
 						<option value="merged">Merged</option>
 						<option value="closed">Closed</option>
-						<option value="">All</option>
+						<option value="">Any Status</option>
 					</select>
 				</div>
 
@@ -188,22 +195,28 @@ class MergeRequests extends Map {
 				<form class="form block" id="new-merge-request-form">
 
 					<label>
-						<span>Type</span>
-						<select name="source">
+						<span>Title <span class="red">*</span></span>
+						<input type="text" name="title" maxlength="250" required>
+					</label>
+
+					<label>
+						<span>Type <span class="red">*</span></span>
+						<select name="source" required>
 							<option value="report">Report</option>
+							<option value="visualization">Visualization</option>
 						</select>
 					</label>
 
 					<div class="report-picker">
 
 						<label class="source-report">
-							<span>Source</span>
+							<span>Source <span class="red">*</span></span>
 						</label>
 
 						<div class="report-picker-arrow"><i class="fas fa-long-arrow-alt-right"></i></div>
 
 						<label class="destination-report">
-							<span>Destination</span>
+							<span>Destination <span class="red">*</span></span>
 						</label>
 					</div>
 				</form>
@@ -218,7 +231,7 @@ class MergeRequests extends Map {
 
 		container.querySelector('.status-filter').on('change', () => this.load());
 
-		container.querySelector('.status-filter').insertAdjacentElement('afterend', this.searchBar.globalSearch.container);
+		container.querySelector('.toolbar').appendChild(this.searchBar.globalSearch.container);
 		container.querySelector('.toolbar').insertAdjacentElement('afterend', this.searchBar.container);
 
 		this.searchBar.on('change', () => {
@@ -306,46 +319,58 @@ class MergeRequest {
 		this.mergeRequests = mergeRequests;
 		this.page = mergeRequests.page;
 
-		this.sourceMultiSelect = new AllSpark.MultiSelect({multiple: false, expand: true});
-		this.destinationMultiSelect = new AllSpark.MultiSelect({multiple: false, expand: true});
+		this.sourceMultiSelect = new AllSpark.MultiSelect({multiple: false});
+		this.destinationMultiSelect = new AllSpark.MultiSelect({multiple: false});
 	}
 
-	get container() {
+	get row() {
 
-		if(this.containerEelement)
-			return this.containerEelement;
+		if(this.rowEelement)
+			return this.rowEelement;
 
 		const
-			container = this.containerEelement = document.createElement('div'),
+			container = this.rowEelement = document.createElement('div'),
 			source = Reports.DataSource.list.get(this.source_id),
 			destination = Reports.DataSource.list.get(this.destination_id);
 
-		container.classList.add('merge-request', 'block', this.status);
+		container.classList.add('merge-request-row', 'block', this.status);
 
 		container.innerHTML = `
 			<h2>
-				<span>
-					<span class="NA">#${this.source_id}</span>
-					${source.name}
-				</span>
-				<span class="NA"><i class="fas fa-long-arrow-alt-right"></i></span>
-				<span>
-					<span class="NA">#${this.destination_id}</span>
-					${destination.name}
-				</span>
+				${this.title}
+				<span class="NA">#${this.id}</span>
 			</h2>
 
+			<div class="subtitle">
+
+				<span>
+					<a href="/report/${this.destination_id}" target="_blank">
+						${source.name}
+					</a>
+					<span class="NA">#${this.source_id}</span>
+				</span>
+
+				<span class="NA"><i class="fas fa-long-arrow-alt-right"></i></span>
+
+				<span>
+					<a href="/report/${this.destination_id}" target="_blank">
+						${destination.name}
+					</a>
+					<span class="NA">#${this.destination_id}</span>
+				</span>
+			</div>
+
 			<div class="NA">
-				<span>#${this.id}</span>
-				&middot;
 				<span title="${AllSpark.Format.dateTime(this.created_at)}" class="created-at">${AllSpark.Format.ago(this.created_at)}</span>
 				&middot;
 				<a href="/user/profile/${this.added_by}" target="_blank">${this.user_name}</a>
 				&middot;
 				<a class="edit">Edit</a>
 				&middot;
-				<a>${this.status[0].toUpperCase() + this.status.slice(1)}</a>
+				<span>${this.source[0].toUpperCase() + this.source.slice(1)}</span>
 			</div>
+
+			<div class="status">${this.status[0].toUpperCase() + this.status.slice(1)}</div>
 		`;
 
 		const createdAt = container.querySelector('.created-at');
@@ -353,6 +378,8 @@ class MergeRequest {
 		setInterval(() => createdAt.textContent = AllSpark.Format.ago(this.created_at), 1000);
 
 		container.querySelector('.edit').on('click', () => this.edit());
+
+		container.querySelector('h2').on('click', () => this.load());
 
 		return container;
 	}
@@ -363,14 +390,6 @@ class MergeRequest {
 	}
 
 	edit() {
-
-		const form = this.form.querySelector('form');
-
-		form.reset();
-
-		form.source.value = this.source;
-		this.sourceMultiSelect.value = this.source_id;
-		this.destinationMultiSelect.value = this.destination_id;
 
 		this.mergeRequests.container.appendChild(this.form);
 
@@ -396,9 +415,11 @@ class MergeRequest {
 
 			this.sourceMultiSelect.datalist = JSON.parse(JSON.stringify(datalist));
 			this.sourceMultiSelect.render();
+			this.sourceMultiSelect.value = this.source_id;
 
 			this.destinationMultiSelect.datalist = JSON.parse(JSON.stringify(datalist));
 			this.destinationMultiSelect.render();
+			this.destinationMultiSelect.value = this.destination_id;
 		}
 
 		const container = this.formElement = document.createElement('section');
@@ -426,38 +447,62 @@ class MergeRequest {
 			<form class="form block" id="edit-${container.id}">
 
 				<label>
-					<span>Type</span>
-					<select name="source">
+					<span>Title <span class="red">*</span></span>
+					<input type="text" name="title" maxlength="250" value="${this.title}" required>
+				</label>
+
+				<label>
+					<span>Type <span class="red">*</span></span>
+					<select name="source" required>
 						<option value="report">Report</option>
+						<option value="visualization">Visualization</option>
 					</select>
 				</label>
 
 				<div class="report-picker">
 
 					<label class="source-report">
-						<span>Source</span>
+						<span>Source <span class="red">*</span></span>
 					</label>
 
 					<div class="report-picker-arrow"><i class="fas fa-long-arrow-alt-right"></i></div>
 
 					<label class="destination-report">
-						<span>Destination</span>
+						<span>Destination <span class="red">*</span></span>
 					</label>
 				</div>
 			</form>
 		`;
+
+		const form = container.querySelector('form');
 
 		container.querySelector('.merge-request-back').on('click', () => this.back());
 
 		container.querySelector('.source-report').appendChild(this.sourceMultiSelect.container);
 		container.querySelector('.destination-report').appendChild(this.destinationMultiSelect.container);
 
-		container.querySelector('form').on('submit', e => {
+		form.source.value = this.source;
+
+		for(const key in this) {
+
+			if(!(key in form.elements))
+				continue;
+
+			form.elements[key].value = this[key];
+			form.elements[key].on('change', () => this.setDirtyForm());
+			form.elements[key].on('keyup', () => this.setDirtyForm());
+		}
+
+		form.on('submit', e => {
 			e.preventDefault();
 			this.update();
 		});
 
 		return container;
+	}
+
+	setDirtyForm() {
+		this.form.querySelector('.toolbar button[type=submit]').classList.add('dirty');
 	}
 
 	async update() {
@@ -482,7 +527,7 @@ class MergeRequest {
 				destination_id: this.destinationMultiSelect.value[0],
 			},
 			options = {
-				form: new FormData(this.container.querySelector('form')),
+				form: new FormData(this.form.querySelector('form')),
 				method: 'POST',
 			};
 
@@ -507,5 +552,66 @@ class MergeRequest {
 				type: 'error',
 			});
 		}
+	}
+
+	async load() {
+
+		this.mergeRequests.container.appendChild(this.container);
+
+		AllSpark.Sections.show(this.container.id);
+	}
+
+	get container() {
+
+		if(this.containerEelement)
+			return this.containerEelement;
+
+		const
+			container = this.containerEelement = document.createElement('section'),
+			source = Reports.DataSource.list.get(this.source_id),
+			destination = Reports.DataSource.list.get(this.destination_id);
+
+		container.classList.add('merge-request', 'section');
+
+		container.id = `merge-request-${this.id}`;
+
+		container.innerHTML = `
+			<h1>
+				<i class="fas fa-code-branch"></i>
+				${this.title}
+				<span class="NA">#${this.id}</span>
+			</h1>
+
+			<div class="toolbar">
+
+				<button class="merge-request-back">
+					<i class="fas fa-arrow-left"></i>
+					Back
+				</button>
+			</div>
+
+			<div class="information-bar block">
+
+				<span>
+					<span class="NA">#${this.source_id}</span>
+					<a href="/report/${this.destination_id}" target="_blank">
+						${source.name}
+					</a>
+				</span>
+
+				<span class="NA"><i class="fas fa-long-arrow-alt-right"></i></span>
+
+				<span>
+					<span class="NA">#${this.destination_id}</span>
+					<a href="/report/${this.destination_id}" target="_blank">
+						${destination.name}
+					</a>
+				</span>
+			</div>
+		`;
+
+		container.querySelector('.merge-request-back').on('click', () => this.back());
+
+		return container;
 	}
 }

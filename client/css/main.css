@@ -123,6 +123,13 @@ input[type=submit] {
 	letter-spacing: 1px;
 }
 
+button[type=submit].dirty,
+input[type=submit].dirty {
+	background: var(--color-red);
+	color: #fff;
+	letter-spacing: 1px;
+}
+
 input::placeholder {
 	color: var(--color-grey);
 }

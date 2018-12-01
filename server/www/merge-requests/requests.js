@@ -27,7 +27,6 @@ class Requests extends API {
 					q.account_id = ?
 					and m.account_id = ?
 					and q.is_deleted = 0
-					and m.source = "report"
 					and (m.status = ? or ? = '')
 		`,
 				[this.account.account_id, this.account.account_id, status, status]),
@@ -49,9 +48,9 @@ class Requests extends API {
 					q.account_id = ?
 					AND m.account_id = ?
 					AND q.is_deleted = 0
-					AND m.source = "report"
+					and (m.status = ? or ? = '')
 			`,
-				[this.account.account_id, this.account.account_id])
+				[this.account.account_id, this.account.account_id, status, status])
 
 		]);
 
@@ -76,6 +75,7 @@ class Requests extends API {
 		this.user.privilege.needs('report.insert', 'ignore');
 
 		const columns = [
+			"title",
 			"source",
 			"source_id",
 			"destination_id",
@@ -120,6 +120,7 @@ class Requests extends API {
 		await this.validateMergeRequestOwner(mergeRequest);
 
 		const columns = [
+			'title',
 			'source',
 			'source_id',
 			'destination_id',
@@ -135,6 +136,8 @@ class Requests extends API {
 			...obj,
 			[key]: this.request.body[key]
 		} : obj), {});
+
+		console.log('-------', filteredRequest);
 
 		await this.validateMergeRequestOwner(mergeRequest);
 
@@ -187,8 +190,9 @@ class Requests extends API {
 				u.status = 1
 				and u.account_id = ?
 				and user_id = ?
+				and source = ?
 		`,
-			[this.account.account_id, this.user.user_id]
+			[this.account.account_id, this.user.user_id, row.source]
 		);
 
 		this.assert(

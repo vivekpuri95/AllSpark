@@ -1478,7 +1478,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 				<label>
 					<span>New Report's Name <span class="red">*</span></span>
-					<input type="text" name="name" value="${this.report.name}" required>
+					<input type="text" name="name" value="Fork of ${this.report.name}" required>
 				</label>
 
 				<label class="filters ${!this.report.filters.length ? 'hidden' : ''}">
