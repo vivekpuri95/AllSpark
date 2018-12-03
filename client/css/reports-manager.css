@@ -876,7 +876,7 @@ main.preview-left #stages {
 			grid-gap: 15px;
 			padding: 0 var(--gap) calc(var(--gap) * 2) 0;
 		}
-			.visualization-form .configuration-section .body .list .default small{
+			.visualization-form .configuration-section .body .list .default small {
 				color: var(--color-grey);
 				font-size: 90%;
 			}

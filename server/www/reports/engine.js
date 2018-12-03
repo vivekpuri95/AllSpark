@@ -246,12 +246,25 @@ class report extends API {
 
 		for (const filter of this.filters) {
 
+			const date = new Date();
+
 			if (isNaN(parseFloat(filter.offset))) {
 
 				continue;
 			}
 
-			if (filter.type == 'date') {
+			if(filter.type == 'time') {
+
+				filter.default_value = new Date(date.getTime() + (1000 * filter.offset)).toTimeString().substring(0, 8);
+				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
+
+				if (filter.value >= new Date().toISOString().slice(11, 19)) {
+
+					this.has_today = true;
+				}
+			}
+
+			else if (filter.type == 'date') {
 
 				filter.default_value = new Date(Date.now() + filter.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
@@ -262,9 +275,7 @@ class report extends API {
 				}
 			}
 
-			if (filter.type == 'month') {
-
-				const date = new Date();
+			else if (filter.type == 'month') {
 
 				filter.default_value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + filter.offset, 1)).toISOString().substring(0, 7);
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
@@ -275,7 +286,18 @@ class report extends API {
 				}
 			}
 
-			if (filter.type == 'datetime') {
+			else if (filter.type == 'year') {
+
+				filter.default_value = date.getFullYear() + parseFloat(filter.offset);
+				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
+
+				if (filter.value >= new Date().toISOString().slice(0, 4)) {
+
+					this.has_today = true;
+				}
+			}
+
+			else if (filter.type == 'datetime') {
 
 				filter.default_value = new Date(Date.now() + filter.offset * 60 * 1000).toISOString().replace('T', ' ').substring(0, 19);
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
@@ -285,6 +307,7 @@ class report extends API {
 					this.has_today = true;
 				}
 			}
+
 		}
 
 		for (const filter of this.filters) {
