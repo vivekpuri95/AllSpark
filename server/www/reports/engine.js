@@ -21,6 +21,7 @@ const ObjectId = require('mongodb').ObjectID;
 const oracle = require('../../utils/oracle').Oracle;
 const PromiseManager = require("../../utils/promisesManager").promiseManager;
 const promiseManager = new PromiseManager("executingReports");
+const pgsql = require("../../utils/pgsql").Postgres;
 
 // prepare the raw data
 class report extends API {
@@ -1106,7 +1107,7 @@ class ReportEngine extends API {
 
 		ReportEngine.engines = {
 			mysql: this.mysql.query,
-			pgsql: this.pgsql.query,
+			pgsql: pgsql.query,
 			api: fetch,
 			bigquery: bigQuery.call,
 			mssql: this.mssql.query,
