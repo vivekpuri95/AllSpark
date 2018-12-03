@@ -129,15 +129,20 @@
 		}
 
 	.merge-requests .merge-request > .information-bar {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		grid-gap: calc(var(--gap) * 2);
 		padding: calc(var(--gap) * 2);
-		font-size: 125%;
-		justify-content: center;
-		grid-auto-flow: column;
+		margin-bottom:
+	}
+
+	.merge-requests .merge-request > .summary {
 		display: grid;
 		grid-gap: calc(var(--gap) * 2);
+		padding: calc(var(--gap) * 2);
 	}
-		.merge-requests .merge-request > .information-bar > .NA i {
-			color: var(--color-secondary);
+		.merge-requests .merge-request > .summary .accept-merge-request {
+			width: max-content;
 		}
 	.merge-requests .merge-request > h1 span i {
 		color: var(--color-secondary);

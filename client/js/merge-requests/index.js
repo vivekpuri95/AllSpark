@@ -89,7 +89,16 @@ class MergeRequests extends Map {
 		return await Promise.all([
 			AllSpark.API.call('merge-requests/requests/list', parameters),
 			Reports.DataSource.load(),
+			this.fetchApprovers(),
 		]);
+	}
+
+	async fetchApprovers() {
+
+		if(this.approvers)
+			return;
+
+		this.approvers = await AllSpark.API.call('merge-requests/approvers/list');
 	}
 
 	process(response = {}) {
@@ -319,8 +328,11 @@ class MergeRequest {
 		this.mergeRequests = mergeRequests;
 		this.page = mergeRequests.page;
 
+		this.approvers = new MergeRequestApprovers(this);
 		this.sourceMultiSelect = new AllSpark.MultiSelect({multiple: false});
 		this.destinationMultiSelect = new AllSpark.MultiSelect({multiple: false});
+
+		MergeRequest.minimumApprovals = 1;
 	}
 
 	get row() {
@@ -576,6 +588,7 @@ class MergeRequest {
 		container.id = `merge-request-${this.id}`;
 
 		container.innerHTML = `
+
 			<h1>
 				<i class="fas fa-code-branch"></i>
 				${this.title}
@@ -592,26 +605,176 @@ class MergeRequest {
 
 			<div class="information-bar block">
 
-				<span>
-					<span class="NA">#${this.source_id}</span>
-					<a href="/report/${this.destination_id}" target="_blank">
-						${source.name}
-					</a>
-				</span>
+				<div>
+					<div class="key">Source</div>
+					<div class="value">
+						<span class="NA">#${this.source_id}</span>
+						<a href="/report/${this.destination_id}" target="_blank">
+							${source.name}
+						</a>
+					</div>
+				</div>
 
-				<span class="NA"><i class="fas fa-long-arrow-alt-right"></i></span>
+				<div>
+					<div class="key">Destination</div>
+					<div class="value">
+						<span class="NA">#${this.destination_id}</span>
+						<a href="/report/${this.destination_id}" target="_blank">
+							${destination.name}
+						</a>
+					</div>
+				</div>
 
-				<span>
-					<span class="NA">#${this.destination_id}</span>
-					<a href="/report/${this.destination_id}" target="_blank">
-						${destination.name}
-					</a>
-				</span>
+				<div>
+					<div class="key">Created At</div>
+					<div class="value">
+						<span>${AllSpark.Format.ago(this.created_at)}</span>
+						<span class="NA">#${this.destination_id}</span>
+					</div>
+				</div>
+
+				<div>
+					<div class="key">Created By</div>
+					<div class="value">
+						<a href="/user/profile/${this.added_by}" target="_blank">${this.user_name}</a>
+					</div>
+				</div>
+			</div>
+
+			<div class="summary block">
+
+				<div class="approvals"></div>
+
+				<button class="accept-merge-request" disabled><i class="fas fa-check"></i> Accept Merge Request</button>
 			</div>
 		`;
 
+		container.appendChild(this.approvers.container);
+
 		container.querySelector('.merge-request-back').on('click', () => this.back());
+		container.querySelector('.accept-merge-request').on('click', () => this.back());
+
+		this.render();
 
 		return container;
+	}
+
+	render() {
+
+		const
+			approvalsContainer = this.container.querySelector('.summary .approvals'),
+			mergeButton = this.container.querySelector('.accept-merge-request'),
+			approvals = [];
+
+		for(const approver of this.approvers) {
+
+			if(!approver.approval)
+				continue;
+
+			approvals.push(approver);
+			approvalsContainer.appendChild(approver.approvalContainer);
+		}
+
+		mergeButton.disabled = approvals.length < MergeRequest.minimumApprovals;
+
+		if(!approvals.length)
+			approvalsContainer.innerHTML = '<span class="NA">No one has approved this merge request yet.</span>';
+	}
+}
+
+class MergeRequestApprovers extends Set {
+
+	constructor(mergeRequest) {
+
+		super();
+
+		this.mergeRequest = mergeRequest;
+
+		for(const approver of this.mergeRequest.mergeRequests.approvers) {
+
+			const [approval] = this.mergeRequest.approvals.filter(a => a.user_id == approver.user_id && a.source == approver.source);
+
+			this.add(new MergeRequestApprover(approver, approval, this));
+		}
+	}
+
+	get container() {
+
+		if(this.containerEelement)
+			return this.containerEelement;
+
+		const container = this.containerEelement = document.createElement('div');
+
+		container.classList.add('approvers');
+
+		container.innerHTML = '<h3>Approvers</h3>';
+
+		for(const approver of this)
+			container.appendChild(approver.container);
+
+		return container;
+	}
+
+	render() {
+
+		for(const approver of this)
+			approver.render();
+	}
+}
+
+class MergeRequestApprover {
+
+	constructor(approver, approval, approvers) {
+
+		Object.assign(this, approver);
+
+		this.approval = approval;
+		this.approvers = approvers;
+	}
+
+	get container() {
+
+		if(this.containerEelement)
+			return this.containerEelement;
+
+		const container = this.containerEelement = document.createElement('div');
+
+		container.classList.add('approver');
+
+		this.render();
+
+		return container;
+	}
+
+	get approvalContainer() {
+
+		if(!this.approval)
+			return false;
+
+		if(this.approvalContainerEelement)
+			return this.approvalContainerEelement;
+
+		const container = this.approvalContainerEelement = document.createElement('div');
+
+		container.classList.add('approver');
+
+		container.classList.toggle('approved', this.approval);
+
+		container.innerHTML = `
+			<i class="far fa-check-square"></i> ${this.name}
+			<span class="NA">${this.approval.updated_at}</span>
+		`;
+
+		return container;
+	}
+
+	render() {
+
+		this.container.innerHTML = `
+			<i class="far ${this.approval ? 'fa-check-square' : 'fa-square'}"></i> ${this.name}
+			${this.approval ? '<span class="NA">' + this.approval.updated_at + '</span>' : ''}
+		`;
+
+		this.container.classList.toggle('approved', this.approval);
 	}
 }

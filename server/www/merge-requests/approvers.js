@@ -2,21 +2,21 @@ const API = require('../../utils/api');
 
 class Approvers extends API {
 
-	async list({source = null} = {}) {
+	async list() {
 
 		this.account.features.needs('merge-requests-module');
 
 		return this.mysql.query(`
 			SELECT
 				u.user_id,
-				CONCAT_WS(' ', u.first_name, u.middle_name, u.last_name) user_name
+				CONCAT_WS(' ', u.first_name, u.middle_name, u.last_name) name
 			FROM
 				tb_merge_requests_approvers a
 			JOIN
-				tb_users u USING(account_id)
+				tb_users u USING(user_id)
 			WHERE
-				a.source = ? AND u.account_id = ?`,
-			[source, this.account.account_id]
+				u.account_id = ?`,
+			[this.account.account_id]
 		);
 	}
 }
