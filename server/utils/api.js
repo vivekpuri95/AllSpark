@@ -1,5 +1,5 @@
 const zlib = require('zlib');
-const mysql = require('./mysql').MySQL;
+const mysql = require('./mysql');
 const crypto = require('crypto');
 const fs = require('fs');
 const pathSeparator = require('path').sep;
@@ -8,13 +8,16 @@ const commonFun = require('./commonFunctions');
 const User = require('./User');
 const constants = require('./constants');
 const assert = require("assert");
-const pgsql = require("./pgsql").Postgres;
+const pgsql = require("./pgsql");
 const errorLogs = require('./errorLogs');
-const msssql = require("./mssql").MsSql;
+const msssql = require("./mssql");
+const oracle = require("./oracle");
+const mongo = require("./mongo");
 const child_process = require('child_process');
 const atob = require('atob');
 const dbConfig = require('config').get("sql_db");
 const url = require('url');
+const syncServer = require("./sync-server");
 
 const environment = {
 	name: process.env.NODE_ENV,
@@ -27,9 +30,8 @@ class API {
 
 	constructor(context = null) {
 
-		this.mysql = mysql;
-		this.pgsql = pgsql;
-		this.mssql = msssql;
+		this.mysql = mysql.MySQL;
+		this.mssql = msssql.MsSql;
 		this.environment = environment;
 
 		if(context) {
@@ -75,6 +77,45 @@ class API {
 	static serve(clientEndpoint) {
 
 		return async function (request, response, next) {
+
+			const catageories = [
+				{
+					name: 'connection.mssql',
+					object: msssql,
+				},
+				{
+					name: 'connection.mysql',
+					object: mysql,
+				},
+				{
+					name: 'connection.pgsql',
+					object: pgsql,
+				},
+				{
+					name: 'connection.oracle',
+					object: oracle,
+				},
+				{
+					name: 'connection.mongo',
+					object: mongo,
+				},
+				{
+					name: 'account',
+					object: {},
+				}
+			];
+
+			for(const type of catageories) {
+
+				const status = await syncServer.status(type.name);
+
+				if(status) {
+
+					console.log('###### Outdated ', type.name);
+
+					syncServer.call(type);
+				}
+			}
 
 			let obj;
 

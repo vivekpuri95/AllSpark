@@ -8,8 +8,11 @@ const mssql = require("../utils/mssql");
 const postgres = require("../utils/pgsql");
 const mongo = require("../utils/mongo");
 const oracle = require("../utils/oracle");
+let syncServer = require("../utils/sync-server");
 
 (async () => {
+
+	syncServer = new syncServer();
 
 	await account.loadAccounts();
 	await account.loadBigquery();

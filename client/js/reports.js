@@ -1510,13 +1510,19 @@ class DataSourceFilter {
 
 		if(!isNaN(parseFloat(this.offset))) {
 
-			if(this.type.includes('date'))
+			const date = new Date();
+
+			if(this.type == 'time')
+				value = new Date(date.getTime() + (1000 * this.offset)).toTimeString().substring(0, 8);
+
+			else if(this.type.includes('date'))
 				value = new Date(Date.nowUTC() + (this.offset * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10);
 
-			if(this.type == 'month') {
-				const date = new Date();
+			else if(this.type == 'month')
 				value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + this.offset, 1)).toISOString().substring(0, 7);
-			}
+
+			else if(this.type == 'year')
+				value = date.getFullYear() + parseFloat(this.offset);
 		}
 
 		// If an offset and a default value was provided for the offset then create a new default value

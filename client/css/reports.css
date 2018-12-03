@@ -724,6 +724,7 @@ main .dataset {
 				padding: 4px;
 				user-select: none;
 				transition: background var(--transition-duration);
+				white-space: nowrap;
 			}
 			.data-source .visualization.table .container td.json:hover {
 				cursor: pointer;
@@ -735,6 +736,7 @@ main .dataset {
 				.data-source .visualization.table .container .code-editor {
 					margin: 0;
 					height: 250px;
+					min-width: 400px;
 				}
 				.data-source .visualization.table .container td.json .close {
 					color: rgba(0, 0, 0, 0.5);

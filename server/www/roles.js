@@ -62,4 +62,4 @@ exports.test = class extends API {
 
 		return this.request.body || this.request.query;
 	}
-};
+}

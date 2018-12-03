@@ -11,6 +11,7 @@ const constants = require("../utils/constants");
 const getRole = require("../www/object_roles").get;
 const Redis = require("../utils/redis").Redis;
 const credentialLogs = require('../utils/reportLogs');
+const syncServer = require("../utils/sync-server");
 
 exports.insert = class extends API {
 
@@ -21,11 +22,11 @@ exports.insert = class extends API {
 		this.assert(connection_name && type, 'Connection name and type required');
 
 		const response = await this.mysql.query(
-			`INSERT INTO 
+			`INSERT INTO
 				tb_credentials (
-					account_id, connection_name, host, port, user, password, 
+					account_id, connection_name, host, port, user, password,
 					db,	\`limit\`, \`type\`, file, project_name, added_by
-				) 
+				)
 				VALUES (?)
 			`,
 			[[
@@ -64,6 +65,8 @@ exports.insert = class extends API {
 				operation:'insert',
 			}
 		);
+
+		await syncServer.set(`${constants.lastUpdatedKeys.connection}.${this.request.body.type.toLowerCase()}`);
 
 		return response;
 	}
@@ -233,6 +236,8 @@ exports.delete = class extends API {
 			}
 		);
 
+		await syncServer.set(`${constants.lastUpdatedKeys.connection}.${connectionObj.type}`);
+
 		return response;
 	}
 };
@@ -323,10 +328,11 @@ exports.update = class extends API {
 			}
 		);
 
+		await syncServer.set(`${constants.lastUpdatedKeys.connection}.${credential.type}`);
+
 		return response;
 	}
 }
-
 
 exports.testConnections = class extends API {
 
