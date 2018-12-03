@@ -690,7 +690,7 @@ class DataSource {
 					if(pipelineToggle.parentElement.classList.contains('selected'))
 						pipelineToggle.click();
 
-					this.menu.querySelector('.related-visualizations').classList.toggle('hidden', !visualization.related_visualizations.length);
+					this.menu.querySelector('.related-visualizations').parentElement.classList.toggle('hidden', !(visualization.related_visualizations && visualization.related_visualizations.length));
 
 					visualization.load();
 				});
@@ -12451,7 +12451,7 @@ class VisualizationsCanvas {
 
             if ((parseInt(visualization.position) < this.maxScrollHeightAchieved + offset) && !visualization.loaded) {
 
-                visualization.query.selectedVisualization.load();
+                visualization.query.visualizations.selected.load();
                 visualization.loaded = true;
 
                 this.loadedVisualizations.set(visualization_id, visualization);
@@ -12479,7 +12479,7 @@ class VisualizationsCanvas {
 
         for (const row of this.visualizations) {
 
-            row.report.container.appendChild(row.report.selectedVisualization.container);
+            row.report.container.appendChild(row.report.visualizations.selected.container);
 
             row.report.container.setAttribute('style', `
 				order: ${row.format.position || 0};
@@ -12488,8 +12488,9 @@ class VisualizationsCanvas {
 			`);
 
             this.list.appendChild(row.report.container);
+	        row.report.container.querySelector('.visualization').classList.toggle('blur', VisualizationsCanvas.editing);
 
-            this.visualizationTrack.set(row.report.selectedVisualization.visualization_id, ({
+            this.visualizationTrack.set(row.report.visualizations.savedOnDashboard.visualization_id, ({
                 position: row.report.container.getBoundingClientRect().y,
                 query: row.report,
                 loaded: false,
@@ -12507,9 +12508,9 @@ class VisualizationsCanvas {
             () => {
                 for (const row of this.visualizations) {
 
-                    if (this.visualizationTrack.get(row.report.selectedVisualization.visualization_id)) {
+                    if (this.visualizationTrack.get(row.report.visualizations.savedOnDashboard.visualization_id)) {
 
-                        this.visualizationTrack.get(row.report.selectedVisualization.visualization_id).position = row.report.container.getBoundingClientRect().y;
+                        this.visualizationTrack.get(row.report.visualizations.savedOnDashboard.visualization_id).position = row.report.container.getBoundingClientRect().y;
                     }
                 }
 
@@ -12528,17 +12529,39 @@ class VisualizationsCanvas {
 
     setEditMode(report) {
 
-    	const menu = report.container.querySelector('.menu');
+    	const
+		    menu = report.container.querySelector('.menu'),
+		    warning = report.container.querySelector('.warning');
 
     	if(menu) {
 
 		    menu.classList.add('hidden');
+
+		    const toggleElements = [
+			    menu.querySelector('.filters-toggle'),
+			    menu.querySelector('.query-toggle'),
+			    menu.querySelector('.description-toggle'),
+			    menu.querySelector('.pipeline-toggle')
+		    ];
+
+		    for(const toggle of toggleElements) {
+
+			    if(toggle.parentElement.classList.contains('selected')) {
+
+				    toggle.click();
+			    }
+		    }
+	    }
+
+	    if(warning) {
+
+		    warning.classList.toggle('blur', VisualizationsCanvas.editing);
 	    }
 
 	    report.container.querySelector('header h2').classList.toggle('edit');
 	    report.container.querySelector('.menu-toggle').classList.toggle('hidden');
-	    report.container.querySelector('.visualization').classList.toggle('blur');
-	    report.container.querySelector('.columns').classList.toggle('blur');
+	    report.container.querySelector('.visualization').classList.toggle('blur', VisualizationsCanvas.editing);
+	    report.container.querySelector('.columns').classList.toggle('blur', VisualizationsCanvas.editing);
     }
 
     edit() {
@@ -12553,7 +12576,7 @@ class VisualizationsCanvas {
 
         for (let {query: report} of this.loadedVisualizations.values()) {
 
-	        [report.selectedVisualizationProperties] = this.visualizations.filter(x => x.visualization_id == report.selectedVisualization.visualization_id);
+	        [report.selectedVisualizationProperties] = this.visualizations.filter(x => x.visualization_id == report.visualizations.savedOnDashboard.visualization_id);
 
 	        this.setEditMode(report);
 
@@ -12727,6 +12750,8 @@ class VisualizationsCanvas {
                 report.container.remove();
 
                 this.visualizations = this.visualizations.filter(x => x.visualization_id != report.selectedVisualizationProperties.visualization_id);
+                this.loadedVisualizations.delete(report.selectedVisualizationProperties.visualization_id);
+
                 this.render();
             });
 
@@ -12953,12 +12978,14 @@ class Canvas extends VisualizationsCanvas {
 
             const dataSource = new DataSource(DataSource.list.get(visualization.query_id), this.page);
 
-            [dataSource.selectedVisualization] = dataSource.visualizations.filter(v => v.visualization_id === visualization.visualization_id);
+            [dataSource.visualizations.savedOnDashboard] = dataSource.visualizations.filter(v => v.visualization_id === visualization.visualization_id);
 
-            if (!dataSource.selectedVisualization) {
+            if (!dataSource.visualizations.savedOnDashboard) {
 
                 continue;
             }
+
+            dataSource.visualizations.selected = dataSource.visualizations.savedOnDashboard;
 
             visualization.report = dataSource;
 
@@ -12972,7 +12999,7 @@ class Canvas extends VisualizationsCanvas {
             }
 
             await Promise.all(filters);
-            dataSource.container.appendChild(dataSource.selectedVisualization.container);
+            dataSource.container.appendChild(dataSource.visualizations.savedOnDashboard.container);
         }
 
 	}

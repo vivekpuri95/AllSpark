@@ -1726,6 +1726,7 @@ main .dataset {
 			.canvas .list .resize-dimentions span {
 				justify-content: center;
 				display: flex;
+				color: var(--color-primary);
 			}
 			.canvas .list .resize-dimentions input {
 				width: 50px;
@@ -1734,7 +1735,7 @@ main .dataset {
 				outline: 0;
 				font-size: 125%;
 				text-align: center;
-				color: var(--grey);
+				color: var(--color-primary);
 				cursor: pointer;
 				padding: 0;
 			}

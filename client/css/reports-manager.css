@@ -909,7 +909,6 @@ main.preview-left #stages {
 			}
 			.visualization-form .configuration-section .body .list .form {
 				grid-gap: calc(var(--gap) * 2);
-				padding: 0;
 			}
 	.visualization-form .configuration-section .theme-list {
 		padding: 10px;
