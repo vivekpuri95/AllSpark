@@ -45,9 +45,7 @@ Page.class = class Dashboards extends Page {
 			this.container.querySelector('.nav-blanket').classList.toggle('hidden', !this.nav.classList.contains('show'));
 		});
 
-		const urlsearchparam = new URLSearchParams(location.search);
-
-		if(urlsearchparam.has('pdf') && urlsearchparam.get('pdf')) {
+		if(this.urlSearchParameters.has('pdf') && this.urlSearchParameters.get('pdf')) {
 			(async () => {
 				await Storage.set('menu-collapsed','1');
 			})();
@@ -808,24 +806,24 @@ class Dashboard {
 
 		await API.refreshToken();
 
-		const xx = new URLSearchParams(location.search);
+		const searchParam = new URLSearchParams(location.search);
 
-		xx.set('pdf', true);
-		xx.set('external_parameters', "1");
-		xx.set('refresh_token', (await Storage.get('refresh_token')));
+		searchParam.set('pdf', true);
+		searchParam.set('external_parameters', "1");
+		searchParam.set('refresh_token', (await Storage.get('refresh_token')));
 
 		for(const [key, value] of Dashboard.urlSearchString()) {
-			xx.set(key, value);
+			searchParam.set(key, value);
 		}
 
-		const urlToDownload = `${location.origin}${location.pathname}?${xx}`;
+		const urlToDownload = `${location.origin}${location.pathname}?${searchParam}`;
 
 		const body = {
 			url: urlToDownload,
 			token : (await Storage.get('token')).body,
 		}
 
-		const x = await (await (fetch("/api/v2/pdf/a", {
+		const pdfContent = await (await (fetch("/api/v2/reports/download/pdf", {
 			body: JSON.stringify(body),
 			headers: {
 				'content-type': 'application/json'
@@ -833,10 +831,22 @@ class Dashboard {
 			method: 'POST',}))
 		).blob();
 
-		const link = document.createElement('a');
-		link.href = window.URL.createObjectURL(x);
-		link.download = 'ravi' +  ".pdf";
-		link.click();
+		if(pdfContent.type.includes('application/pdf')) {
+
+			const link = document.createElement('a');
+			link.href = window.URL.createObjectURL(pdfContent);
+			link.download = page.list.get(page.currentDashboard).name + '_' + Format.dateTime(Date.now()) + ".pdf";
+			link.click();
+		}
+		else {
+
+			new SnackBar({
+				message: 'Unable to download pdf',
+				subtitle: 'Request Failed',
+				icon: 'fas fa-ban',
+				type: 'error',
+			});
+		}
 	}
 
 	static sortVisualizations(visibleVisuliaztions) {

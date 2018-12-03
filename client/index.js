@@ -666,7 +666,7 @@ router.get('/:type(dashboard|report|visualization)/:id?', API.serve(class extend
 							Download
 						</button>
 						<div class="options hidden">
-							<button id="pdf">PDF</button>
+							<button id="pdf"><i class="far fa-file-pdf"></i> PDF</button>
 						</div>
 					</div>
 
