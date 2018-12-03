@@ -107,3 +107,8 @@ exports.filterTypes = [
 		input_type: 'text',
 	},
 ];
+
+exports.lastUpdatedKeys = {
+	connection: 'connection',
+	account: 'account',
+};

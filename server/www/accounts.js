@@ -4,6 +4,7 @@ const commonFun = require("../utils/commonFunctions");
 const redis = require("../utils/redis").Redis;
 const config = require('config');
 const constants = require("../utils/constants");
+const syncServer = require('../utils/sync-server');
 
 exports.list = class extends API {
 
@@ -144,6 +145,8 @@ exports.insert = class extends API {
 			)
 		]);
 
+		await syncServer.set(`${constants.lastUpdatedKeys.account}`);
+
 		await account.loadAccounts();
 
 		return {
@@ -165,6 +168,8 @@ exports.update = class extends API {
 			[{name, url, icon, logo, auth_api}, account_id],
 			'write'
 		);
+
+		await syncServer.set(`${constants.lastUpdatedKeys.account}`);
 
 		await account.loadAccounts();
 		return result;
@@ -188,6 +193,8 @@ exports.delete = class extends API {
 			[account_id],
 			"write"
 		);
+
+		await syncServer.set(`${constants.lastUpdatedKeys.account}`);
 
 		await account.loadAccounts();
 		return result;

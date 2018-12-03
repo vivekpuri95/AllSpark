@@ -33,18 +33,11 @@ class MySQL {
 		const mysqlObj = new MySQL();
 		const credentials = await mysqlObj.query(query);
 
-		let invalidConnections = new Set((await Redis.hget(`${process.env.NODE_ENV}#invalidCredentials`, "mysql") || "").split(", ").map(x => x.toString()) || []);
-
 		for (const credential of credentials) {
 
 			if(poolObj[credential.id]) {
 
 				continue;
-			}
-
-			if(invalidConnections.has(credential.id.toString())) {
-
-				invalidConnections.delete(credential.id.toString());
 			}
 
 			poolObj[credential.id] = {
@@ -53,7 +46,6 @@ class MySQL {
 		}
 
 		await Redis.hset(`${process.env.NODE_ENV}#credentials`, "mysql", Object.values(poolObj).filter(x => x.pool && x.connection.id).map(x => x.connection.id).join(", "));
-		await Redis.hset(`${process.env.NODE_ENV}#invalidCredentials`, "mysql", [...invalidConnections].join(", "));
 
 		console.log("Connections Available: ", Object.keys(poolObj));
 	}
@@ -69,13 +61,6 @@ class MySQL {
 		if(!poolObj[connectionName]) {
 
 			throw(new Error('Connection not found'));
-		}
-
-		let invalidConnections = (await Redis.hget(`${process.env.NODE_ENV}#invalidCredentials`, "mysql") || "").split(", ").map(x => x.toString());
-
-		if(invalidConnections.includes(connectionName.toString())) {
-
-			await MySQL.crateExternalPool();
 		}
 
 		if(!poolObj[connectionName].pool) {
