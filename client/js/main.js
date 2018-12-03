@@ -1394,6 +1394,13 @@ class AJAX {
 			return User.logout({next: true, redirect: options.redirectOnLogout, message: message});
 		}
 
+		if(!response.headers.get('content-type').includes('json') && options.raw) {
+			return {
+				data: response,
+				status: true,
+			}
+		}
+
 		return response.headers.get('content-type').includes('json') ? await response.json() : await response.text();
 	}
 }
@@ -1468,7 +1475,7 @@ class API extends AJAX {
 	static loadFormData(parameters, formData) {
 
 		if(!(formData instanceof FormData))
-			throw new Page.exception('The form object is not an instance of FormDat class!');
+			throw new Page.exception('The form object is not an instance of FormData class!');
 
 		for(const key of formData.keys()) {
 

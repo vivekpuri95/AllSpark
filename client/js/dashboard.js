@@ -823,13 +823,11 @@ class Dashboard {
 			token : (await Storage.get('token')).body,
 		}
 
-		const pdfContent = await (await (fetch("/api/v2/reports/download/pdf", {
-			body: JSON.stringify(body),
-			headers: {
-				'content-type': 'application/json'
-			},
-			method: 'POST',}))
-		).blob();
+		const options = {
+			raw: true,
+		};
+
+		const pdfContent = await (await API.call('reports/download/pdf', {url: urlToDownload}, options)).blob();
 
 		if(pdfContent.type.includes('application/pdf')) {
 

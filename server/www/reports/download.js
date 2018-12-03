@@ -11,7 +11,7 @@ exports.pdf = class DownloadPdf extends API {
 			browser = await this.browser(),
 			page = await browser.newPage();
 
-		await page.goto(`${this.request.body.url}`,
+		await page.goto(`${this.request.query.url}`,
 			{waitUntil: ['networkidle2','domcontentloaded']}
 		);
 
