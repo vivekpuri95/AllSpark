@@ -7621,23 +7621,6 @@ class ReportVisualizationFilter {
 
 		const container = this.containerElement = document.createElement('fieldset');
 
-		const types = ['hidden', 'column', 'literal'];
-
-		if(this.reportFilter.type == 'datetime')
-			this.reportFilter.type = 'datetime-local';
-
-		else if(this.reportFilter.type == 'year')
-			this.reportFilter.type = 'number';
-
-		else if(this.reportFilter.type == 'time') {
-
-			this.reportFilter.type = 'time';
-			this.reportFilter.step = '1';
-		}
-
-		else if(types.includes(this.reportFilter.type))
-			this.reportFilter.type = 'text';
-
 		container.innerHTML = `
 			<legend>${this.reportFilter.name}</legend>
 
@@ -7669,6 +7652,22 @@ class ReportVisualizationFilter {
 				</label>
 			</div>
 		`;
+
+		const types = ['hidden', 'column', 'literal'];
+
+		const default_value = container.querySelector('input[name="default_value"]');
+
+		if(this.reportFilter.type == 'datetime')
+			default_value.type = 'datetime-local';
+
+		else if(this.reportFilter.type == 'year')
+			default_value.type = 'number';
+
+		else if(this.reportFilter.type == 'time')
+			default_value.step = '1';
+
+		else if(types.includes(this.reportFilter.type))
+			default_value.type = 'text';
 
 		let default_data;
 
