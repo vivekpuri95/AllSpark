@@ -12572,7 +12572,7 @@ class VisualizationsCanvas {
 
         edit.innerHTML = VisualizationsCanvas.editing ? '<i class="fas fa-check"></i> Done' : '<i class="fas fa-edit"></i> Edit';
 
-        this.list.classList.toggle('editing', VisualizationsCanvas.editing);
+        this.container.classList.toggle('editing', VisualizationsCanvas.editing);
 
         for (let {query: report} of this.loadedVisualizations.values()) {
 
