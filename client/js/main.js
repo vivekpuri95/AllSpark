@@ -2501,8 +2501,17 @@ class MultiSelect {
 			values = [values];
 
 		for(const value of values) {
-			if(this.datalist && this.datalist.some(r => r.value == value))
+
+			if(this.datalist && this.datalist.some(r => r.value == value)) {
+
 				this.selectedValues.add(value.toString());
+
+				if (!this.multiple) {
+
+					break;
+				}
+
+			}
 		}
 
 		if(this.changeCallback)
