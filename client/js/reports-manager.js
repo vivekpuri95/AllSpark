@@ -7713,7 +7713,7 @@ class ReportVisualizationFilter {
 		if(default_type != 'offset')
 			offset_value = '';
 
- 		if(default_type != 'default_value')
+		if(default_type != 'default_value')
 			default_value = '';
 
 		return {
