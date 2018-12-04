@@ -6184,6 +6184,17 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 		this.plot(options);
 	}
 
+	async draw() {
+
+		if(!this.axes.right)
+			return this.source.error('Right axis not defined.');
+
+		if(!this.axes.right.columns.length)
+			return this.source.error('Right axis requires one column.');
+
+		await super.draw();
+	}
+
 	plot(options = {}) {
 
 		super.plot(options);
