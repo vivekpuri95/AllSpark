@@ -6188,6 +6188,9 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 
 		await super.draw();
 
+		if(!this.axes)
+			return this.source.error('Axes not defined.');
+
 		if(!this.axes.right)
 			return this.source.error('Right axis not defined.');
 
