@@ -19,7 +19,7 @@ class GlobalFilters extends API {
 		return result;
 	};
 
-	async insert({name, placeholder, description = '', default_value = '', multiple = null, type = null, offset, dataset} = {}) {
+	async insert({name, placeholder, description = '', order = null, default_value = '', multiple = null, type = null, offset, dataset} = {}) {
 
 		this.user.privilege.needs('administrator', 'ignore');
 
@@ -30,6 +30,7 @@ class GlobalFilters extends API {
 			name,
 			placeholder,
 			description,
+			order,
 			default_value,
 			multiple,
 			type,
@@ -44,7 +45,7 @@ class GlobalFilters extends API {
 		);
 	}
 
-	async update({id, name, placeholder, description = '', default_value = '', multiple = null, type = null, offset, dataset} = {}) {
+	async update({id, name, placeholder, description = '', order = null, default_value = '', multiple = null, type = null, offset, dataset} = {}) {
 
 		this.user.privilege.needs('administrator', 'ignore');
 
@@ -52,7 +53,7 @@ class GlobalFilters extends API {
 		this.assert(name && placeholder, 'Name or Placeholder cannot be null or empty');
 
 		const params = {
-			name, placeholder, description, default_value, multiple, type,
+			name, placeholder, description, order, default_value, multiple, type,
 			offset: isNaN(parseInt(offset)) ? null : parseInt(offset),
 			dataset: parseInt(dataset) || null,
 		};

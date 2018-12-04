@@ -1338,7 +1338,7 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 					<form class="block form" id="user-form">
 
 						<label>
-							<span>Name <span class="red">*</span></span>
+							<span>Name <span class="red">*</span><span class="right" data-tooltip="Uniquely identifies the filter in this report.">?</span></span>
 							<input type="text" name="name" required>
 						</label>
 
@@ -1353,7 +1353,17 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 						</label>
 
 						<label>
-							<span>Default</span>
+							<span>Description</span>
+							<input type="text" name="description" maxlength="200">
+						</label>
+
+						<label>
+							<span>Order</span>
+							<input type="number" name="order">
+						</label>
+
+						<label>
+							<span>Default Value <span class="right" data-tooltip="Calculated and applied on first load\nif a global filter with same placeholder isn't added.">?</span></span>
 							<select name="default_type">
 								<option value="none">None</option>
 								<option value="default_value">Default Value</option>
@@ -1365,17 +1375,12 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 							<input type="number" name="offset">
 						</label>
 
-						<label>
-							<span>Description</span>
-							<input type="text" name="description" maxlength="200">
-						</label>
-
 						<label class="datasets">
-							<span>Dataset</span>
+							<span>Dataset <span class="right" data-tooltip="A set of possible values for this filter.">?</span></span>
 						</label>
 
 						<label>
-							<span>Multiple</span>
+							<span>Multiple <span class="right" data-tooltip="Can the user pick multiple values.">?</span></span>
 							<select name="multiple">
 								<option value="0">No</option>
 								<option value="1">Yes</option>

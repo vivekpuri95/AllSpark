@@ -459,6 +459,11 @@ main.preview-left #stages {
 				margin: 10px 0;
 				border-bottom: 1px dashed var(--color-border);
 				padding-bottom: 10px;
+				position: sticky;
+				top: 0;
+				background: var(--color-background);
+				color: var(--color-background-text);
+				z-index: 1;
 			}
 				#stage-define-report #filters h3 > i {
 					margin: 0 var(--gap);
@@ -469,11 +474,7 @@ main.preview-left #stages {
 				color: var(--color-grey);
 			}
 			#stage-define-report #filters .toolbar {
-				position: sticky;
-				top: 0;
-				background: var(--color-background);
 				overflow: auto;
-				color: var(--color-background-text);
 			}
 				#stage-define-report #filters .toolbar .filter-info {
 					text-align: right;

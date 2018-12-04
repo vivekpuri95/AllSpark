@@ -195,13 +195,13 @@ class ReportsManger extends Page {
 	}
 }
 
-window.addEventListener("beforeunload", function (event) {
+window.addEventListener('beforeunload', function (event) {
 
 	event.preventDefault();
 
 	if(this.page.stages.get('define-report').container.querySelector('button.not-saved'))
 		event.returnValue = 'Sure';
-  });
+});
 
 class ReportsMangerPreview {
 
@@ -872,6 +872,8 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 			this.form.redis_custom.classList.add('hidden');
 		}
 
+		await this.descriptionEditor.setup();
+
 		this.descriptionEditor.value = this.report.description;
 
 		{
@@ -1157,7 +1159,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		}
 	}
 
-	unsavedQueryValue() {
+	setDirtyForm() {
 
 		if(!this.report.connection.editor)
 			return;
@@ -1169,7 +1171,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 	saveReportConfirm() {
 
-		const defineReportSaveButton = this.container.querySelector('#stage-define-report button[type=submit].not-saved');
+		const defineReportSaveButton = this.container.querySelector('#stage-define-report > .toolbar button[type=submit].not-saved');
 
 		if(!defineReportSaveButton)
 			return true;
@@ -2212,7 +2214,7 @@ class ReportsManagerFilters extends Map {
 								<th>Name</th>
 								<th>Placeholder</th>
 								<th>Type</th>
-								<th>Offset</th>
+								<th>Default Value</th>
 								<th>Dataset</th>
 								<th class="action">Edit</th>
 								<th class="action">Delete</th>
@@ -2327,7 +2329,7 @@ class ReportsManagerFilters extends Map {
 
 					<label class="multiple">
 						<span>Multiple <span class="right" data-tooltip="Can the user pick multiple values">?</span></span>
-						<select name="multiple" required>
+						<select name="multiple">
 							<option value="0">No</option>
 							<option value="1">Yes</option>
 						</select>
@@ -2705,7 +2707,7 @@ class ReportsManagerFilter {
 			<td>${this.name}</td>
 			<td>${this.placeholder}</td>
 			<td>${this.type}</td>
-			<td>${this.offset || ''}</td>
+			<td>${this.default_value || isNaN(parseFloat(this.offset)) ? '' : this.offset}</td>
 			<td>${datasetName}</td>
 			<td class="action green"><i class="far fa-edit"></i></td>
 			<td class="action red"><i class="far fa-trash-alt"></i></td>
@@ -2774,7 +2776,7 @@ class ReportsManagerFilter {
 				</label>
 
 				<label>
-					<span>Placeholder <span class="red">*</span><span class="right" data-tooltip="Uniquely identifies the filter in this report">?</span></span>
+					<span>Placeholder <span class="red">*</span><span class="right" data-tooltip="Uniquely identifies the filter in this report.">?</span></span>
 					<input type="text" name="placeholder" value="${this.placeholder || ''}" required>
 				</label>
 
@@ -2795,7 +2797,7 @@ class ReportsManagerFilter {
 
 				<label>
 
-					<span>Default Value <span class="right" data-tooltip="Calculated and applied on first load\nif a global filter with same placeholder isn't added">?</span></span>
+					<span>Default Value <span class="right" data-tooltip="Calculated and applied on first load\nif a global filter with same placeholder isn't added.">?</span></span>
 
 					<select name="default_type">
 						<option value="none">None</option>
@@ -2805,15 +2807,15 @@ class ReportsManagerFilter {
 
 					<input type="text" name="default_value" value="${this.default_value || ''}">
 
-					<input type="number" name="offset" value="${this.offset || ''}">
+					<input type="number" name="offset" value="${isNaN(parseFloat(this.offset)) ? '' : this.offset}">
 				</label>
 
 				<label class="dataset">
-					<span>Dataset <span class="right" data-tooltip="A set of possible values for this filter">?</span></span>
+					<span>Dataset <span class="right" data-tooltip="A set of possible values for this filter.">?</span></span>
 				</label>
 
 				<label class="multiple">
-					<span>Allow Multiple <span class="right" data-tooltip="Can the user pick multiple values">?</span></span>
+					<span>Allow Multiple <span class="right" data-tooltip="Can the user pick multiple values.">?</span></span>
 					<select name="multiple" required>
 						<option value="0">No</option>
 						<option value="1">Yes</option>
@@ -2853,13 +2855,16 @@ class ReportsManagerFilter {
 			container.querySelector('label.dataset').appendChild(this.datasetMultiSelect.container);
 
 			this.datasetMultiSelect.value = this.dataset;
-			this.datasetMultiSelect.on('change', () => this.updateFormFields());
+			this.datasetMultiSelect.on('change', () => {
+				this.updateFormFields();
+				this.setDirtyForm();
+			});
 		}
 
 		{
 
 			const
-				default_value = container.default_value.value,
+				default_value = container.default_value.vaslue,
 				default_value_offset = container.offset.value;
 
 			for(const type of MetaData.filterTypes.values()) {
@@ -2906,11 +2911,11 @@ class ReportsManagerFilter {
 		});
 
 		{
-			const submit = container.querySelector('button[type=submit]');
 
 			for(const element of container.elements) {
-				element.on('keyup', () => submit.classList.add('not-saved'));
-				element.on('change', () => submit.classList.add('not-saved'));
+
+				element.on('keyup', () => this.setDirtyForm());
+				element.on('change', () => this.setDirtyForm());
 			}
 		}
 
@@ -2925,19 +2930,13 @@ class ReportsManagerFilter {
 		if(this.form.default_type.value != 'default_value')
 			this.form.default_value.value = '';
 
-		const
-			parameters = {
-				filter_id: this.id,
-				dataset: this.datasetMultiSelect.value[0] || '',
-			},
-			options = {
-				method: 'POST',
-				form: new FormData(this.form),
-			};
+		const options = {
+			method: 'POST',
+		};
 
 		try {
 
-			await API.call('reports/filters/update', parameters, options);
+			await API.call('reports/filters/update', this.json, options);
 
 			await DataSource.load(true);
 
@@ -3004,6 +3003,21 @@ class ReportsManagerFilter {
 		}
 	}
 
+	get json() {
+
+		const response = {
+			filter_id: this.id,
+			dataset: this.datasetMultiSelect.value[0] || '',
+		};
+
+		for(const [name, value] of new FormData(this.form))
+			response[name] = value;
+
+		response.multiple = parseInt(response.multiple) || 0;
+
+		return response;
+	}
+
 	changeFilterType() {
 
 		const types = ['hidden', 'column', 'literal'];
@@ -3033,6 +3047,24 @@ class ReportsManagerFilter {
 		this.form.offset.classList.toggle('hidden', this.form.default_type.value != 'offset');
 
 		this.form.querySelector('.multiple').classList.toggle('hidden', !this.datasetMultiSelect.value.length);
+	}
+
+	setDirtyForm() {
+
+		const
+			submit = this.form.querySelector('button[type=submit]'),
+			json = this.json;
+
+		let dirty = false;
+
+		for(const key in json) {
+
+			if(key in this && (this[key] || json[key]) && this[key] != json[key])
+				dirty = key;
+		}
+
+		submit.classList.toggle('not-saved', dirty);
+		submit.title = 'Changed Field: ' + dirty;
 	}
 }
 
@@ -3523,7 +3555,7 @@ ReportConnection.types.set('mysql', class ReportConnectionMysql extends ReportCo
 
 		this.editor.on('change', () => {
 
-			this.stage.unsavedQueryValue();
+			this.stage.setDirtyForm();
 
 			if(this.stage.filtersManager)
 				this.stage.filtersManager.suggestions();
@@ -3565,7 +3597,7 @@ ReportConnection.types.set('mssql', class ReportConnectionMysql extends ReportCo
 
 		this.editor.on('change', () => {
 
-			this.stage.unsavedQueryValue();
+			this.stage.setDirtyForm();
 
 			if(this.stage.filtersManager)
 				this.stage.filtersManager.suggestions();
@@ -3607,7 +3639,7 @@ ReportConnection.types.set('pgsql', class ReportConnectionMysql extends ReportCo
 
 		this.editor.on('change', () => {
 
-			this.stage.unsavedQueryValue();
+			this.stage.setDirtyForm();
 
 			if(this.stage.filtersManager)
 				this.stage.filtersManager.suggestions();
@@ -3649,7 +3681,7 @@ ReportConnection.types.set('bigquery', class ReportConnectionMysql extends Repor
 
 		this.editor.on('change', () => {
 
-			this.stage.unsavedQueryValue();
+			this.stage.setDirtyForm();
 
 			if(this.stage.filtersManager)
 				this.stage.filtersManager.suggestions();
@@ -3958,7 +3990,7 @@ ReportConnection.types.set('mongo', class ReportConnectionMysql extends ReportCo
 
 		this.editor.on('change', () => {
 
-			this.stage.unsavedQueryValue();
+			this.stage.setDirtyForm();
 
 			if(this.stage.filtersManager)
 				this.stage.filtersManager.suggestions();
@@ -4018,7 +4050,7 @@ ReportConnection.types.set('oracle', class ReportConnectionMysql extends ReportC
 
 		this.editor.on('change', () => {
 
-			this.stage.unsavedQueryValue();
+			this.stage.setDirtyForm();
 
 			if(this.stage.filtersManager)
 				this.stage.filtersManager.suggestions();
