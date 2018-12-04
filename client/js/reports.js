@@ -12410,7 +12410,7 @@ class VisualizationsCanvas {
 
         const container = this.containerElement = document.createElement('div');
 
-        container.classList.add('canvas');
+        container.classList.add('visualization-canvas');
 
         container.innerHTML = `
 			<div class="menu hidden">

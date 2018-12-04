@@ -1691,29 +1691,29 @@ main .dataset {
 	}
 		.sub-reports-dialog .data-source {
 		}
-.canvas {
+.visualization-canvas {
 	position: relative;
 	display: flex;
 	flex-direction: column;
 }
-	.canvas .menu {
+	.visualization-canvas .menu {
 		margin-left: auto;
 	}
-		.canvas .menu button {
+		.visualization-canvas .menu button {
 			outline: 0;
 			cursor: pointer;
 		}
-	.canvas > .list {
+	.visualization-canvas > .list {
 		display: grid;
 		grid-template-columns: repeat(32, 1.25fr);
 		grid-auto-rows: calc(50px - (var(--gap) * 4));
 		grid-gap: calc(var(--gap) * 4);
 		padding-top: calc(var(--gap) * 2);
 	}
-	.canvas .list.editing {
+	.visualization-canvas .list.editing {
 		margin-bottom: 200px;
 	}
-		.canvas .list .resize-dimentions {
+		.visualization-canvas .list .resize-dimentions {
 			padding: calc(var(--gap) * 1);
 			display: grid;
 			grid-template-columns: repeat(3, 60px);
@@ -1723,12 +1723,12 @@ main .dataset {
 			align-content: center;
 			background-image: radial-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.3), rgba(0, 0, 0, 0.1));;
 		}
-			.canvas .list .resize-dimentions span {
+			.visualization-canvas .list .resize-dimentions span {
 				justify-content: center;
 				display: flex;
 				color: var(--color-primary);
 			}
-			.canvas .list .resize-dimentions input {
+			.visualization-canvas .list .resize-dimentions input {
 				width: 50px;
 				border: none;
 				background: transparent;
@@ -1739,17 +1739,17 @@ main .dataset {
 				cursor: pointer;
 				padding: 0;
 			}
-			.canvas .list .resize-dimentions > i {
+			.visualization-canvas .list .resize-dimentions > i {
 				font-size: 100%;
 			}
-			.canvas .list .resize-dimentions input[type=number]::-webkit-inner-spin-button,
-			.canvas .list .resize-dimentionsinput[type=number]::-webkit-outer-spin-button {
+			.visualization-canvas .list .resize-dimentions input[type=number]::-webkit-inner-spin-button,
+			.visualization-canvas .list .resize-dimentionsinput[type=number]::-webkit-outer-spin-button {
 				-webkit-appearance: none;
 				-moz-appearance: none;
 				appearance: none;
 				margin: 0;
 			}
-		.canvas .resize {
+		.visualization-canvas .resize {
 			position: absolute;
 			cursor: nwse-resize;
 			width: 12px;
