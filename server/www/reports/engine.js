@@ -22,6 +22,7 @@ const oracle = require('../../utils/oracle').Oracle;
 const PromiseManager = require("../../utils/promisesManager").promiseManager;
 const promiseManager = new PromiseManager("executingReports");
 const pgsql = require("../../utils/pgsql").Postgres;
+const child_process = require('child_process');
 
 // prepare the raw data
 class report extends API {
@@ -1371,6 +1372,32 @@ class executingReports extends API {
 	}
 }
 
+class executingRedis extends API {
+
+	async executingRedis() {
+
+		const
+			// memory_info = await redis.infoMemory(),
+			// big_keys = await redis.bigKeys(),
+			all_keys = await redis.keys('*');
+
+		const key_info = [];
+
+		for(const key of all_keys) {
+			key_info.push(redis.keyInfo(key));
+		}
+
+		const tasksExecuteResponse = await commonFun.promiseParallelLimit(5, key_info);
+
+		return {
+			// memory_info,
+			// big_keys,
+			// all_keys,
+			tasksExecuteResponse
+		};
+	}
+}
+
 
 exports.query = query;
 exports.report = report;
@@ -1379,3 +1406,4 @@ exports.Postgres = Postgres;
 exports.APIRequest = APIRequest;
 exports.download = download;
 exports.executingReports = executingReports;
+exports.executingRedis = executingRedis;

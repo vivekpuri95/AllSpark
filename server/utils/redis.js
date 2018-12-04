@@ -1,5 +1,6 @@
 const config = require('config');
 const promisify = require("util").promisify;
+const child_process = require('child_process');
 
 if (!config.has('redisOptions')) {
 	return;
@@ -16,6 +17,8 @@ class Redis {
 	constructor() {
 
 		console.log("initializing redis");
+
+		Redis.redis_client = redis_client;
 	}
 
 	static async get(keyPattern) {
@@ -80,8 +83,22 @@ class Redis {
 
 		return await hgetPromisified(key, field);
 	}
-}
 
+	// static async infoMemory() {
+
+	// 	return child_process.execSync('redis-cli info memory').toString();
+	// }
+
+	// static async bigKeys() {
+
+	// 	return child_process.execSync('redis-cli --bigkeys').toString();
+	// }
+
+	static async keyInfo(key) {
+
+		return child_process.execSync(`redis-cli debug object ${key}`).toString();
+	}
+}
 
 // (async () => await Redis.hset("accountSettings#1", "testkey", "value"))();
 
