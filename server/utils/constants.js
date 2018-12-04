@@ -79,8 +79,16 @@ exports.filterTypes = [
 		input_type: 'month',
 	},
 	{
+		name: 'Year',
+		input_type: 'number',
+	},
+	{
 		name: 'DateTime',
 		input_type: 'datetime-local',
+	},
+	{
+		name: 'Time',
+		input_type: 'time',
 	},
 	{
 		name: 'Hidden',
@@ -99,3 +107,8 @@ exports.filterTypes = [
 		input_type: 'text',
 	},
 ];
+
+exports.lastUpdatedKeys = {
+	connection: 'connection',
+	account: 'account',
+};
