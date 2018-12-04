@@ -4,7 +4,7 @@ class GlobalFilters extends API {
 
 	async list() {
 
-        this.user.privilege.needs('administrator', 'ignore');
+		this.user.privilege.needs('administrator', 'ignore');
 
 		const result = await this.mysql.query(
 			`SELECT * FROM tb_global_filters WHERE account_id = ?`,
@@ -19,16 +19,17 @@ class GlobalFilters extends API {
 		return result;
 	};
 
-	async insert({name, placeholder, default_value = '', multiple = null, type = null, offset, dataset} = {}) {
+	async insert({name, placeholder, description = '', default_value = '', multiple = null, type = null, offset, dataset} = {}) {
 
 		this.user.privilege.needs('administrator', 'ignore');
 
-        this.assert(name && placeholder, 'Name or Placeholder is missing');
+		this.assert(name && placeholder, 'Name or Placeholder is missing');
 
 		const params = {
 			account_id: this.account.account_id,
 			name,
 			placeholder,
+			description,
 			default_value,
 			multiple,
 			type,
@@ -43,7 +44,7 @@ class GlobalFilters extends API {
 		);
 	}
 
-	async update({id, name, placeholder, default_value = '', multiple = null, type = null, offset, dataset} = {}) {
+	async update({id, name, placeholder, description = '', default_value = '', multiple = null, type = null, offset, dataset} = {}) {
 
 		this.user.privilege.needs('administrator', 'ignore');
 
@@ -51,7 +52,7 @@ class GlobalFilters extends API {
 		this.assert(name && placeholder, 'Name or Placeholder cannot be null or empty');
 
 		const params = {
-			name, placeholder, default_value, multiple, type,
+			name, placeholder, description, default_value, multiple, type,
 			offset: isNaN(parseInt(offset)) ? null : parseInt(offset),
 			dataset: parseInt(dataset) || null,
 		};

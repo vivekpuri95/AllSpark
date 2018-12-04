@@ -872,17 +872,20 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 			this.form.redis_custom.classList.add('hidden');
 		}
 
-		const share = new ObjectRoles('query', this.report.query_id);
-
-		await Promise.all([
-			this.descriptionEditor.setup(),
-			share.load(),
-		]);
-
-		this.shareContainer.textContent = null;
-		this.shareContainer.appendChild(share.container);
-
 		this.descriptionEditor.value = this.report.description;
+
+		{
+
+			const share = new ObjectRoles('query', this.report.query_id);
+
+			await Promise.all([
+				this.descriptionEditor.setup(),
+				share.load(),
+			]);
+
+			this.shareContainer.textContent = null;
+			this.shareContainer.appendChild(share.container);
+		}
 	}
 
 	async update(e) {
@@ -939,11 +942,6 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.title = 'Define Report\'s Data';
 		this.description = 'The report\'s SQL query or API';
 
-		this.filterForm = this.container.querySelector('#filters form');
-
-		this.filterForm.datasetMultiSelect = new MultiSelect({dropDownPosition: 'top', multiple: false});
-		this.filterForm.querySelector('label.dataset').appendChild(this.filterForm.datasetMultiSelect.container);
-
 		this.schemas = new Map;
 		this.schemaLists = new Map;
 
@@ -965,11 +963,11 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			container.appendChild(this.schema);
 		});
 
-		const filtersToggle = this.container.querySelector('#filters-toggle')
+		const filtersToggle = this.container.querySelector('#filters-toggle');
 
 		filtersToggle.on('click', () => {
 			filtersToggle.classList.toggle('selected');
-			this.container.querySelector('#filters').classList.toggle('hidden');
+			this.filtersManager.container.classList.toggle('hidden');
 		});
 
 		const previewToggle = this.container.querySelector('#preview-toggle');
@@ -997,29 +995,25 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 				await this.queryLogs.load();
 		});
 
-		this.editReportData = new EditReportData();
+		{
 
-		this.editReportData.container.classList.add('hidden');
-		this.container.querySelector('#define-report-parts').appendChild(this.editReportData.container);
+			this.editReportData = new EditReportData();
 
-		const editDataToggle = this.container.querySelector('#edit-data-toggle');
+			this.editReportData.container.classList.add('hidden');
+			this.container.querySelector('#define-report-parts').appendChild(this.editReportData.container);
 
-		editDataToggle.on('click', async () => {
+			const editDataToggle = this.container.querySelector('#edit-data-toggle');
 
-			editDataToggle.classList.toggle('selected');
-			this.editReportData.container.classList.toggle('hidden', !editDataToggle.classList.contains('selected'));
-			this.report.connection.form.classList.toggle('hidden');
+			editDataToggle.on('click', async () => {
 
-			if(!this.editReportData.container.classList.contains('hidden'))
-				await this.editReportData.load(this.report.query_id);
-		});
+				editDataToggle.classList.toggle('selected');
+				this.editReportData.container.classList.toggle('hidden', !editDataToggle.classList.contains('selected'));
+				this.report.connection.form.classList.toggle('hidden');
 
-		this.container.querySelector('#add-filter').on('click', () => this.addFilter());
-
-		this.container.querySelector('#filter-back').on('click', () => {
-			this.container.querySelector('#filter-form').classList.add('hidden');
-			this.container.querySelector('#filter-list').classList.remove('hidden');
-		});
+				if(!this.editReportData.container.classList.contains('hidden'))
+					await this.editReportData.load(this.report.query_id);
+			});
+		}
 
 		this.container.querySelector('#save-container #save-more').on('click', e => {
 
@@ -1085,7 +1079,19 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			this.report.connection.editor.editor.focus();
 
 		this.loadSchema();
-		this.filters();
+		ReportsManagerFilters.setup();
+
+		const showFiltersManager = this.filtersManager ? !this.filtersManager.container.classList.contains('hidden') : false;
+
+		if(this.filtersManager)
+			this.filtersManager.container.remove();
+
+		this.filtersManager = new ReportsManagerFilters(this);
+
+		if(showFiltersManager)
+			this.filtersManager.container.classList.remove('hidden');
+
+		this.container.querySelector('#define-report-parts').appendChild(this.filtersManager.container);
 
 		this.queryLogs = new ReportLogs(this.report, this, {class: QueryLog, name: 'query'});
 
@@ -1103,9 +1109,6 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		this.page.preview.position('bottom');
 		this.container.querySelector('#preview-toggle').classList.toggle('selected', !this.page.preview.hidden);
-
-		this.container.querySelector('#filter-form').classList.add('hidden');
-		this.container.querySelector('#filter-list').classList.remove('hidden');
 
 		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` #${this.report.query_id}`;
 	}
@@ -1152,41 +1155,6 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 			throw e;
 		}
-	}
-
-	filterSuggestions() {
-
-		// If the connection type doesn't have an editor (API, CSV, etc)
-		if(!this.report.connection.editor)
-			return;
-
-		let placeholders = this.report.connection.editor.value.match(/{{([a-zA-Z0-9_-]*)}}/g) || [];
-
-		placeholders = new Set(placeholders.map(a => a.match('{{(.*)}}')[1]));
-
-		const
-			missing = new Set(placeholders),
-			missingContainer = this.container.querySelector('#missing-filters');
-
-		for(const filter of this.report.filters) {
-
-			missing.delete(filter.placeholder);
-
-			if(!filter.container)
-				continue;
-
-			filter.container.elements.placeholder.classList.remove('red');
-
-			if(!placeholders.has(filter.placeholder))
-				filter.container.elements.placeholder.classList.add('red');
-		}
-
-		if(missing.size) {
-			missingContainer.innerHTML = `Missing Placeholders: <strong>${Array.from(missing).join(', ')}</strong>`;
-			missingContainer.classList.remove('hidden');
-		}
-
-		else missingContainer.classList.add('hidden');
 	}
 
 	unsavedQueryValue() {
@@ -1744,392 +1712,6 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		window.location = `/reports/define-report/${newReportId}`;
 	}
-
-	async filters() {
-
-		const tbody = this.container.querySelector('#filter-list table tbody');
-
-		tbody.textContent = null;
-
-		this.report.filters.sort((a, b) => a.order - b.order);
-
-		for(const filter of this.report.filters) {
-
-			const row = document.createElement('tr');
-
-			let datasetName = '';
-
-			if(filter.dataset && DataSource.list.has(filter.dataset)) {
-
-				const dataset = DataSource.list.get(filter.dataset);
-
-				datasetName = `
-					<a href="/report/${dataset.query_id}" target="_blank" title="${DataSource.list.get(dataset.query_id).name}">
-						${dataset.name}
-					</a>
-				`;
-			}
-
-			row.innerHTML = `
-				<td>${filter.name}</td>
-				<td>${filter.placeholder}</td>
-				<td>${filter.type}</td>
-				<td>${datasetName}</td>
-				<td class="action green"><i class="far fa-edit"></i></td>
-				<td class="action red"><i class="far fa-trash-alt"></i></td>
-			`;
-
-			row.querySelector('.green').on('click', () => this.editFilter(filter));
-			row.querySelector('.red').on('click', () => this.deleteFilter(filter));
-
-			tbody.appendChild(row);
-		}
-
-		if(!this.report.filters.length)
-			tbody.innerHTML = `<tr class="NA"><td colspan="6">No filters added yet!</td></tr>`;
-
-		const datalist = [];
-
-		for(const source of DataSource.list.values()) {
-
-			if(source.query_id == this.report.query_id)
-				continue;
-
-			datalist.push({
-				name: source.name,
-				value: source.query_id,
-				subtitle: '#' + source.query_id,
-			});
-		}
-
-		this.filterForm.datasetMultiSelect.datalist = datalist;
-		this.filterForm.datasetMultiSelect.render();
-
-		if(this.container.querySelector('#filter-list .external-parameters'))
-			this.container.querySelector('#filter-list .external-parameters').remove();
-
-		const
-			externalParameters = this.page.account.settings.get('external_parameters'),
-			externalParametersValues = (await Storage.get('external_parameters')) || {};
-
-		if(externalParameters && externalParameters.length) {
-
-			const container = document.createElement('div');
-
-			container.classList.add('external-parameters');
-
-			container.innerHTML = `
-				<h3>External Parameters</h3>
-				<p>These parameters are available as additional information when user logs in through external authentication of your app.</p>
-
-				<table>
-					<thead>
-						<tr>
-							<th>Placeholer</th>
-							<th>Value</th>
-						</tr>
-					</thead>
-					<tbody></tbody>
-				</table>
-			`;
-
-			const tbody = container.querySelector('tbody');
-
-			for(const parameter of externalParameters) {
-
-				tbody.insertAdjacentHTML('beforeend', `
-					<tr>
-						<td>${parameter}</td>
-						<td>${parameter in externalParametersValues ? externalParametersValues[parameter] : ''}</td>
-					</tr>
-				`);
-			}
-
-			this.container.querySelector('#filter-list').appendChild(container);
-		}
-	}
-
-	addFilter() {
-
-		const filterForm = this.container.querySelector('#filter-form');
-
-		this.filterForm.reset();
-
-		filterForm.classList.remove('hidden');
-		this.container.querySelector('#filter-list').classList.add('hidden');
-
-		this.filterForm.type.textContent = null;
-
-		for (const type of MetaData.filterTypes.values()) {
-
-			if(!type.input_type)
-				continue;
-
-			this.filterForm.type.insertAdjacentHTML('beforeend', `
-				<option value="${type.name.toLowerCase()}">${type.name}</option>
-			`);
-		}
-
-		this.filterForm.default_value.type = this.filterForm.type.value;
-
-		this.updateDefaultType();
-
-		this.filterForm.type.removeEventListener('change', this.typeChangeListener);
-
-		this.filterForm.type.on('change', this.typeChangeListener = () => this.changeFilterType());
-
-		this.filterForm.default_type.on('change', () => this.updateDefaultType());
-
-		this.filterForm.removeEventListener('submit', this.filterForm.listener);
-		this.filterForm.on('submit', this.filterForm.listener = e => {
-
-			e.preventDefault();
-
-			if(this.saveReportConfirm())
-				this.insertFilter(e);
-		});
-
-		this.filterForm.datasetMultiSelect.clear();
-
-		this.filterForm.reset();
-
-		this.filterForm.name.focus();
-	}
-
-	async insertFilter(e) {
-
-		if(e)
-			e.preventDefault();
-
-		if(this.filterForm.default_type.value != 'offset')
-			this.filterForm.offset.value = '';
-
-		if(this.filterForm.default_type.value != 'default_value')
-			this.filterForm.default_value.value = '';
-
-		const
-			parameters = {
-				query_id: this.report.query_id,
-				dataset: this.filterForm.datasetMultiSelect.value[0] || '',
-			},
-			options = {
-				method: 'POST',
-				form: new FormData(this.filterForm),
-			};
-
-		try {
-
-			await API.call('reports/filters/insert', parameters, options);
-
-			await DataSource.load(true);
-
-			this.load();
-
-			new SnackBar({
-				message: `${this.filterForm.name.value} Filter Added`,
-				subtitle: `Type: <strong>${MetaData.filterTypes.get(this.filterForm.type.value).name}</strong> Placeholer: <strong>${this.filterForm.placeholder.value}</strong></span>`,
-				icon: 'fa fa-plus',
-			});
-
-		} catch(e) {
-
-			this.unsavedQueryValue();
-
-			new SnackBar({
-				message: 'Request Failed',
-				subtitle: e.message,
-				type: 'error',
-			});
-
-			throw e;
-		}
-	}
-
-	editFilter(filter) {
-
-		this.container.querySelector('#filter-form').classList.remove('hidden');
-		this.container.querySelector('#filter-list').classList.add('hidden');
-
-		this.filterForm.removeEventListener('submit', this.filterForm.listener);
-		this.filterForm.on('submit', this.filterForm.listener = e => {
-
-			e.preventDefault();
-
-			if(this.saveReportConfirm())
-				this.updateFilter(e, filter);
-		});
-
-		this.filterForm.reset();
-
-		this.filterForm.type.textContent = null;
-
-		for(const type of MetaData.filterTypes.values()) {
-
-			if(!type.input_type)
-				continue;
-
-			this.filterForm.type.insertAdjacentHTML('beforeend', `
-				<option value="${type.name.toLowerCase()}">${type.name}</option>
-			`);
-		}
-
-		for(const key in filter) {
-			if(key in this.filterForm)
-				this.filterForm[key].value = filter[key];
-		}
-
-		const
-			default_value = this.filterForm.default_value.value,
-			default_value_offset = this.filterForm.offset.value;
-
-		if(this.filterForm.default_value.value)
-			this.filterForm.default_type.value = 'default_value';
-
-		else if(this.filterForm.offset.value)
-			this.filterForm.default_type.value = 'offset';
-
-		else
-			this.filterForm.default_type.value = 'none';
-
-		this.changeFilterType();
-
-		this.filterForm.type.removeEventListener('change', this.typeChangeListener);
-
-		this.filterForm.type.on('change', this.typeChangeListener = () => {
-
-			this.changeFilterType();
-
-			this.filterForm.default_value.value = default_value;
-			this.filterForm.offset.value = default_value_offset;
-		});
-
-		this.updateDefaultType();
-
-		this.filterForm.default_type.on('change', () => this.updateDefaultType());
-
-		this.filterForm.datasetMultiSelect.value = filter.dataset;
-
-		this.filterForm.name.focus();
-	}
-
-	changeFilterType() {
-
-		const types = ['hidden', 'column', 'literal'];
-
-		if(this.filterForm.type.value == 'datetime')
-			this.filterForm.default_value.type = 'datetime-local';
-
-		else if(this.filterForm.type.value == 'year')
-			this.filterForm.default_value.type = 'number';
-
-		else if(this.filterForm.type.value == 'time') {
-
-			this.filterForm.default_value.type = 'time';
-			this.filterForm.default_value.step = '1';
-		}
-
-		else if(types.includes(this.filterForm.type.value))
-			this.filterForm.default_value.type = 'text';
-
-		else
-			this.filterForm.default_value.type = this.filterForm.type.value;
-	}
-
-	updateDefaultType() {
-
-		const default_type = this.filterForm.default_type;
-
-		this.filterForm.default_value.classList.toggle('hidden', default_type.value != 'default_value');
-		this.filterForm.offset.classList.toggle('hidden', default_type.value != 'offset');
-	}
-
-	async updateFilter(e, filter) {
-
-		if(e)
-			e.preventDefault();
-
-		if(this.filterForm.default_type.value != 'offset')
-			this.filterForm.offset.value = '';
-
-		if(this.filterForm.default_type.value != 'default_value')
-			this.filterForm.default_value.value = '';
-
-		const
-			parameters = {
-				filter_id: filter.filter_id,
-				dataset: this.filterForm.datasetMultiSelect.value[0] || '',
-			},
-			options = {
-				method: 'POST',
-				form: new FormData(this.filterForm),
-			};
-
-		try {
-
-			await API.call('reports/filters/update', parameters, options);
-
-			await DataSource.load(true);
-
-			this.load();
-
-			new SnackBar({
-				message: `${this.filterForm.name.value} Filter Saved`,
-				subtitle: `Type: <strong>${MetaData.filterTypes.get(this.filterForm.type.value).name}</strong> Placeholer: <strong>${this.filterForm.placeholder.value}</strong>`,
-				icon: 'far fa-save',
-			});
-
-		} catch(e) {
-
-			this.unsavedQueryValue();
-
-			new SnackBar({
-				message: 'Request Failed',
-				subtitle: e.message,
-				type: 'error',
-			});
-
-			throw e;
-		}
-	}
-
-	async deleteFilter(filter) {
-
-		if(!confirm('Are you sure?!'))
-			return;
-
-		const
-			parameters = {
-				filter_id: filter.filter_id,
-			},
-			options = {
-				method: 'POST',
-			};
-
-		try {
-
-			await API.call('reports/filters/delete', parameters, options);
-
-			await DataSource.load(true);
-
-			this.load();
-
-			new SnackBar({
-				message: `${filter.name} Filter Deleted`,
-				subtitle: `Type: <strong>${MetaData.filterTypes.get(filter.type).name}</strong> Placeholer: <strong>${filter.placeholder}</strong>`,
-				icon: 'far fa-trash-alt',
-			});
-
-		} catch(e) {
-
-			new SnackBar({
-				message: 'Request Failed',
-				subtitle: e.message,
-				type: 'error',
-			});
-
-			throw e;
-		}
-	}
 });
 
 ReportsManger.stages.set('pick-visualization', class PickVisualization extends ReportsMangerStage {
@@ -2576,6 +2158,883 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		}
 	}
 });
+
+class ReportsManagerFilters extends Map {
+
+	static async setup() {
+
+		ReportsManagerFilters.externalParameters = new Map;
+
+		const response = await API.call('reports/filters/preReport');
+
+		for(const parameter of response)
+			ReportsManagerFilters.externalParameters.set(parameter.placeholder, parameter.value);
+	}
+
+	constructor(stage) {
+
+		super();
+
+		this.stage = stage;
+		this.page = this.stage.page;
+
+		for(const filter of this.stage.report.filters)
+			this.set(filter.placeholder, new ReportsManagerFilter(filter, stage));
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.id = 'filters';
+		container.classList.add('hidden');
+
+		container.innerHTML = `
+
+			<div id="filters-list">
+
+				<div id="list">
+
+					<h3><i class="fas fa-filter"></i> Report Filters</h3>
+					<p>These filters will be passed into the report before execution by the end user.</p>
+
+					<div class="toolbar">
+						<button class="add-filter-button"><i class="fas fa-plus"></i> Add New Filter</button>
+					</div>
+
+					<table>
+						<thead>
+							<tr>
+								<th>ID</th>
+								<th>Name</th>
+								<th>Placeholder</th>
+								<th>Type</th>
+								<th>Offset</th>
+								<th>Dataset</th>
+								<th class="action">Edit</th>
+								<th class="action">Delete</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+				</div>
+
+				<div id="suggested-filters" class="hidden">
+
+					<h3><i class="fas fa-thumbs-up"></i> Suggested Filters</h3>
+					<p>These filters are suggested based on your query's body.</p>
+
+					<table>
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Placeholder</th>
+								<th>Type</th>
+								<th>Default Value</th>
+								<th class="action">&nbsp;</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+				</div>
+
+				<div id="external-parameters" class="hidden">
+
+					<h3><i class="fas fa-bolt"></i> External Filters</h3>
+					<p>These parameters are automatically available as additional information when user logs in through your app.</p>
+
+					<table>
+						<thead>
+							<tr>
+								<th>Placeholer</th>
+								<th>Value</th>
+								<th class="trusted">
+									Trusted
+									<span class="NA tooltip" data-tooltip="Trusted values come from the product\nand cannot be changed by the user.">
+										<i class="fas fa-question"></i>
+									</span>
+								</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+				</div>
+			</div>
+
+			<form class="hidden add-filter">
+
+				<h3><i class="fas fa-plus"></i> Add New Filter</h3>
+
+				<div class="toolbar">
+
+					<button type="button" class="filter-back">
+						<i class="fa fa-arrow-left"></i> Back
+					</button>
+
+					<button type="submit">
+						<i class="far fa-save"></i> Save
+					</button>
+				</div>
+
+				<div class="form">
+
+					<label>
+						<span>Name <span class="red">*</span></span>
+						<input type="text" name="name" required>
+					</label>
+
+					<label>
+						<span>Placeholder <span class="red">*</span><span class="right" data-tooltip="Uniquely identifies the filter in this report">?</span></span>
+						<input type="text" name="placeholder" required>
+					</label>
+
+					<label>
+						<span>Type <span class="red">*</span></span>
+						<select name="type" required></select>
+					</label>
+
+					<label>
+						<span>Description</span>
+						<input type="text" name="description">
+					</label>
+
+					<label>
+						<span>Order</span>
+						<input type="number" name="order">
+					</label>
+
+					<label>
+
+						<span>Default Value <span class="right" data-tooltip="Calculated and applied on first load\nif a global filter with same placeholder isn't added">?</span></span>
+
+						<select name="default_type">
+							<option value="none">None</option>
+							<option value="default_value">Fixed</option>
+							<option value="offset">Relative</option>
+						</select>
+
+						<input type="text" name="default_value">
+
+						<input type="number" name="offset">
+					</label>
+
+					<label class="dataset">
+						<span>Dataset <span class="right" data-tooltip="A set of possible values for this filter">?</span></span>
+					</label>
+
+					<label class="multiple">
+						<span>Multiple <span class="right" data-tooltip="Can the user pick multiple values">?</span></span>
+						<select name="multiple" required>
+							<option value="0">No</option>
+							<option value="1">Yes</option>
+						</select>
+					</label>
+				</div>
+			</form>
+		`;
+
+		const tbody = container.querySelector('table tbody');
+
+		for(const filter of this.values())
+			tbody.appendChild(filter.row);
+
+		if(!this.size)
+			tbody.innerHTML = `<tr class="NA"><td colspan="6">No filters added yet!</td></tr>`;
+
+		container.querySelector('.add-filter-button').on('click', () => this.add());
+
+		{
+			this.datasetMultiSelect = new MultiSelect({dropDownPosition: 'top', multiple: false});
+
+			const datalist = [];
+
+			for(const source of DataSource.list.values()) {
+
+				if(source.query_id == this.stage.report.query_id)
+					continue;
+
+				datalist.push({
+					name: source.name,
+					value: source.query_id,
+					subtitle: '#' + source.query_id,
+				});
+			}
+
+			this.datasetMultiSelect.datalist = datalist;
+			this.datasetMultiSelect.render();
+
+			container.querySelector('label.dataset').appendChild(this.datasetMultiSelect.container);
+
+			this.datasetMultiSelect.value = this.dataset;
+			this.datasetMultiSelect.on('change', () => this.updateFormFields());
+		}
+
+		{
+
+			const form = container.querySelector('.add-filter');
+
+			for(const type of MetaData.filterTypes.values()) {
+
+				if(!type.input_type)
+					continue;
+
+				form.type.insertAdjacentHTML('beforeend', `
+					<option value="${type.name.toLowerCase()}">${type.name}</option>
+				`);
+			}
+
+			form.type.on('change', () => this.changeFilterType());
+			form.default_type.on('change', () => this.updateFormFields());
+
+			this.changeFilterType();
+			this.updateFormFields();
+
+			form.on('submit', e => {
+
+				e.preventDefault();
+
+				if(this.stage.saveReportConfirm())
+					this.insert();
+			});
+
+			container.querySelector('.filter-back').on('click', () => {
+
+				this.stage.filtersManager.container.querySelector('#filters-list').classList.remove('hidden');
+				form.classList.add('hidden');
+			});
+		}
+
+		this.externalParameters();
+		this.suggestions();
+
+		return container;
+	}
+
+	add(filter = {}) {
+
+		const form = this.container.querySelector('.add-filter');
+
+		form.reset();
+
+		this.stage.filtersManager.container.querySelector('#filters-list').classList.add('hidden');
+
+		form.classList.remove('hidden');
+
+		for(const key in filter) {
+
+			if(key in form.elements)
+				form.elements[key].value = filter[key];
+		}
+
+		if(form.default_value.value)
+			form.default_type.value = 'default_value';
+
+		else if(form.offset.value)
+			form.default_type.value = 'offset';
+
+		else
+			form.default_type.value = 'none';
+
+		if(filter.dataset)
+			this.datasetMultiSelect.value = filter.dataset;
+
+		this.changeFilterType();
+		this.updateFormFields();
+
+		form.name.focus();
+	}
+
+	async insert() {
+
+		const form = this.container.querySelector('form.add-filter');
+
+		if(form.default_type.value != 'offset')
+			form.offset.value = '';
+
+		if(form.default_type.value != 'default_value')
+			form.default_value.value = '';
+
+		const
+			parameters = {
+				query_id: this.stage.report.query_id,
+				dataset: this.datasetMultiSelect.value[0] || '',
+			},
+			options = {
+				method: 'POST',
+				form: new FormData(form),
+			};
+
+		if(this.has(form.placeholder.value)) {
+
+			return new SnackBar({
+				message: 'Placeholer already exists!',
+				subtitle: `Placeholer ${form.placeholder.value} is already in use by ${this.get(form.placeholder.value).name} filter`,
+				type: 'error',
+			});
+		}
+
+		try {
+
+			await API.call('reports/filters/insert', parameters, options);
+
+			await DataSource.load(true);
+
+			await this.stage.load();
+
+			this.stage.filtersManager.container.classList.remove('hidden');
+
+			new SnackBar({
+				message: `${form.name.value} Filter Added`,
+				subtitle: `Type: <strong>${MetaData.filterTypes.get(form.type.value).name}</strong> Placeholer: <strong>${form.placeholder.value}</strong></span>`,
+				icon: 'fa fa-plus',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+
+	async externalParameters() {
+
+		const
+			externalParameters = this.page.account.settings.get('external_parameters'),
+			externalParametersValues = (await Storage.get('external_parameters')) || {},
+			container = this.container.querySelector('#external-parameters');
+
+		if(!externalParameters || !externalParameters.length)
+			return;
+
+		container.classList.remove('hidden');
+
+		const tbody = container.querySelector('tbody');
+
+		for(const parameter of externalParameters) {
+
+			let value = '';
+
+			if(parameter in externalParametersValues)
+				value = externalParametersValues[parameter];
+
+			if(ReportsManagerFilters.externalParameters.has(parameter))
+				value = ReportsManagerFilters.externalParameters.get(parameter);
+
+			tbody.insertAdjacentHTML('beforeend', `
+				<tr>
+					<td>${parameter}</td>
+					<td>${value}</td>
+					<td>${ReportsManagerFilters.externalParameters.has(parameter) ? 'Yes' : 'No'}</td>
+				</tr>
+			`);
+		}
+	}
+
+	suggestions() {
+
+		// If the connection type doesn't have an editor (API, CSV, etc)
+		if(!this.stage.report.connection.editor)
+			return;
+
+		let placeholders = this.stage.report.connection.editor.value.match(/{{([a-zA-Z0-9_-]*)}}/g) || [];
+
+		placeholders = new Set(placeholders.map(a => a.match('{{(.*)}}')[1]));
+
+		const
+			suggested = new Set(placeholders),
+			container = this.container.querySelector('#suggested-filters');
+
+		for(const filter of this.values()) {
+
+			suggested.delete(filter.placeholder);
+
+			if(!filter.row)
+				continue;
+
+			filter.row.classList.remove('red');
+
+			if(!placeholders.has(filter.placeholder))
+				filter.row.classList.add('red');
+		}
+
+		container.classList.toggle('hidden', !suggested.size);
+
+		if(!suggested.size)
+			return;
+
+		const tbody = container.querySelector('tbody');
+
+		tbody.textContent = null;
+
+		for(const placeholder of suggested) {
+
+			let
+				split = placeholder ? placeholder.split('_') : [],
+				name = split.filter(w => w).map(w => w[0].toUpperCase() + w.slice(1)).join(' '),
+				type = 'text',
+				globalFilter = {};
+
+			if(placeholder.includes('date'))
+				type = 'date';
+
+			else if(split.includes('id'))
+				type = 'number';
+
+			for(const filter of MetaData.globalFilters.values()) {
+
+				if(filter.placeholder == placeholder)
+					globalFilter = filter;
+			}
+
+			const row = document.createElement('tr');
+
+			row.innerHTML = `
+				<td>${name}</td>
+				<td>${placeholder}</td>
+				<td>${type}</td>
+				<td>${globalFilter.default_value || globalFilter.offset || ''}</td>
+				<td class="action green">Add Now &nbsp; <i class="fas fa-arrow-right"></i></td>
+			`;
+
+			row.on('mouseenter', () => {
+
+				clearTimeout(row.placeholderTimeout);
+
+				row.placeholderTimeout = setTimeout(() => {
+					this.stage.report.connection.editor.editor.findAll(`{{${placeholder}}}`);
+				}, 500);
+			});
+
+			row.on('mouseleave', () => clearTimeout(row.placeholderTimeout));
+
+			row.querySelector('.green').on('click', () => {
+
+				this.add({
+					name,
+					type,
+					placeholder,
+					dataset: globalFilter.dataset || null,
+					multiple: globalFilter.multiple || null,
+					description: globalFilter.description || null,
+					default_value: globalFilter.default_value || null,
+					offset: globalFilter.offset || null,
+				});
+			});
+
+			tbody.appendChild(row);
+		}
+	}
+
+	changeFilterType() {
+
+		const
+			form = this.container.querySelector('form'),
+			types = ['hidden', 'column', 'literal'];
+
+		if(form.type.value == 'datetime')
+			form.default_value.type = 'datetime-local';
+
+		else if(form.type.value == 'year')
+			form.default_value.type = 'number';
+
+		else if(form.type.value == 'time') {
+
+			form.default_value.type = 'time';
+			form.default_value.step = '1';
+		}
+
+		else if(types.includes(form.type.value))
+			form.default_value.type = 'text';
+
+		else
+			form.default_value.type = form.type.value;
+	}
+
+	updateFormFields() {
+
+		const form = this.container.querySelector('form');
+
+		form.default_value.classList.toggle('hidden', form.default_type.value != 'default_value');
+		form.offset.classList.toggle('hidden', form.default_type.value != 'offset');
+
+		form.querySelector('.multiple').classList.toggle('hidden', !this.datasetMultiSelect.value.length);
+	}
+}
+
+class ReportsManagerFilter {
+
+	constructor(filter, stage) {
+
+		Object.assign(this, filter);
+		this.id = this.filter_id;
+
+		this.stage = stage;
+		this.page = this.stage.page;
+	}
+
+	get row() {
+
+		if(this.rowElement)
+			return this.rowElement;
+
+		const row = this.rowElement = document.createElement('tr');
+
+		let datasetName = '';
+
+		if(this.dataset && DataSource.list.has(this.dataset)) {
+
+			const dataset = DataSource.list.get(this.dataset);
+
+			datasetName = `
+				<a href="/report/${dataset.query_id}" target="_blank" title="${DataSource.list.get(dataset.query_id).name}">
+					${dataset.name}
+				</a>
+			`;
+		}
+
+		row.innerHTML = `
+			<td>${this.id}</td>
+			<td>${this.name}</td>
+			<td>${this.placeholder}</td>
+			<td>${this.type}</td>
+			<td>${this.offset || ''}</td>
+			<td>${datasetName}</td>
+			<td class="action green"><i class="far fa-edit"></i></td>
+			<td class="action red"><i class="far fa-trash-alt"></i></td>
+		`;
+
+		row.querySelector('.green').on('click', () => this.edit());
+		row.querySelector('.red').on('click', () => this.delete());
+
+		row.on('mouseenter', () => {
+
+			clearTimeout(this.placeholderTimeout);
+
+			this.placeholderTimeout = setTimeout(() => {
+				this.stage.report.connection.editor.editor.findAll(`{{${this.placeholder}}}`);
+			}, 500);
+		});
+
+		row.on('mouseleave', () => clearTimeout(this.placeholderTimeout));
+
+		return row;
+	}
+
+	edit() {
+
+		this.stage.filtersManager.container.appendChild(this.form);
+		this.stage.filtersManager.container.querySelector('#filters-list').classList.add('hidden');
+		this.form.classList.remove('hidden');
+
+		this.form.name.focus();
+	}
+
+	get form() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('form');
+
+		container.classList.add('edit-filter');
+
+		container.innerHTML = `
+
+			<h3><i class="far fa-edit"></i> Edit Filter ${this.name}</h3>
+
+			<div class="toolbar">
+
+				<button type="button" class="filter-back">
+					<i class="fa fa-arrow-left"></i> Back
+				</button>
+
+				<button type="submit">
+					<i class="far fa-save"></i> Save
+				</button>
+
+				<span class="NA filter-info">
+					Created: <strong title="${this.created_at}">${Format.ago(this.created_at)}</strong><br>
+					Updated: <strong title="${this.updated_at}">${Format.ago(this.updated_at)}</strong>
+				</span>
+			</div>
+
+			<div class="form">
+
+				<label>
+					<span>Name <span class="red">*</span></span>
+					<input type="text" name="name" value="${this.name || ''}" required>
+				</label>
+
+				<label>
+					<span>Placeholder <span class="red">*</span><span class="right" data-tooltip="Uniquely identifies the filter in this report">?</span></span>
+					<input type="text" name="placeholder" value="${this.placeholder || ''}" required>
+				</label>
+
+				<label>
+					<span>Type <span class="red">*</span></span>
+					<select name="type" required></select>
+				</label>
+
+				<label>
+					<span>Description</span>
+					<input type="text" name="description" value="${this.description || ''}">
+				</label>
+
+				<label>
+					<span>Order</span>
+					<input type="number" name="order" value="${this.order || ''}">
+				</label>
+
+				<label>
+
+					<span>Default Value <span class="right" data-tooltip="Calculated and applied on first load\nif a global filter with same placeholder isn't added">?</span></span>
+
+					<select name="default_type">
+						<option value="none">None</option>
+						<option value="default_value">Fixed</option>
+						<option value="offset">Relative</option>
+					</select>
+
+					<input type="text" name="default_value" value="${this.default_value || ''}">
+
+					<input type="number" name="offset" value="${this.offset || ''}">
+				</label>
+
+				<label class="dataset">
+					<span>Dataset <span class="right" data-tooltip="A set of possible values for this filter">?</span></span>
+				</label>
+
+				<label class="multiple">
+					<span>Allow Multiple <span class="right" data-tooltip="Can the user pick multiple values">?</span></span>
+					<select name="multiple" required>
+						<option value="0">No</option>
+						<option value="1">Yes</option>
+					</select>
+				</label>
+			<form>
+		`;
+
+		container.querySelector('.filter-back').on('click', () => {
+
+			this.stage.filtersManager.container.querySelector('#filters-list').classList.remove('hidden');
+			container.classList.add('hidden');
+		});
+
+		{
+			container.multiple.value = this.multiple || '0';
+
+			this.datasetMultiSelect = new MultiSelect({dropDownPosition: 'top', multiple: false});
+
+			const datalist = [];
+
+			for(const source of DataSource.list.values()) {
+
+				if(source.query_id == this.stage.report.query_id)
+					continue;
+
+				datalist.push({
+					name: source.name,
+					value: source.query_id,
+					subtitle: '#' + source.query_id,
+				});
+			}
+
+			this.datasetMultiSelect.datalist = datalist;
+			this.datasetMultiSelect.render();
+
+			container.querySelector('label.dataset').appendChild(this.datasetMultiSelect.container);
+
+			this.datasetMultiSelect.value = this.dataset;
+			this.datasetMultiSelect.on('change', () => this.updateFormFields());
+		}
+
+		{
+
+			const
+				default_value = container.default_value.value,
+				default_value_offset = container.offset.value;
+
+			for(const type of MetaData.filterTypes.values()) {
+
+				if(!type.input_type)
+					continue;
+
+				container.type.insertAdjacentHTML('beforeend', `
+					<option value="${type.name.toLowerCase()}">${type.name}</option>
+				`);
+			}
+
+			container.type.value = this.type || 'text';
+
+			if(container.default_value.value)
+				container.default_type.value = 'default_value';
+
+			else if(container.offset.value)
+				container.default_type.value = 'offset';
+
+			else
+				container.default_type.value = 'none';
+
+			container.type.on('change', () => {
+
+				this.changeFilterType();
+
+				container.default_value.value = default_value;
+				container.offset.value = default_value_offset;
+			});
+
+			container.default_type.on('change', () => this.updateFormFields());
+
+			this.changeFilterType();
+			this.updateFormFields();
+		}
+
+		container.on('submit', e => {
+
+			e.preventDefault();
+
+			if(this.stage.saveReportConfirm())
+				this.update();
+		});
+
+		{
+			const submit = container.querySelector('button[type=submit]');
+
+			for(const element of container.elements) {
+				element.on('keyup', () => submit.classList.add('not-saved'));
+				element.on('change', () => submit.classList.add('not-saved'));
+			}
+		}
+
+		return container;
+	}
+
+	async update() {
+
+		if(this.form.default_type.value != 'offset')
+			this.form.offset.value = '';
+
+		if(this.form.default_type.value != 'default_value')
+			this.form.default_value.value = '';
+
+		const
+			parameters = {
+				filter_id: this.id,
+				dataset: this.datasetMultiSelect.value[0] || '',
+			},
+			options = {
+				method: 'POST',
+				form: new FormData(this.form),
+			};
+
+		try {
+
+			await API.call('reports/filters/update', parameters, options);
+
+			await DataSource.load(true);
+
+			await this.stage.load();
+
+			this.stage.filtersManager.container.classList.remove('hidden');
+
+			new SnackBar({
+				message: `${this.form.name.value} Filter Saved`,
+				subtitle: `Type: <strong>${MetaData.filterTypes.get(this.form.type.value).name}</strong> Placeholer: <strong>${this.form.placeholder.value}</strong>`,
+				icon: 'far fa-save',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+
+	async delete() {
+
+		if(!confirm('Are you sure?!'))
+			return;
+
+		const
+			parameters = {
+				filter_id: this.id,
+			},
+			options = {
+				method: 'POST',
+			};
+
+		try {
+
+			await API.call('reports/filters/delete', parameters, options);
+
+			await DataSource.load(true);
+
+			await this.stage.load();
+
+			this.stage.filtersManager.container.classList.remove('hidden');
+
+			new SnackBar({
+				message: `${this.name} Filter Deleted`,
+				subtitle: `Type: <strong>${MetaData.filterTypes.get(this.type).name}</strong> Placeholer: <strong>${this.placeholder}</strong>`,
+				icon: 'far fa-trash-alt',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+
+	changeFilterType() {
+
+		const types = ['hidden', 'column', 'literal'];
+
+		if(this.form.type.value == 'datetime')
+			this.form.default_value.type = 'datetime-local';
+
+		else if(this.form.type.value == 'year')
+			this.form.default_value.type = 'number';
+
+		else if(this.form.type.value == 'time') {
+
+			this.form.default_value.type = 'time';
+			this.form.default_value.step = '1';
+		}
+
+		else if(types.includes(this.form.type.value))
+			this.form.default_value.type = 'text';
+
+		else
+			this.form.default_value.type = this.form.type.value;
+	}
+
+	updateFormFields() {
+
+		this.form.default_value.classList.toggle('hidden', this.form.default_type.value != 'default_value');
+		this.form.offset.classList.toggle('hidden', this.form.default_type.value != 'offset');
+
+		this.form.querySelector('.multiple').classList.toggle('hidden', !this.datasetMultiSelect.value.length);
+	}
+}
 
 class VisualizationManager {
 
@@ -3064,8 +3523,10 @@ ReportConnection.types.set('mysql', class ReportConnectionMysql extends ReportCo
 
 		this.editor.on('change', () => {
 
-			this.stage.filterSuggestions();
 			this.stage.unsavedQueryValue();
+
+			if(this.stage.filtersManager)
+				this.stage.filtersManager.suggestions();
 		});
 
 		setTimeout(() => this.setEditorKeyboardShortcuts());
@@ -3104,8 +3565,10 @@ ReportConnection.types.set('mssql', class ReportConnectionMysql extends ReportCo
 
 		this.editor.on('change', () => {
 
-			this.stage.filterSuggestions();
 			this.stage.unsavedQueryValue();
+
+			if(this.stage.filtersManager)
+				this.stage.filtersManager.suggestions();
 		});
 
 		setTimeout(() => this.setEditorKeyboardShortcuts());
@@ -3144,8 +3607,10 @@ ReportConnection.types.set('pgsql', class ReportConnectionMysql extends ReportCo
 
 		this.editor.on('change', () => {
 
-			this.stage.filterSuggestions();
 			this.stage.unsavedQueryValue();
+
+			if(this.stage.filtersManager)
+				this.stage.filtersManager.suggestions();
 		});
 
 		setTimeout(() => this.setEditorKeyboardShortcuts());
@@ -3184,8 +3649,10 @@ ReportConnection.types.set('bigquery', class ReportConnectionMysql extends Repor
 
 		this.editor.on('change', () => {
 
-			this.stage.filterSuggestions();
 			this.stage.unsavedQueryValue();
+
+			if(this.stage.filtersManager)
+				this.stage.filtersManager.suggestions();
 		});
 
 		setTimeout(() => this.setEditorKeyboardShortcuts());
@@ -3491,8 +3958,10 @@ ReportConnection.types.set('mongo', class ReportConnectionMysql extends ReportCo
 
 		this.editor.on('change', () => {
 
-			this.stage.filterSuggestions();
 			this.stage.unsavedQueryValue();
+
+			if(this.stage.filtersManager)
+				this.stage.filtersManager.suggestions();
 		});
 
 		setTimeout(() => this.setEditorKeyboardShortcuts());
@@ -3549,8 +4018,10 @@ ReportConnection.types.set('oracle', class ReportConnectionMysql extends ReportC
 
 		this.editor.on('change', () => {
 
-			this.stage.filterSuggestions();
 			this.stage.unsavedQueryValue();
+
+			if(this.stage.filtersManager)
+				this.stage.filtersManager.suggestions();
 		});
 
 		setTimeout(() => this.setEditorKeyboardShortcuts());
