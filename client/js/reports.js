@@ -12414,8 +12414,8 @@ class VisualizationsCanvas {
 
         container.innerHTML = `
 			<div class="menu hidden">
-        		<button type="button" class="edit">Edit</button>
-        		<button type="button" class="reorder">Reorder</button>
+        		<button type="button" class="edit"><i class="far fa-edit"></i> Edit</button>
+        		<button type="button" class="reorder"><i class="fas fa-random"></i> Reorder</button>
 			</div>
         	<div class="list"></div>
         `;
@@ -12570,9 +12570,9 @@ class VisualizationsCanvas {
 
         const edit = this.container.querySelector('.edit');
 
-        edit.textContent = VisualizationsCanvas.editing ? 'Close' : 'Edit';
+        edit.innerHTML = VisualizationsCanvas.editing ? '<i class="fas fa-check"></i> Done' : '<i class="fas fa-edit"></i> Edit';
 
-        this.list.classList.toggle('editing', VisualizationsCanvas.editing);
+        this.container.classList.toggle('editing', VisualizationsCanvas.editing);
 
         for (let {query: report} of this.loadedVisualizations.values()) {
 
@@ -12757,49 +12757,24 @@ class VisualizationsCanvas {
 
 	        report.resize_dimentions.on('submit', async e => {
 
-            	e.preventDefault();
+		        e.preventDefault();
 
-	            const visualization_id = report.selectedVisualizationProperties.visualization_id;
+		        await this.save(
+			        {
+				        position: report.resize_dimentions.position.value,
+				        height: report.resize_dimentions.height.value,
+				        width: report.resize_dimentions.width.value,
+			        },
+			        report.selectedVisualizationProperties.id
+		        );
 
-	            report.selectedVisualizationProperties.format.position = report.resize_dimentions.position.value;
-	            report.selectedVisualizationProperties.format.height = report.resize_dimentions.height.value;
-	            report.selectedVisualizationProperties.format.width = report.resize_dimentions.width.value;
+		        report.selectedVisualizationProperties.format.position = report.resize_dimentions.position.value;
+		        report.selectedVisualizationProperties.format.height = report.resize_dimentions.height.value;
+		        report.selectedVisualizationProperties.format.width = report.resize_dimentions.width.value;
 
-	            const
-		            option = {
-			            method: 'POST',
-		            },
-		            parameters = {
-			            id: report.selectedVisualizationProperties.id,
-			            owner: 'visualization',
-			            owner_id: report.selectedVisualizationProperties.owner_id,
-			            visualization_id: visualization_id,
-			            format: JSON.stringify(report.selectedVisualizationProperties.format)
-		            };
+		        this.render();
 
-	            try {
-
-		            await API.call('reports/dashboard/update', parameters, option);
-
-		            new SnackBar({
-			            message: 'Related Visualization Saved',
-			            subtitle: `#${visualization_id}`,
-			            icon: 'far fa-save',
-		            });
-
-	            } catch(e) {
-
-		            new SnackBar({
-			            message: 'Request Failed',
-			            subtitle: e.message,
-			            type: 'error',
-		            });
-
-		            throw e;
-	            }
-
-	            this.render();
-            });
+	        });
 
             resize.on('dragstart', e => {
                 e.stopPropagation();
@@ -12853,8 +12828,8 @@ class VisualizationsCanvas {
 
                 report.container.setAttribute('style', `
 					order: ${report.selectedVisualizationProperties.format.position || 0};
-					grid-column: auto / span ${visualizationFormat.width || Dashboard.grid.columns};
-					grid-row: auto / span ${visualizationFormat.height || Dashboard.grid.rows};
+					grid-column: auto / span ${dimentions.width.value || Dashboard.grid.columns};
+					grid-row: auto / span ${dimentions.height.value || Dashboard.grid.rows};
 				`);
 
                 if (this.dragTimeout)
@@ -12890,7 +12865,7 @@ class VisualizationsCanvas {
         const
             parameters = {
                 id: id,
-                format: JSON.stringify(format || this.format),
+                format: JSON.stringify(format),
             },
             options = {
                 method: 'POST',
