@@ -1206,6 +1206,11 @@ class UserPrivileges extends Set {
 
 	has(name) {
 
+		if(super.has('superadmin')) {
+
+			return 1;
+		}
+
 		if(name === "superadmin") {
 
 			return Array.from(this).filter(p => p.privilege_name.toLowerCase() == name.toLowerCase()).length;
