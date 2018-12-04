@@ -12836,7 +12836,7 @@ class VisualizationsCanvas {
 		);
 	}
 
-	async save(format, id) {
+	async save(report) {
 
 		const
 			parameters = {
