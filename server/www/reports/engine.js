@@ -254,7 +254,7 @@ class report extends API {
 				continue;
 			}
 
-			if(filter.type == 'time') {
+			if (filter.type == 'time') {
 
 				filter.default_value = new Date(date.getTime() + (1000 * filter.offset)).toTimeString().substring(0, 8);
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
@@ -478,6 +478,9 @@ class report extends API {
 			case "file":
 				this.assert(false, 'No data found in the file. Please upload some data first.');
 				break;
+			case "bigquery_legacy":
+				preparedRequest = new BigqueryLegacy(this.reportObj, this.filters);
+				break;
 			default:
 				this.assert(false, "Report Type " + this.reportObj.type.toLowerCase() + " does not exist", 404);
 		}
@@ -607,7 +610,7 @@ class SQL {
 
 		for (const filter of this.filters) {
 
-			if(filter.type == "literal") {
+			if (filter.type == "literal") {
 
 				continue;
 			}
@@ -711,7 +714,7 @@ class APIRequest {
 
 		this.filters.forEach(x => filterSet.add(x.placeholder));
 
-		for(const filter in requestBody) {
+		for (const filter in requestBody) {
 
 			this.filters.push({
 				placeholder: filterSet.has(filter) ? `allspark_${filter}` : filter,
@@ -958,6 +961,50 @@ class Bigquery {
 			}
 
 			this.makeFilters(filter.value, filter.placeholder, filter.type, filter.multiple);
+		}
+	}
+}
+
+class BigqueryLegacy {
+
+	constructor(reportObj, filters = []) {
+
+		this.reportObj = reportObj;
+		this.filters = filters;
+	}
+
+	get finalQuery() {
+
+		this.prepareQuery();
+
+		return {
+			type: "bigquery",
+			request: [
+				this.reportObj.query,
+				this.filterList || [],
+				this.reportObj.account_id,
+				this.reportObj.connection_name + ".json",
+				this.reportObj.project_name,
+				true
+			]
+		}
+	}
+
+	prepareQuery() {
+
+		this.filterList = [];
+
+		for (const filter of this.filters) {
+
+			if (Array.isArray(filter.value)) {
+
+				this.reportObj.query = this.reportObj.query.replace((new RegExp(`{{${filter.placeholder}}}`, "g")), '"' + filter.value.join('", "') + '"');
+			}
+
+			else {
+
+				this.reportObj.query = this.reportObj.query.replace((new RegExp(`{{${filter.placeholder}}}`, "g")), filter.value);
+			}
 		}
 	}
 }
