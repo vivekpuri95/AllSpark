@@ -176,6 +176,8 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 
 		const select = this.form.querySelector('select[name="type"]');
 
+		select.textContent = null;
+
 		for(const type of MetaData.filterTypes.values())
 			select.insertAdjacentHTML('beforeend', `<option value="${type.name.toLowerCase()}">${type.name}</option>`);
 	}
@@ -1244,8 +1246,8 @@ class GlobalFilter {
 			<td>${this.id}</td>
 			<td>${this.name}</td>
 			<td>${this.placeholder}</td>
-			<td>${this.default_value}</td>
 			<td>${this.type}</td>
+			<td>${this.default_value}</td>
 			<td>${this.multiple ? 'Yes' : 'No'}</td>
 			<td>${isNaN(parseInt(this.offset)) ? '' : this.offset}</td>
 			<td><a target="_blank" href="/report/${this.dataset}">${dataset}</a></td>
