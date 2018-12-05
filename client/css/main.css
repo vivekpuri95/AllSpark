@@ -36,7 +36,6 @@
 }
 
 * {
-	-webkit-print-color-adjust: exact;
 	box-sizing: border-box;
 }
 

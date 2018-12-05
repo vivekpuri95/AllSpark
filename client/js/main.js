@@ -265,15 +265,12 @@ class Page {
 		await Storage.set('refresh_token', parameters.get('refresh_token'));
 
 		const searchParams = new URLSearchParams(window.location.search);
-		const _searchParams = new URLSearchParams();
 
-		for(const [key, value] of searchParams) {
+		searchParams.delete('external_parameters');
+		searchParams.delete('refresh_token');
+		searchParams.delete('token');
 
-			if(!['external_parameters', 'refresh_token', 'token'].includes(key))
-				_searchParams.set(key, value);
-		}
-
-		window.history.replaceState({}, '', `${window.location.pathname}?${_searchParams}`);
+		window.history.replaceState({}, '', `${window.location.pathname}?${searchParams}`);
 	}
 
 	static async loadOnboardScripts() {
@@ -1394,11 +1391,11 @@ class AJAX {
 			return User.logout({next: true, redirect: options.redirectOnLogout, message: message});
 		}
 
-		if(!response.headers.get('content-type').includes('json') && options.raw) {
+		if(options.raw) {
 			return {
 				data: response,
 				status: true,
-			}
+			};
 		}
 
 		return response.headers.get('content-type').includes('json') ? await response.json() : await response.text();

@@ -2,16 +2,17 @@ const puppeteer = require('puppeteer');
 
 class HeadlessChrome {
 
-	static async setup() {
+	async setup() {
 
 		if(!HeadlessChrome.browser) {
 
-			return HeadlessChrome.browser = await puppeteer.launch({
-				headless: true, args: [`--window-size=1920,1080`]
+			HeadlessChrome.browser = await puppeteer.launch({
+				headless: true,
+				args: ['--window-size=1920,1080'],
 			});
 		}
 
-		return HeadlessChrome.browser;
+		this.browser = HeadlessChrome.browser;
 	}
 }
 

@@ -45,10 +45,8 @@ Page.class = class Dashboards extends Page {
 			this.container.querySelector('.nav-blanket').classList.toggle('hidden', !this.nav.classList.contains('show'));
 		});
 
-		if(this.urlSearchParameters.has('pdf') && this.urlSearchParameters.get('pdf')) {
-			(async () => {
-				await Storage.set('menu-collapsed','1');
-			})();
+		if(this.urlSearchParameters.get('download')) {
+			Storage.set('menu-collapsed', 1);
 		}
 
 		this.reports.querySelector('.toolbar #back').on('click', async () => {
@@ -774,7 +772,7 @@ class Dashboard {
 
 		const
 			download = page.container.querySelector('.download'),
-			downloadOptions = download.querySelector('.options')
+			downloadOptions = download.querySelector('.options');
 
 		download.querySelector('button').on('click', (e) => {
 
@@ -787,7 +785,20 @@ class Dashboard {
 			downloadOptions.classList.add('hidden');
 		});
 
-		downloadOptions.querySelector('#pdf').on('click', async (e) => await Dashboard.pdfDownload(e));
+		downloadOptions.querySelector('#pdf').on('click', e => {
+			e.stopPropagation();
+			Dashboard.download('pdf')
+		});
+
+		downloadOptions.querySelector('#png').on('click', e => {
+			e.stopPropagation();
+			Dashboard.download('png')
+		});
+
+		downloadOptions.querySelector('#jpeg').on('click', e => {
+			e.stopPropagation();
+			Dashboard.download('jpeg')
+		});
 	}
 
 	static urlSearchString() {
@@ -800,47 +811,55 @@ class Dashboard {
 		return parameters;
 	}
 
-	static async pdfDownload(e) {
-
-		e.stopPropagation();
+	static async download(type) {
 
 		await API.refreshToken();
 
 		const searchParam = new URLSearchParams(location.search);
 
-		searchParam.set('pdf', true);
-		searchParam.set('external_parameters', "1");
-		searchParam.set('refresh_token', (await Storage.get('refresh_token')));
+		searchParam.set('download', true);
+		searchParam.set('external_parameters', 1);
+		searchParam.set('refresh_token', await Storage.get('refresh_token'));
 
 		for(const [key, value] of Dashboard.urlSearchString()) {
 			searchParam.set(key, value);
 		}
 
-		const urlToDownload = `${location.origin}${location.pathname}?${searchParam}`;
+		const
+			urlToDownload = `${location.origin}${location.pathname}?${searchParam}`,
+			options = {
+				raw: true,
+			},
+			parameter = {
+				url: urlToDownload,
+				type: type,
+			};
 
-		const body = {
-			url: urlToDownload,
-			token : (await Storage.get('token')).body,
-		}
+		let content = await API.call('reports/download/pdf', parameter, options);
 
-		const options = {
-			raw: true,
-		};
+		if(content.headers.get('content-type').includes('pdf')) {
 
-		const pdfContent = await (await API.call('reports/download/pdf', {url: urlToDownload}, options)).blob();
-
-		if(pdfContent.type.includes('application/pdf')) {
+			content = await content.blob();
 
 			const link = document.createElement('a');
-			link.href = window.URL.createObjectURL(pdfContent);
-			link.download = page.list.get(page.currentDashboard).name + '_' + Format.dateTime(Date.now()) + ".pdf";
+			link.href = window.URL.createObjectURL(content);
+			link.download = page.list.get(page.currentDashboard).name + '_' + Format.dateTime(Date.now()) + '.pdf';
+			link.click();
+		}
+		else if(content.headers.get('content-type').includes('image')) {
+
+			content = await content.blob();
+
+			const link = document.createElement('a');
+			link.href = window.URL.createObjectURL(content);
+			link.download = page.list.get(page.currentDashboard).name + '_' + Format.dateTime(Date.now()) + '.' + type;
 			link.click();
 		}
 		else {
 
 			new SnackBar({
-				message: 'Unable to download pdf',
-				subtitle: 'Request Failed',
+				message: 'Request Failed',
+				subtitle: 'Unable to download pdf',
 				icon: 'fas fa-ban',
 				type: 'error',
 			});

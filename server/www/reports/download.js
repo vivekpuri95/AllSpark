@@ -7,57 +7,75 @@ exports.pdf = class DownloadPdf extends API {
 
 	async pdf() {
 
-		const
-			browser = await this.browser(),
-			page = await browser.newPage();
+		const chrome = new headlessChrome();
 
-		await page.goto(`${this.request.query.url}`,
-			{waitUntil: ['networkidle2','domcontentloaded']}
+		await chrome.setup();
+
+		const page = await chrome.browser.newPage();
+
+		await page.goto(
+			this.request.query.url,
+			{waitUntil: ['networkidle2', 'load']}
 		);
 
-		await page.setViewport({width: 1600,height: 1080});
+		await page.setViewport({width: 1600, height: 1080});
 
-		//Check file exists and if not then make dir;
+		// Check Directory exists and if not then make dir.
 		if(!fs.existsSync('/tmp/Allspark')) {
 			child_process.execSync('mkdir /tmp/Allspark');
 		}
 
-		//get the width of headless chrome so that the viewports can be changed;
-		const clientWidth = await page.evaluate(() => {
-
-			return document.querySelector('body').clientWidth;
-		});
-
-		//render the visualization.
+		// Render the visualization.
 		await page.evaluate(async () => {
 
 			const visibleVisuliaztions = page.list.get(page.currentDashboard).visibleVisuliaztions;
 
+			const promiseList = [];
+
 			for(const report of visibleVisuliaztions) {
-				await report.visualizations.selected.render();
+				promiseList.push(report.visualizations.selected.render());
 			}
+
+			await Promise.all(promiseList);
 		});
 
-		//Wait until the graphs animations rendered;
-		await new Promise(resolve => {setTimeout(() => {resolve()}, 1800)});
+		// Wait until the graphs animations rendered.
+		await new Promise(resolve => setTimeout(resolve, 1800));
 
-		//preparing for download;
-		const fileName = Math.random() + '.pdf';
+		// Preparing for download.
+		const fileName = Math.random() + '.' + this.request.query.type;
 
-		await page.pdf({path: `/tmp/Allspark/${fileName}`, format: 'A4', scale: 0.5});
+		if(this.request.query.type == 'pdf') {
+
+			await page.pdf({path: `/tmp/Allspark/${fileName}`, format: 'A4', scale: 0.5});
+		}
+		else if(this.request.query.type == 'png') {
+
+			await page.screenshot({
+				path: `/tmp/Allspark/${fileName}`,
+				type: 'jpeg',
+				fullPage: true,
+			});
+		}
+		else if(this.request.query.type == 'jpeg') {
+
+			await page.screenshot({
+				path: `/tmp/Allspark/${fileName}`,
+				type: 'jpeg',
+				quality: 80,
+				fullPage: true,
+			});
+		}
+
+		await page.close();
 
 		await this.response.sendFile(`/tmp/Allspark/${fileName}`);
 
-		//delete the file generated;
+		// Delete the file generated.
 		setTimeout(() => {
 			child_process.execSync(`rm /tmp/Allspark/${fileName}`);
-		},2000);
+		}, 30000);
 
-		throw({'pass': true});
-	}
-
-	async browser() {
-
-		return await headlessChrome.setup();
+		throw({pass: true});
 	}
 }
