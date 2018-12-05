@@ -6461,6 +6461,11 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 		if(!this.rows || !this.rows.length)
 			return;
 
+		if(!this.bubbleColumn || !this.bubbleRadiusColumn) {
+
+			return this.source.error('Bubble Column and Bubble Radius column cannot be empty');
+		}
+
 		const
 			container = d3.selectAll(`#visualization-${this.id}`),
 			that = this;

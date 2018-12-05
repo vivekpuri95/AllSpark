@@ -5441,7 +5441,6 @@ ConfigureVisualization.types.set('bubble', class BubbleOptions extends ReportVis
 			<label>
 				<span>Radius Column</span>
 				<select name="radius">
-					<option value="none">None</option>
 					${selectOptions}
 				</select>
 			</label>
@@ -5458,7 +5457,7 @@ ConfigureVisualization.types.set('bubble', class BubbleOptions extends ReportVis
 		optionsForm.insertAdjacentHTML('afterbegin', bubbleOptions);
 
 		optionsForm.querySelector('select[name=bubbleColumn]').value = this.visualization.options.bubbleColumn;
-		optionsForm.querySelector('select[name=radius]').value = this.visualization.options.bubbleRadiusColumn || 'none';
+		optionsForm.querySelector('select[name=radius]').value = this.visualization.options.bubbleRadiusColumn;
 		optionsForm.querySelector('select[name=showValues]').value = this.visualization.options.showValues || 'empty';
 
 		return container;
