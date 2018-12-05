@@ -2289,7 +2289,7 @@ class ReportsManagerFilters extends Map {
 					</label>
 
 					<label>
-						<span>Placeholder <span class="red">*</span><span class="right" data-tooltip="Uniquely identifies the filter in this report">?</span></span>
+						<span>Placeholder <span class="red">*</span><span class="right" data-tooltip="Uniquely identifies the filter in this report.">?</span></span>
 						<input type="text" name="placeholder" required>
 					</label>
 
@@ -2310,7 +2310,7 @@ class ReportsManagerFilters extends Map {
 
 					<label>
 
-						<span>Default Value <span class="right" data-tooltip="Calculated and applied on first load\nif a global filter with same placeholder isn't added">?</span></span>
+						<span>Default Value <span class="right" data-tooltip="Calculated and applied on first load\nif a global filter with same placeholder isn't added.">?</span></span>
 
 						<select name="default_type">
 							<option value="none">None</option>
@@ -2324,11 +2324,11 @@ class ReportsManagerFilters extends Map {
 					</label>
 
 					<label class="dataset">
-						<span>Dataset <span class="right" data-tooltip="A set of possible values for this filter">?</span></span>
+						<span>Dataset <span class="right" data-tooltip="A set of possible values for this filter.">?</span></span>
 					</label>
 
 					<label class="multiple">
-						<span>Multiple <span class="right" data-tooltip="Can the user pick multiple values">?</span></span>
+						<span>Multiple <span class="right" data-tooltip="Can the user pick multiple values.">?</span></span>
 						<select name="multiple">
 							<option value="0">No</option>
 							<option value="1">Yes</option>
@@ -2623,7 +2623,7 @@ class ReportsManagerFilters extends Map {
 					type,
 					placeholder,
 					dataset: globalFilter.dataset || null,
-					multiple: globalFilter.multiple || null,
+					multiple: isNaN(globalFilter.multiple) ? null : globalFilter.multiple,
 					description: globalFilter.description || null,
 					default_value: globalFilter.default_value || null,
 					offset: globalFilter.offset || null,
