@@ -1390,7 +1390,7 @@ class cachedReports extends API {
 			}
 
 			try {
-				keyData['created_at'] = new Date(JSON.parse(await redis.get(key)).cached.store_time);
+				keyData.created_at = new Date(JSON.parse(await redis.get(key)).cached.store_time);
 			}
 
 			catch(e) {}
