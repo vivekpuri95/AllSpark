@@ -94,9 +94,13 @@ class Redis {
 	// 	return child_process.execSync('redis-cli --bigkeys').toString();
 	// }
 
-	static async keyInfo(key) {
+	static async keyInfo(report) {
 
-		return child_process.execSync(`redis-cli debug object ${key}`).toString();
+		return {
+			report_id: report.report_id,
+			key: child_process.execSync(`redis-cli debug object ${report.key}`).toString().trim(),
+			created_at: report.created_at,
+		}
 	}
 }
 

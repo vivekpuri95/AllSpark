@@ -463,6 +463,84 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 	}
 });
 
+Settings.list.set('executingRedisReports', class About extends SettingPage {
+
+	get name() {
+		return 'Executing Redis Reports';
+	}
+
+	async setup() {
+
+		if(this.page.querySelector('.executing-redis-reports')) {
+
+			this.page.querySelector('.executing-redis-reports').remove();
+		}
+
+		this.page.appendChild(this.container);
+
+		await this.load();
+	}
+
+	async load() {
+
+		let reports = await API.call('reports/engine/executingRedis');
+
+		this.redisReports = new Set();
+
+		for(const report of reports) {
+
+			report.key = parseFloat(report.key.slice(report.key.indexOf('serializedlength') + 17));
+			this.redisReports.add(new ExecutingRedisReport(report));
+		}
+
+		await this.render();
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('setting-page', 'executing-redis-reports', 'hidden');
+
+		container.innerHTML = `
+			<section class="section show" id="executing-redis-reports">
+				<h1>Executing Redis Reports</h1>
+
+				<table class="block">
+					<thead>
+						<tr>
+							<th>Query Id</th>
+							<th>Size</th>
+							<th>Created At</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</section>
+		`;
+
+		return container;
+	}
+
+	async render() {
+
+		const tbody = this.container.querySelector('table tbody');
+
+		tbody.textContent = null;
+
+		if(!this.redisReports.size)
+			tbody.innerHTML = '<tr><td class="NA" colspan="4">No executing redis reports at this time.</td></tr>';
+
+		for(const report of this.redisReports.values())
+			tbody.appendChild(report.row);
+
+		await Sections.show('executing-redis-reports');
+	}
+
+});
+
 Settings.list.set('about', class About extends SettingPage {
 
 	get name() {
@@ -2195,6 +2273,27 @@ class ExecutingReport {
 
 			ExecutingReport.queryDialog.show();
 		});
+
+		return tr;
+	}
+}
+
+class ExecutingRedisReport {
+
+	constructor(report) {
+
+		Object.assign(this, report);
+	}
+
+	get row() {
+
+		const tr = document.createElement('tr');
+
+		tr.innerHTML = `
+			<td>${this.report_id}</td>
+			<td class="query-name">${this.key}</td>
+			<td class="query-name">${this.created_at}</td>
+		`;
 
 		return tr;
 	}

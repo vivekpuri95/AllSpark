@@ -1384,20 +1384,23 @@ class executingRedis extends API {
 		const key_info = [];
 
 		for(const key of all_keys) {
-			key_info.push(redis.keyInfo(key));
+
+			try {
+
+				key_info.push(redis.keyInfo({
+
+					report_id: parseFloat(key.slice(key.indexOf('report_id') + 10)),
+					key,
+					created_at: new Date(JSON.parse(await redis.get(key)).cached.store_time),
+				}));
+			}
+
+			catch(e) {}
 		}
 
-		const tasksExecuteResponse = await commonFun.promiseParallelLimit(5, key_info);
-
-		return {
-			// memory_info,
-			// big_keys,
-			// all_keys,
-			tasksExecuteResponse
-		};
+		return await commonFun.promiseParallelLimit(5, key_info);
 	}
 }
-
 
 exports.query = query;
 exports.report = report;
