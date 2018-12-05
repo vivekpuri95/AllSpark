@@ -9843,28 +9843,29 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 
 	async process() {
 
-		const [response] = await this.source.response();
+		const response = await this.source.response();
 
 		if(!this.options || !this.options.column)
 			return this.source.error('Value column not selected.');
 
-		if(!response)
+		if(!response || !response.length)
 			return this.source.error('Invalid Response.');
 
-		if(!response.has(this.options.column))
+		if(!response[0].has(this.options.column))
 			return this.source.error(`<em>${this.options.column}</em> column not found.`);
 	}
 
 	async render(options = {}) {
+
 		if(!this.options)
 			return;
 
-		const [response] = await this.source.response();
+		const response = await this.source.response();
 
-		if(!response)
+		if(!response || !response.length)
 			return this.source.error();
 
-		const value = response.getTypedValue(this.options.column);
+		const value = response[0].getTypedValue(this.options.column);
 
 		this.container.querySelector('.container').innerHTML = `<div class="value">${value}</div>`;
 
