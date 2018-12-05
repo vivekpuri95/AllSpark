@@ -1382,16 +1382,18 @@ class cachedReports extends API {
 
 		for(const key of allKeys) {
 
-			try {
+			const keyData = {
+				report_id: parseFloat(key.slice(key.indexOf('report_id') + 10)),
+				size: await redis.keyInfo(key),
+			}
 
-				keyInfo.push({
-					report_id: parseFloat(key.slice(key.indexOf('report_id') + 10)),
-					created_at: new Date(JSON.parse(await redis.get(key)).cached.store_time),
-					size: await redis.keyInfo(key),
-				});
+			try {
+				keyData['created_at'] = new Date(JSON.parse(await redis.get(key)).cached.store_time);
 			}
 
 			catch(e) {}
+
+			keyInfo.push(keyData);
 		}
 
 		return await commonFun.promiseParallelLimit(5, keyInfo);
