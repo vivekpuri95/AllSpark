@@ -12608,11 +12608,6 @@ class VisualizationsCanvas {
 				continue;
 			}
 
-			if (!report.format)
-				report.format = {};
-
-			report.format.format = report.selectedVisualizationProperties.format;
-
 			const
 				header = report.container.querySelector('header .actions'),
 				format = report.selectedVisualizationProperties.format;
@@ -12759,21 +12754,7 @@ class VisualizationsCanvas {
 
 				e.preventDefault();
 
-				await this.save(
-					{
-						position: report.resize_dimentions.position.value,
-						height: report.resize_dimentions.height.value,
-						width: report.resize_dimentions.width.value,
-					},
-					report.selectedVisualizationProperties.id
-				);
-
-				report.selectedVisualizationProperties.format.position = report.resize_dimentions.position.value;
-				report.selectedVisualizationProperties.format.height = report.resize_dimentions.height.value;
-				report.selectedVisualizationProperties.format.width = report.resize_dimentions.width.value;
-
-				this.render();
-
+				await this.save(report);
 			});
 
 			resize.on('dragstart', e => {
@@ -12797,13 +12778,8 @@ class VisualizationsCanvas {
 			if (!report)
 				return;
 
-			let format = report.format || {};
-
-			if (!format.format)
-				format.format = {};
-
 			const
-				visualizationFormat = format.format,
+				visualizationFormat = report.selectedVisualizationProperties.format,
 				columnStart = this.getColumn(report.container.offsetLeft),
 				newColumn = this.getColumn(e.pageX - this.list.getBoundingClientRect().left) + 1,
 				rowStart = this.getRow(report.container.offsetTop),
@@ -12840,7 +12816,7 @@ class VisualizationsCanvas {
 				if (this.saveTimeout)
 					clearTimeout(this.saveTimeout);
 
-				this.saveTimeout = setTimeout(() => this.save(visualizationFormat, report.selectedVisualizationProperties.id), 1000);
+				this.saveTimeout = setTimeout(() => this.save(report), 1000);
 			}
 		});
 	}
@@ -12860,18 +12836,28 @@ class VisualizationsCanvas {
 		);
 	}
 
-	async save(format, id) {
+	async save(report) {
 
 		const
 			parameters = {
-				id: id,
-				format: JSON.stringify(format),
+				id: report.selectedVisualizationProperties.id,
+				format: JSON.stringify({
+					position: report.resize_dimentions.position.value,
+					height: report.resize_dimentions.height.value,
+					width: report.resize_dimentions.width.value,
+				}),
 			},
 			options = {
 				method: 'POST',
 			};
 
 		await API.call('reports/dashboard/update', parameters, options);
+
+		report.selectedVisualizationProperties.format.position = report.resize_dimentions.position.value;
+		report.selectedVisualizationProperties.format.height = report.resize_dimentions.height.value;
+		report.selectedVisualizationProperties.format.width = report.resize_dimentions.width.value;
+
+		this.render();
 	}
 
 	sort(visualizations) {
