@@ -8,28 +8,38 @@ class Approvals extends API {
 
 		this.account.features.needs('merge-requests-module');
 
-		this.assert(['open', 'merged', 'closed'].includes(status), 'Invalid merge request status.');
+		this.assert(['approved', 'rejected'].includes(status), 'Invalid merge request status.');
 
 		const mergeRequest = await this.findMergeRequest(merge_request_id);
 
 		await this.validateApprover(mergeRequest);
 
-		const [existingRow] = await this.mysql.query(
+		let [existingRow] = await this.mysql.query(
 			'SELECT * FROM tb_merge_requests_approvals WHERE merge_request_id = ? AND user_id = ?',
 			[merge_request_id, this.user.user_id]
 		);
 
 		if(existingRow) {
 
-			return await this.mysql.query(
+			await this.mysql.query(
 				'UPDATE tb_merge_requests_approvals SET status = ? WHERE id = ?',
 				[status, existingRow.id]
 			);
 		}
 
+		else {
+
+			let response = await this.mysql.query(`
+				INSERT INTO tb_merge_requests_approvals (merge_request_id, user_id, status) VALUES (?, ?, ?)`,
+				[merge_request_id, this.user.user_id, status]
+			);
+
+			existingRow = {id: response.insertId};
+		}
+
 		return await this.mysql.query(`
-			INSERT INTO tb_merge_requests_approvals (merge_request_id, user_id, status) VALUES (?, ?, ?)`,
-			[merge_request_id, this.user.user_id, status]
+			SELECT * FROM tb_merge_requests_approvals where id = ?`,
+			[existingRow.id]
 		);
 	}
 
@@ -38,7 +48,7 @@ class Approvals extends API {
 		const
 			requests = new Requests.list(this),
 			mergeRequests = await requests.list({status: 'Open'}),
-			[mergeRequest] = mergeRequests.filter(request => request.id == merge_request_id);
+			[mergeRequest] = mergeRequests.filter(request => request.id == id);
 
 		this.assert(mergeRequest, 'Invalid merge request ID or you don\'t have access to it.');
 
@@ -56,4 +66,4 @@ class Approvals extends API {
 	}
 }
 
-exports.list = Approvals;
+exports.approve = Approvals;

@@ -58,7 +58,7 @@ class Requests extends API {
 
 		mergeRequestList.forEach(x => mergeRequestObj[x.id] = {...x, approvals: []});
 
-		mergeRequestApprovals.forEach(x => mergeRequestObj[row.merge_request_id].approvals.push(x));
+		mergeRequestApprovals.forEach(x => mergeRequestObj[x.merge_request_id].approvals.push(x));
 
 		const reportObj = new report.list();
 		Object.assign(reportObj, this);
