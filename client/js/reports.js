@@ -12416,7 +12416,7 @@ class VisualizationsCanvas {
 		};
 
 		VisualizationsCanvas.screenHeightOffset = 1.5 * screen.availHeight;
-		VisualizationsCanvas.editing = false;
+		this.editing = false;
 	}
 
 	get container() {
@@ -12506,7 +12506,7 @@ class VisualizationsCanvas {
 			`);
 
 			this.list.appendChild(row.report.container);
-			row.report.container.querySelector('.visualization').classList.toggle('blur', VisualizationsCanvas.editing);
+			row.report.container.querySelector('.visualization').classList.toggle('blur', this.editing);
 
 			this.visualizationTrack.set(row.report.visualizations.savedOnDashboard.visualization_id, ({
 				position: row.report.container.getBoundingClientRect().y,
@@ -12573,24 +12573,24 @@ class VisualizationsCanvas {
 
 		if(warning) {
 
-			warning.classList.toggle('blur', VisualizationsCanvas.editing);
+			warning.classList.toggle('blur', this.editing);
 		}
 
 		report.container.querySelector('header h2').classList.toggle('edit');
 		report.container.querySelector('.menu-toggle').classList.toggle('hidden');
-		report.container.querySelector('.visualization').classList.toggle('blur', VisualizationsCanvas.editing);
-		report.container.querySelector('.columns').classList.toggle('blur', VisualizationsCanvas.editing);
+		report.container.querySelector('.visualization').classList.toggle('blur', this.editing);
+		report.container.querySelector('.columns').classList.toggle('blur', this.editing);
 	}
 
 	edit() {
 
-		VisualizationsCanvas.editing = !VisualizationsCanvas.editing;
+		this.editing = !this.editing;
 
 		const edit = this.container.querySelector('.edit');
 
-		edit.innerHTML = VisualizationsCanvas.editing ? '<i class="fas fa-check"></i> Done' : '<i class="fas fa-edit"></i> Edit';
+		edit.innerHTML = this.editing ? '<i class="fas fa-check"></i> Done' : '<i class="fas fa-edit"></i> Edit';
 
-		this.container.classList.toggle('editing', VisualizationsCanvas.editing);
+		this.container.classList.toggle('editing', this.editing);
 
 		for (let {query: report} of this.loadedVisualizations.values()) {
 
@@ -12614,7 +12614,7 @@ class VisualizationsCanvas {
 					continue;
 				}
 
-				element.classList.toggle('hidden', !VisualizationsCanvas.editing)
+				element.classList.toggle('hidden', !this.editing)
 			}
 
 			if(report.resize_dimentions) {
