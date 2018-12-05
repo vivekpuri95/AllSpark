@@ -1372,9 +1372,9 @@ class executingReports extends API {
 	}
 }
 
-class executingRedis extends API {
+class cachedReports extends API {
 
-	async executingRedis() {
+	async cachedReports() {
 
 		const
 			// memory_info = await redis.infoMemory(),
@@ -1409,4 +1409,4 @@ exports.Postgres = Postgres;
 exports.APIRequest = APIRequest;
 exports.download = download;
 exports.executingReports = executingReports;
-exports.executingRedis = executingRedis;
+exports.cachedReports = cachedReports;

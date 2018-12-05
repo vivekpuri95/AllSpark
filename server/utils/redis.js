@@ -96,9 +96,11 @@ class Redis {
 
 	static async keyInfo(report) {
 
+		const key = child_process.execSync(`redis-cli debug object ${report.key}`).toString().trim();
+
 		return {
 			report_id: report.report_id,
-			key: child_process.execSync(`redis-cli debug object ${report.key}`).toString().trim(),
+			size: parseFloat(key.slice(key.indexOf('serializedlength') + 17)),
 			created_at: report.created_at,
 		}
 	}

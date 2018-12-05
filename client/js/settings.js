@@ -463,37 +463,42 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 	}
 });
 
-Settings.list.set('executingRedisReports', class About extends SettingPage {
+Settings.list.set('cachedReports', class CachedReports extends SettingPage {
+
+	constructor(...params) {
+
+		super(...params);
+		this.reports = new Set();
+	}
 
 	get name() {
-		return 'Executing Redis Reports';
+		return 'Cached Reports';
 	}
 
 	async setup() {
 
-		if(this.page.querySelector('.executing-redis-reports')) {
-
-			this.page.querySelector('.executing-redis-reports').remove();
-		}
-
 		this.page.appendChild(this.container);
-
-		await this.load();
 	}
 
 	async load() {
 
-		let reports = await API.call('reports/engine/executingRedis');
+		const response = await this.fetch();
 
-		this.redisReports = new Set();
+		this.process(response);
 
-		for(const report of reports) {
+		this.render();
+	}
 
-			report.key = parseFloat(report.key.slice(report.key.indexOf('serializedlength') + 17));
-			this.redisReports.add(new ExecutingRedisReport(report));
+	async fetch() {
+
+		return API.call('reports/engine/cachedReports');
+	}
+
+	process(response) {
+
+		for(const report of response) {
+			this.reports.add(new CachedReport(report));
 		}
-
-		await this.render();
 	}
 
 	get container() {
@@ -502,10 +507,10 @@ Settings.list.set('executingRedisReports', class About extends SettingPage {
 			return this.containerElement;
 
 		const container = this.containerElement = document.createElement('div');
-		container.classList.add('setting-page', 'executing-redis-reports', 'hidden');
+		container.classList.add('setting-page', 'cached-reports', 'hidden');
 
 		container.innerHTML = `
-			<section class="section show" id="executing-redis-reports">
+			<section class="section show" id="cached-reports">
 				<h1>Executing Redis Reports</h1>
 
 				<table class="block">
@@ -524,19 +529,19 @@ Settings.list.set('executingRedisReports', class About extends SettingPage {
 		return container;
 	}
 
-	async render() {
+	render() {
 
 		const tbody = this.container.querySelector('table tbody');
 
 		tbody.textContent = null;
 
-		if(!this.redisReports.size)
+		if(!this.reports.size)
 			tbody.innerHTML = '<tr><td class="NA" colspan="4">No redis reports at this time.</td></tr>';
 
-		for(const report of this.redisReports.values())
+		for(const report of this.reports.values())
 			tbody.appendChild(report.row);
 
-		await Sections.show('executing-redis-reports');
+		Sections.show('cached-reports');
 	}
 });
 
@@ -2277,7 +2282,7 @@ class ExecutingReport {
 	}
 }
 
-class ExecutingRedisReport {
+class CachedReport {
 
 	constructor(report) {
 
@@ -2287,10 +2292,10 @@ class ExecutingRedisReport {
 	get row() {
 
 		const tr = document.createElement('tr');
-
+		// report.key = parseFloat(report.key.slice(report.key.indexOf('serializedlength') + 17));
 		tr.innerHTML = `
 			<td>${this.report_id}</td>
-			<td class="query-name">${this.key}</td>
+			<td class="query-name">${this.size}</td>
 			<td class="query-name">${this.created_at}</td>
 		`;
 
