@@ -493,7 +493,7 @@ class DataSource {
 				<span class="label change-visualization"><i class="fas fa-chart-line"></i> Visualizations</span>
 				<div class="submenu"></div>
 			</div>
-			
+
 			<div class="item hidden">
 				<span class="label related-visualizations"><i class="fas fa-link"></i> Related Visualizations</span>
 			</div>
@@ -9861,7 +9861,10 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 
 		const [response] = await this.source.response();
 
-		let value = response.getTypedValue(this.options.column);
+		if(!response)
+			return this.source.error();
+
+		const value = response.getTypedValue(this.options.column);
 
 		this.container.querySelector('.container').innerHTML = `<div class="value">${value}</div>`;
 
