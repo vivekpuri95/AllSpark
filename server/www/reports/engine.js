@@ -1396,6 +1396,7 @@ class cachedReports extends API {
 			catch(e) {}
 
 			keyInfo.push(keyData);
+			keyInfo.sort((a, b) => a.size - b.size);
 		}
 
 		return await commonFun.promiseParallelLimit(5, keyInfo);
