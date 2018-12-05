@@ -84,30 +84,12 @@ class Redis {
 		return await hgetPromisified(key, field);
 	}
 
-	// static async infoMemory() {
+	static async keyInfo(key) {
 
-	// 	return child_process.execSync('redis-cli info memory').toString();
-	// }
-
-	// static async bigKeys() {
-
-	// 	return child_process.execSync('redis-cli --bigkeys').toString();
-	// }
-
-	static async keyInfo(report) {
-
-		const key = child_process.execSync(`redis-cli debug object ${report.key}`).toString().trim();
-
-		return {
-			report_id: report.report_id,
-			size: parseFloat(key.slice(key.indexOf('serializedlength') + 17)),
-			created_at: report.created_at,
-		}
+		const keyResponse = child_process.execSync(`redis-cli debug object ${key}`).toString().trim();
+		return parseFloat(keyResponse.slice(keyResponse.indexOf('serializedlength') + 17));
 	}
 }
-
-// (async () => await Redis.hset("accountSettings#1", "testkey", "value"))();
-
 
 exports.redis = redis_client;
 exports.Redis = Redis;

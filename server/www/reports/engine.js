@@ -1377,28 +1377,24 @@ class cachedReports extends API {
 	async cachedReports() {
 
 		const
-			// memory_info = await redis.infoMemory(),
-			// big_keys = await redis.bigKeys(),
-			all_keys = await redis.keys('*');
+			allKeys = await redis.keys('*'),
+			keyInfo = [];
 
-		const key_info = [];
-
-		for(const key of all_keys) {
+		for(const key of allKeys) {
 
 			try {
 
-				key_info.push(redis.keyInfo({
-
+				keyInfo.push({
 					report_id: parseFloat(key.slice(key.indexOf('report_id') + 10)),
-					key,
 					created_at: new Date(JSON.parse(await redis.get(key)).cached.store_time),
-				}));
+					size: await redis.keyInfo(key),
+				});
 			}
 
 			catch(e) {}
 		}
 
-		return await commonFun.promiseParallelLimit(5, key_info);
+		return await commonFun.promiseParallelLimit(5, keyInfo);
 	}
 }
 

@@ -496,6 +496,8 @@ Settings.list.set('cachedReports', class CachedReports extends SettingPage {
 
 	process(response) {
 
+		this.reports.clear();
+
 		for(const report of response) {
 			this.reports.add(new CachedReport(report));
 		}
@@ -2291,14 +2293,16 @@ class CachedReport {
 
 	get row() {
 
-		const tr = document.createElement('tr');
-		// report.key = parseFloat(report.key.slice(report.key.indexOf('serializedlength') + 17));
-		tr.innerHTML = `
+		if(this.rowElement)
+			return this.rowElement;
+
+		this.rowElement = document.createElement('tr');
+		this.rowElement.innerHTML = `
 			<td>${this.report_id}</td>
-			<td class="query-name">${this.size}</td>
-			<td class="query-name">${this.created_at}</td>
+			<td>${this.size}</td>
+			<td>${this.created_at}</td>
 		`;
 
-		return tr;
+		return this.rowElement;
 	}
 }
