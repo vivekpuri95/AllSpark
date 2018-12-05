@@ -9834,6 +9834,26 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 			</div>
 		`;
 
+		if(this.related_visualizations && this.related_visualizations.length) {
+
+			this.container.style.cursor = 'pointer';
+
+			const actions = this.source.container.querySelector('header .actions');
+
+			const card_info = this.source.container.querySelector('header .actions .card-info');
+
+			if(!card_info) {
+
+				actions.insertAdjacentHTML('beforeend', `
+					<span class="card-info" title="${this.related_visualizations.length + (this.related_visualizations.length > 1 ? ' sub-cards' : ' sub-card')}">
+						<i class="fas fa-ellipsis-h"></i>
+					</span>
+				`);
+			}
+
+			this.container.on('click', async () => await this.showSubVisualizations());
+		}
+
 		await this.source.fetch(options);
 
 		await this.process();
@@ -9920,9 +9940,9 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 					</span>
 				`);
 			}
-		}
 
-		this.container.on('click', async () => await this.showSubVisualizations());
+			this.container.on('click', async () => await this.showSubVisualizations());
+		}
 
 		await this.source.fetch(options);
 
