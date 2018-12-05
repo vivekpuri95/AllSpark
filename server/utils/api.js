@@ -283,7 +283,7 @@ class API {
 				if(user_id == 16563)
 					return;
 
-				mysql.query(`
+				mysql.MySQL.query(`
 					INSERT INTO ??.tb_api_logs (
 						account_id, user_id, pathname, body, query, headers, response, status, useragent
 					) VALUES (?)`,
