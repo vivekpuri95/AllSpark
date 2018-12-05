@@ -5432,6 +5432,13 @@ ConfigureVisualization.types.set('bubble', class BubbleOptions extends ReportVis
 
 		const bubbleOptions = `
 			<label>
+				<span>Bubble Column</span>
+				<select name="bubbleColumn">
+					${selectOptions}
+				</select>
+			</label>
+			
+			<label>
 				<span>Radius Column</span>
 				<select name="radius">
 					<option value="none">None</option>
@@ -5450,6 +5457,7 @@ ConfigureVisualization.types.set('bubble', class BubbleOptions extends ReportVis
 
 		optionsForm.insertAdjacentHTML('afterbegin', bubbleOptions);
 
+		optionsForm.querySelector('select[name=bubbleColumn]').value = this.visualization.options.bubbleColumn;
 		optionsForm.querySelector('select[name=radius]').value = this.visualization.options.bubbleRadiusColumn || 'none';
 		optionsForm.querySelector('select[name=showValues]').value = this.visualization.options.showValues || 'empty';
 
@@ -5462,6 +5470,7 @@ ConfigureVisualization.types.set('bubble', class BubbleOptions extends ReportVis
 			axes: this.axes.json,
 			hideHeader: this.form.querySelector('input[name=hideHeader]').checked,
 			hideLegend: this.form.querySelector('input[name=hideLegend]').checked,
+			bubbleColumn: this.form.querySelector('.configuration-section .body .form.subform select[name=bubbleColumn]').value,
 			bubbleRadiusColumn: this.form.querySelector('.configuration-section .body .form.subform select[name=radius]').value,
 			showValues: this.form.querySelector('.configuration-section .body .form.subform select[name=showValues]').value
 		}

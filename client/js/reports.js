@@ -6184,20 +6184,6 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 		this.plot(options);
 	}
 
-	async draw() {
-
-		await super.draw();
-
-		if(!this.axes)
-			return this.source.error('Axes not defined.');
-
-		if(!this.axes.right)
-			return this.source.error('Right axis not defined.');
-
-		if(!this.axes.right.columns.length)
-			return this.source.error('Right axis requires one column.');
-	}
-
 	plot(options = {}) {
 
 		super.plot(options);
@@ -6624,7 +6610,7 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 		// For each line appending the circle at each point
 		for(const column of this.columns) {
 
-			if(column.key == that.axes.right.column) {
+			if(that.axes.right && column.key == that.axes.right.column) {
 
 				continue;
 			}
@@ -6662,20 +6648,20 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 					}
 
 					const content = `
-						<header>${d.row.get(that.axes.right.column)}</header>
+						<header>${d.row.get(that.bubbleColumn)}</header>
 						<ul class="body">
 							${tooltip.join('')}
 						</ul>
 					`;
 
 					that.svg.selectAll('circle')
-						.filter(function (v) {
-							return v.y1 != d.y1;
+						.filter(v => {
+							return v.row.get(that.bubbleColumn) != d.row.get(that.bubbleColumn);
 						})
 						.style("opacity", 0.2);
 
 					that.svg.selectAll('text')
-						.filter(x => x && x.y1 && x.y1 != d.y1)
+						.filter(x => x && x.row && x.row.get(that.bubbleColumn) != d.row.get(that.bubbleColumn))
 						.attr('fill', 'grey')
 						.attr('opacity', 0.2);
 
