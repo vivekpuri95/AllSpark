@@ -5725,7 +5725,7 @@ class ReportTransformations extends Set {
 				<i class="fas fa-long-arrow-alt-down"></i>
 				<span class="NA">
 					<span>Rows: <strong>${Format.number(originalResponse ? originalResponse.data.length : 0)}</strong></span>
-					<span>Columns: <strong>${Format.number(Object.keys(originalResponse ? originalResponse.data[0] : {} || {}).length)}</strong></span>
+					<span>Columns: <strong>${Format.number(Object.keys(originalResponse && originalResponse.data.length ? originalResponse.data[0] : {} || {}).length)}</strong></span>
 					<span>Duration: <strong>${Format.number(originalResponse ? originalResponse.runtime || 0 : 0)}ms</strong></span>
 				</span>
 				<i class="fas fa-long-arrow-alt-down"></i>
@@ -7745,17 +7745,17 @@ class RelatedVisualizations extends Set {
 
 		container.innerHTML = `
 			<h3><i class="fas fa-angle-right"></i> Related Visualizations <span class="count"></span></h3>
-			
+
 			<div class="body">
-			
+
 				<div class="list"></div>
-				
+
 				<form class="add">
-				
+
 					<fieldset>
-					
+
 						<legend>Add Related Visualizations</legend>
-						
+
 						<div class="form">
 
 							<label class="visualization">
@@ -7766,12 +7766,12 @@ class RelatedVisualizations extends Set {
 								<span>Position</span>
 								<input name="position" type="number" class="item" placeholder="1">
 							</label>
-							
+
 							<label>
 								<span>Width</span>
 								<input name="width" min="2" type="number" step="1" class="item" placeholder="32" max="32">
 							</label>
-							
+
 							<label>
 								<span>Height</span>
 								<input name="height" min="1" type="number" step="1" class="item" placeholder="10" max="10">
@@ -7781,8 +7781,8 @@ class RelatedVisualizations extends Set {
 								<span>&nbsp;</span>
 								<button type="submit"><i class="fa fa-plus"></i> Add</button>
 							</label>
-							
-						</div>						
+
+						</div>
 					</fieldset>
 				</form>
 			</div>
@@ -7984,12 +7984,12 @@ class RelatedVisualization {
 				<span>Position</span>
 				<input type="number" name="position" value="${this.format.position || ''}" class="item" placeholder="1">
 			</label>
-			
+
 			<label>
 				<span>Width</span>
 				<input name="width" type="number" min="2" value="${this.format.width || ''}" class="item" placeholder="32" step="1" max="32">
 			</label>
-			
+
 			<label>
 				<span>Height</span>
 				<input name="height" type="number" min="1" value="${this.format.height || ''}" class="item" placeholder="10" step="1" max="10">
