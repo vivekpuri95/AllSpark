@@ -1698,13 +1698,13 @@ main .dataset {
 	flex-direction: column;
 	transition: background var(--transition-duration);
 }
-	.visualization-canvas .menu {
+	.visualization-canvas > .menu {
 		margin-left: auto;
 		display: grid;
 		grid-auto-flow: column;
 		grid-gap: calc(var(--gap) * 2);
 	}
-		.visualization-canvas .menu button {
+		.visualization-canvas > .menu button {
 			outline: 0;
 			cursor: pointer;
 		}
@@ -1772,6 +1772,24 @@ main .dataset {
 @media (max-width:750px) {
 
 	.visualization-canvas > .list {
-		display: block;
+		display: flex;
+		flex-direction: column;
+		padding: 0;
+	}
+
+	.visualization-canvas > .list .data-source {
+		margin: calc(var(--gap) * 2) 0;
+	}
+		.visualization-canvas > .list .data-source .visualization {
+			height: 275px;
+		}
+		.visualization-canvas > .list .data-source .visualization.livenumber {
+			height: 200px;
+		}
+		.visualization-canvas > .list .data-source .visualization.html {
+			height: auto;
+		}
+	.visualization-canvas > .list .resize {
+		display: none;
 	}
 }
