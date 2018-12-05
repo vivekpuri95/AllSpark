@@ -10,7 +10,7 @@ class Settings extends Page {
 
 			for (const [key, settings] of Settings.list) {
 
-				if(['executingReports', 'accounts'].includes(key) && !this.user.privileges.has('superadmin'))
+				if(['executingReports', 'accounts', 'cachedReports'].includes(key) && !this.user.privileges.has('superadmin'))
 					continue;
 
 				if(key == 'categories' && !user.privileges.has('category.insert') && !user.privileges.has('category.update') && !user.privileges.has('category.delete'))
@@ -513,7 +513,7 @@ Settings.list.set('cachedReports', class CachedReports extends SettingPage {
 
 		container.innerHTML = `
 			<section class="section show" id="cached-reports">
-				<h1>Executing Redis Reports</h1>
+				<h1>Cached Reports</h1>
 
 				<table class="block">
 					<thead>
@@ -2299,8 +2299,8 @@ class CachedReport {
 		this.rowElement = document.createElement('tr');
 		this.rowElement.innerHTML = `
 			<td>${this.report_id}</td>
-			<td>${this.size}</td>
-			<td>${this.created_at}</td>
+			<td>${Format.number(this.size)}</td>
+			<td title="${Format.dateTime(this.created_at)}">${Format.ago(this.created_at)}</td>
 		`;
 
 		return this.rowElement;

@@ -1376,6 +1376,8 @@ class cachedReports extends API {
 
 	async cachedReports() {
 
+		this.user.privilege.needs("superadmin");
+
 		const
 			allKeys = await redis.keys('*'),
 			keyInfo = [];
