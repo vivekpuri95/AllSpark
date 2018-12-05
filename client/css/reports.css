@@ -1769,3 +1769,9 @@ main .dataset {
 			border: double var(--color-border);
 			border-width: 0 3px 3px 0;
 		}
+@media (max-width:750px) {
+
+	.visualization-canvas > .list {
+		display: block;
+	}
+}
