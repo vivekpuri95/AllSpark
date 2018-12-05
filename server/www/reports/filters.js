@@ -1,6 +1,10 @@
 const API = require('../../utils/api');
 const auth = require('../../utils/auth');
+const promisify = require('util').promisify;
 const reportHistory = require('../../utils/reportLogs');
+const request = require("request");
+const requestPromise = promisify(request);
+const commonFun = require('../../utils/commonFunctions');
 
 class Filters extends API {
 
@@ -109,8 +113,60 @@ class Filters extends API {
 		return deleteResponse;
 	}
 
+	async preReport() {
+
+		let [preReportApi] = await this.mysql.query(
+			`select value from tb_settings where owner = 'account' and profile = 'pre_report_api' and owner_id = ?`,
+			[this.account.account_id],
+		);
+
+		if (!preReportApi || commonFun.isJson(preReportApi.value)) {
+
+			return [];
+		}
+
+		preReportApi = (JSON.parse(preReportApi.value)).value;
+
+		let preReportApiDetails = await requestPromise({
+
+			har: {
+				url: preReportApi,
+				method: 'GET',
+				headers: [
+					{
+						name: 'content-type',
+						value: 'application/x-www-form-urlencoded'
+					}
+				],
+				queryString: this.account.settings.get("external_parameters").map(x => {
+					return {
+						name: x,
+						value: this.request.body[constants.filterPrefix + x],
+					}
+				})
+			},
+			gzip: true
+		});
+
+		preReportApiDetails = JSON.parse(preReportApiDetails.body).data[0];
+
+		const filterMapping = {};
+
+		for (const key in preReportApiDetails) {
+
+			const value = preReportApiDetails.hasOwnProperty(key) ? (new String(preReportApiDetails[key])).toString() : "";
+
+			filterMapping[key] = {
+				placeholder: key,
+				value: value,
+			}
+		}
+
+		return Object.values(filterMapping);
+	}
 }
 
 exports.insert = Filters;
 exports.update = Filters;
 exports.delete = Filters;
+exports.preReport = Filters;

@@ -338,7 +338,7 @@ class DataSource {
 			if(!container.contains(this.menu))
 				container.appendChild(this.menu);
 
-			const alreadyVisibleMenu = page.container.querySelector('.data-source > .menu:not(.hidden)');
+			const alreadyVisibleMenu = this.container.parentElement.querySelector('.data-source > .menu:not(.hidden)');
 
 			if(alreadyVisibleMenu && alreadyVisibleMenu != this.menu)
 				alreadyVisibleMenu.classList.add('hidden');
@@ -354,9 +354,9 @@ class DataSource {
 
 				document.body.on('click', this.menuToggleListener = e => {
 
-					const alreadyVisibleMenu = page.container.querySelectorAll('.data-source > .menu:not(.hidden)');
+					const allVisibleMenu = this.container.parentElement.querySelectorAll('.data-source > .menu:not(.hidden)');
 
-					for(const item of page.container.querySelectorAll('.data-source > .menu:not(.hidden)'))
+					for(const item of allVisibleMenu)
 						item.parentElement.querySelector('.menu-toggle').click();
 				});
 			}
@@ -494,6 +494,10 @@ class DataSource {
 				<div class="submenu"></div>
 			</div>
 
+			<div class="item hidden">
+				<span class="label related-visualizations"><i class="fas fa-link"></i> Related Visualizations</span>
+			</div>
+
 			<div class="item">
 
 				<span class="label download" title="Download Report"><i class="fa fa-download"></i> Download</span>
@@ -570,7 +574,13 @@ class DataSource {
 			filtersToggle = menu.querySelector('.filters-toggle'),
 			descriptionToggle = menu.querySelector('.description-toggle'),
 			pipelineToggle = menu.querySelector('.pipeline-toggle'),
-			queryToggle = menu.querySelector('.query-toggle');
+			queryToggle = menu.querySelector('.query-toggle'),
+			relatedVisualizations = menu.querySelector('.related-visualizations');
+
+		if(this.visualizations.selected.related_visualizations && this.visualizations.selected.related_visualizations.length) {
+
+			relatedVisualizations.parentElement.classList.remove('hidden');
+		}
 
 		if(this.editable) {
 
@@ -598,6 +608,11 @@ class DataSource {
 
 			if(e.altKey)
 				new SnackBar({message: 'Report Reloaded Without Cache.'});
+		});
+
+		relatedVisualizations.on('click', async () => {
+
+			await this.visualizations.selected.showSubVisualizations();
 		});
 
 		filtersToggle.on('click', () => {
@@ -674,6 +689,8 @@ class DataSource {
 
 					if(pipelineToggle.parentElement.classList.contains('selected'))
 						pipelineToggle.click();
+
+					this.menu.querySelector('.related-visualizations').parentElement.classList.toggle('hidden', !(visualization.related_visualizations && visualization.related_visualizations.length));
 
 					visualization.load();
 				});
@@ -1046,14 +1063,14 @@ class DataSource {
 				actions = this.container.querySelector('header .actions'),
 				old = actions.querySelector('.drilldown');
 
-			if(old)
-				old.remove();
+			if(!old) {
 
-			actions.insertAdjacentHTML('beforeend', `
-				<span class="grey drilldown" title="Drilldown available on: ${drilldown.join(', ')}">
-					<i class="fas fa-angle-double-down"></i>
-				</span>
-			`);
+				actions.insertAdjacentHTML('beforeend', `
+					<span class="grey drilldown" title="Drilldown available on: ${drilldown.join(', ')}">
+						<i class="fas fa-angle-double-down"></i>
+					</span>
+				`);
+			}
 		}
 
 		const description = this.container.querySelector('.description .body');
@@ -4601,7 +4618,7 @@ DataSourceTransformation.types.set('linear-regression', class DataSourceTransfor
 			 mean(x) * mean(y) - mean(x * y)
 			---------------------------------
 			 mean(x) * mean(x) - mean(x * x)
-	    */
+		*/
 
 		const
 			meanX = this.mean(this.xs),
@@ -5263,6 +5280,30 @@ class Visualization {
 
 		this.source.resetError();
 	}
+
+	async showSubVisualizations() {
+
+		if(!this.related_visualizations || !this.related_visualizations.length)
+			return;
+
+		if(this.subReportDialogBox) {
+
+			this.subReportDialogBox.show();
+			return;
+		}
+
+		this.subReportDialogBox = new DialogBox();
+		this.subReportDialogBox.container.classList.add('sub-reports-dialog');
+		this.subReportDialogBox.heading = this.name;
+
+		this.subReportDialogBox.body.textContent = null;
+
+		const visualizationCanvas =  new Canvas(this.related_visualizations, page);
+		this.subReportDialogBox.body.appendChild(visualizationCanvas.container);
+
+		await visualizationCanvas.load();
+		this.subReportDialogBox.show();
+	}
 }
 
 class LinearVisualization extends Visualization {
@@ -5546,7 +5587,7 @@ class LinearVisualization extends Visualization {
 
 			const row = that.rows[parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length))];
 
- 			if(!row)
+			if(!row)
 				return;
 
 			const tooltip = [];
@@ -7580,7 +7621,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 			const row = that.rows[parseInt((mouse[0] - that.axes.left.size - 10) / (that.width / that.rows.length))];
 
- 			if(!row || !that.x)
+			if(!row || !that.x)
 				return;
 
 			const tooltip = [];
@@ -9654,6 +9695,26 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 			</div>
 		`;
 
+		if(this.related_visualizations && this.related_visualizations.length) {
+
+			this.container.style.cursor = 'pointer';
+
+			const actions = this.source.container.querySelector('header .actions');
+
+			const card_info = this.source.container.querySelector('header .actions .card-info');
+
+			if(!card_info) {
+
+				actions.insertAdjacentHTML('beforeend', `
+					<span class="card-info" title="${this.related_visualizations.length + (this.related_visualizations.length > 1 ? ' sub-cards' : ' sub-card')}">
+						<i class="fas fa-ellipsis-h"></i>
+					</span>
+				`);
+			}
+		}
+
+		this.container.on('click', async () => await this.showSubVisualizations());
+
 		await this.source.fetch(options);
 
 		await this.process();
@@ -9773,6 +9834,26 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 			</div>
 		`;
 
+		if(this.related_visualizations && this.related_visualizations.length) {
+
+			this.container.style.cursor = 'pointer';
+
+			const actions = this.source.container.querySelector('header .actions');
+
+			const card_info = this.source.container.querySelector('header .actions .card-info');
+
+			if(!card_info) {
+
+				actions.insertAdjacentHTML('beforeend', `
+					<span class="card-info" title="${this.related_visualizations.length + (this.related_visualizations.length > 1 ? ' sub-cards' : ' sub-card')}">
+						<i class="fas fa-ellipsis-h"></i>
+					</span>
+				`);
+			}
+
+			this.container.on('click', async () => await this.showSubVisualizations());
+		}
+
 		await this.source.fetch(options);
 
 		await this.process();
@@ -9782,25 +9863,29 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 
 	async process() {
 
-		const [response] = await this.source.response();
+		const response = await this.source.response();
 
 		if(!this.options || !this.options.column)
 			return this.source.error('Value column not selected.');
 
-		if(!response)
+		if(!response || !response.length)
 			return this.source.error('Invalid Response.');
 
-		if(!response.has(this.options.column))
+		if(!response[0].has(this.options.column))
 			return this.source.error(`<em>${this.options.column}</em> column not found.`);
 	}
 
 	async render(options = {}) {
+
 		if(!this.options)
 			return;
 
-		const [response] = await this.source.response();
+		const response = await this.source.response();
 
-		let value = response.getTypedValue(this.options.column);
+		if(!response || !response.length)
+			return this.source.error();
+
+		const value = response[0].getTypedValue(this.options.column);
 
 		this.container.querySelector('.container').innerHTML = `<div class="value">${value}</div>`;
 
@@ -9843,7 +9928,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		`;
 		this.container.querySelector('.graph').textContent = null;
 
-		if(this.subReports && this.subReports.length) {
+		if(this.related_visualizations && this.related_visualizations.length) {
 
 			this.container.style.cursor = 'pointer';
 
@@ -9854,51 +9939,14 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			if(!card_info) {
 
 				actions.insertAdjacentHTML('beforeend', `
-					<span class="card-info" title="${this.subReports.length + (this.subReports.length > 1 ? ' sub-cards' : ' sub-card')}">
+					<span class="card-info" title="${this.related_visualizations.length + (this.related_visualizations.length > 1 ? ' sub-cards' : ' sub-card')}">
 						<i class="fas fa-ellipsis-h"></i>
 					</span>
 				`);
 			}
+
+			this.container.on('click', async () => await this.showSubVisualizations());
 		}
-
-		this.container.on('click', async () => {
-
-			if(!this.subReports || !this.subReports.length)
-				return;
-
-			if(this.subReportsLoaded) {
-
-				this.subReportDialogBox.show();
-				return;
-			}
-
-			this.subReportDialogBox.body.textContent = null;
-			this.subReportDialogBox.show();
-
-			let visualizations = [];
-
-			for(const [index, report] of DataSource.list.entries()) {
-
-				const selectedVisualizations = report.visualizations.filter(x => this.subReports.includes(x.visualization_id.toString()));
-
-				visualizations = visualizations.concat(selectedVisualizations);
-			}
-
-			for(const visualization of visualizations) {
-
-				const
-					query = DataSource.list.get(visualization.query_id),
-					report = new DataSource(query, this),
-					[selectedVisualization] = report.visualizations.filter(x => x.visualization_id == visualization.visualization_id);
-
-				report.visualizations.selected = selectedVisualization;
-
-				report.visualizations.selected.load();
-				this.subReportDialogBox.body.appendChild(report.container);
-			}
-
-			this.subReportsLoaded = true;
-		});
 
 		await this.source.fetch(options);
 
@@ -10076,10 +10124,8 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 		container.selectAll('*').remove();
 
-		if(!this.width) {
-			this.width = this.container.clientWidth - margin.left - margin.right;
-			this.height = this.container.clientHeight - margin.top - margin.bottom - 10;
-		}
+		this.width = this.container.clientWidth - margin.left - margin.right;
+		this.height = this.container.clientHeight - margin.top - margin.bottom - 10;
 
 		const
 			data = [],
@@ -10174,17 +10220,6 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		return color ? 'green' : 'red';
 	}
 
-	get subReportDialogBox() {
-
-		if(this.subReportsDialogBoxContainer)
-			return this.subReportsDialogBoxContainer;
-
-		const subReportDialog = this.subReportsDialogBoxContainer = new DialogBox();
-		subReportDialog.container.classList.add('sub-reports-dialog');
-		subReportDialog.heading = this.name;
-
-		return subReportDialog;
-	}
 });
 
 Visualization.list.set('json', class JSONVisualization extends Visualization {
@@ -12372,139 +12407,585 @@ class Tooltip {
 
 class VisualizationsCanvas {
 
-    constructor(visualizations, page) {
+	constructor(visualizations, page) {
 
-        this.page = page;
+		this.page = page;
+		this.visualizations = visualizations;
+		this.loadedVisualizations = new Map();
 
-        VisualizationsCanvas.grid = {
-            columns: 32,
-            rows: 10,
-            rowHeight: 50,
-        };
+		VisualizationsCanvas.grid = {
+			columns: 32,
+			rows: 10,
+			rowHeight: 50,
+		};
 
-        VisualizationsCanvas.screenHeightOffset = 1.5 * screen.availHeight;
+		VisualizationsCanvas.screenHeightOffset = 1.5 * screen.availHeight;
+		this.editing = false;
+	}
 
-        this.visualizations = new Set();
+	get container() {
 
-        for(const visualization of visualizations) {
+		if(this.containerElement) {
 
-            if (!visualization.format) {
+			return this.containerElement;
+		}
 
-                visualization.format = {};
-            }
+		const container = this.containerElement = document.createElement('div');
 
-            if (!DataSource.list.has(visualization.query_id)) {
+		container.classList.add('visualization-canvas');
 
-                continue;
-            }
+		container.innerHTML = `
+			<div class="menu hidden">
+				<button type="button" class="edit"><i class="far fa-edit"></i> Edit</button>
+				<button type="button" class="reorder"><i class="fas fa-random"></i> Reorder</button>
+			</div>
+			<div class="list"></div>
+		`;
 
-            const dataSource = new DataSource(JSON.parse(JSON.stringify(DataSource.list.get(visualization.query_id))), this.page);
+		this.list = container.querySelector('.list');
 
-            dataSource.container.setAttribute('style', `
-				order: ${visualization.format.position || 0};
-				grid-column: auto / span ${visualization.format.width || VisualizationsCanvas.grid.columns};
-				grid-row: auto / span ${visualization.format.height || VisualizationsCanvas.grid.rows};
+		if (this.page.user.privileges.has('report')) {
+
+			container.querySelector('.menu').classList.remove('hidden');
+
+			container.querySelector('.edit').on('click', () => this.edit());
+			container.querySelector('.reorder').on('click', () => this.reorder());
+		}
+
+		return container;
+	}
+
+	lazyLoad(resize, offset = VisualizationsCanvas.screenHeightOffset) {
+
+		const visitedVisualizations = new Set;
+
+		for (const [visualization_id, visualization] of this.visualizationTrack) {
+
+			for (const filter of visualization.query.filters.values()) {
+
+				let datasetFilter = this.page.list && this.page.list.get(this.page.currentDashboard) && this.page.list.get(this.page.currentDashboard).globalFilters ? this.page.list.get(this.page.currentDashboard).globalFilters.get(filter.placeholder) :  null;
+
+				if (!datasetFilter)
+					continue;
+
+				filter.value = datasetFilter.value;
+			}
+
+			if ((parseInt(visualization.position) < this.maxScrollHeightAchieved + offset) && !visualization.loaded) {
+
+				visualization.query.visualizations.selected.load();
+				visualization.loaded = true;
+
+				this.loadedVisualizations.set(visualization_id, visualization);
+
+				visitedVisualizations.add(visualization_id);
+			}
+
+			if (visualization.loaded) {
+
+				visitedVisualizations.add(visualization_id);
+			}
+		}
+		for (const visualizationId of visitedVisualizations.values()) {
+
+			this.visualizationTrack.delete(visualizationId);
+		}
+	}
+
+	render(resize) {
+
+		this.list.textContent = null;
+
+		this.visualizationTrack = new Map();
+		this.visualizations = this.sort(this.visualizations);
+
+		for (const row of this.visualizations) {
+
+			row.report.container.appendChild(row.report.visualizations.selected.container);
+
+			row.report.container.setAttribute('style', `
+				order: ${row.format.position || 0};
+				grid-column: auto / span ${row.format.width || VisualizationsCanvas.grid.columns};
+				grid-row: auto / span ${row.format.height || VisualizationsCanvas.grid.rows};
 			`);
 
-            [dataSource.selectedVisualization] = dataSource.visualizations.filter(v => v.visualization_id === visualization.visualization_id);
+			this.list.appendChild(row.report.container);
+			row.report.container.querySelector('.visualization').classList.toggle('blur', this.editing);
 
-            if (!dataSource.selectedVisualization) {
+			this.visualizationTrack.set(row.report.visualizations.savedOnDashboard.visualization_id, ({
+				position: row.report.container.getBoundingClientRect().y,
+				query: row.report,
+				loaded: false,
+			}));
+		}
 
-                continue;
-            }
+		const main = document.querySelector('main');
 
-            this.visualizations.add(dataSource);
-            dataSource.container.appendChild(dataSource.selectedVisualization.container);
-        }
-    }
+		this.maxScrollHeightAchieved = Math.max(VisualizationsCanvas.screenHeightOffset, main.scrollTop);
 
-    get container() {
+		this.lazyLoad(this.maxScrollHeightAchieved, resize);
 
-        if(this.containerElement) {
+		document.addEventListener(
+			'scroll',
+			() => {
+				for (const row of this.visualizations) {
 
-            return this.containerElement;
-        }
+					if (this.visualizationTrack.get(row.report.visualizations.savedOnDashboard.visualization_id)) {
 
-        const container = this.containerElement = document.createElement('div');
+						this.visualizationTrack.get(row.report.visualizations.savedOnDashboard.visualization_id).position = row.report.container.getBoundingClientRect().y;
+					}
+				}
 
-        container.classList.add('canvas');
+				this.maxScrollHeightAchieved = Math.max(main.scrollTop, this.maxScrollHeightAchieved);
+				this.lazyLoad(resize,);
+			}, {
+				passive: true
+			}
+		);
 
-        return container;
-    }
+		if (!this.loadedVisualizations.size) {
 
-    lazyLoad(resize, offset = VisualizationsCanvas.screenHeightOffset) {
+			this.container.innerHTML = '<div class="NA no-reports">No reports found!</div>';
+		}
+	}
 
-        const visitedVisualizations = new Set;
+	setEditMode(report) {
 
-        for (const [visualization_id, visualization] of this.visualizationTrack) {
+		const
+			menu = report.container.querySelector('.menu'),
+			warning = report.container.querySelector('.warning');
 
-            if ((parseInt(visualization.position) < this.maxScrollHeightAchieved + offset) && !visualization.loaded) {
+		if(menu) {
 
-                visualization.query.selectedVisualization.load();
-                visualization.loaded = true;
+			menu.classList.add('hidden');
 
-                this.page.loadedVisualizations.add(visualization);
+			const toggleElements = [
+				menu.querySelector('.filters-toggle'),
+				menu.querySelector('.query-toggle'),
+				menu.querySelector('.description-toggle'),
+				menu.querySelector('.pipeline-toggle')
+			];
 
-                visitedVisualizations.add(visualization_id);
-            }
+			for(const toggle of toggleElements) {
 
-            if (visualization.loaded) {
+				if(toggle.parentElement.classList.contains('selected')) {
 
-                visitedVisualizations.add(visualization_id);
-            }
-        }
-        for (const visualizationId of visitedVisualizations.values()) {
+					toggle.click();
+				}
+			}
+		}
 
-            this.visualizationTrack.delete(visualizationId);
-        }
-    }
+		if(warning) {
 
-    async render(resize) {
+			warning.classList.toggle('blur', this.editing);
+		}
 
-        this.visualizationTrack = new Map();
+		report.container.querySelector('header h2').classList.toggle('edit');
+		report.container.querySelector('.menu-toggle').classList.toggle('hidden');
+		report.container.querySelector('.visualization').classList.toggle('blur', this.editing);
+		report.container.querySelector('.columns').classList.toggle('blur', this.editing);
+	}
 
-        for (const queryDataSource of this.visualizations) {
+	edit() {
 
-            queryDataSource.container.appendChild(queryDataSource.selectedVisualization.container);
+		this.editing = !this.editing;
 
-            this.container.appendChild(queryDataSource.container);
+		const edit = this.container.querySelector('.edit');
 
-            this.visualizationTrack.set(queryDataSource.selectedVisualization.visualization_id, ({
-                position: queryDataSource.container.getBoundingClientRect().y,
-                query: queryDataSource,
-                loaded: false,
-            }));
-        }
+		edit.innerHTML = this.editing ? '<i class="fas fa-check"></i> Done' : '<i class="fas fa-edit"></i> Edit';
 
-        const main = document.querySelector('main');
+		this.container.classList.toggle('editing', this.editing);
 
-        this.maxScrollHeightAchieved = Math.max(VisualizationsCanvas.screenHeightOffset, main.scrollTop);
+		for (let {query: report} of this.loadedVisualizations.values()) {
 
-        this.lazyLoad(this.maxScrollHeightAchieved, resize);
+			[report.selectedVisualizationProperties] = this.visualizations.filter(x => x.visualization_id == report.visualizations.savedOnDashboard.visualization_id);
 
-        document.addEventListener(
-            'scroll',
-            () => {
-                for (const queryDataSource of this.visualizations) {
+			this.setEditMode(report);
 
-                    if (this.visualizationTrack.get(queryDataSource.selectedVisualization.visualization_id)) {
+			const
+				elements = [
+					report.container.querySelector('header .actions .move-up'),
+					report.container.querySelector('header .actions .move-down'),
+					report.container.querySelector('header .actions .remove'),
+					report.resize_dimentions,
+					report.container.querySelector('.resize'),
+				];
 
-                        this.visualizationTrack.get(queryDataSource.selectedVisualization.visualization_id).position = queryDataSource.container.getBoundingClientRect().y;
-                    }
-                }
+			for(const element of elements) {
 
-                this.maxScrollHeightAchieved = Math.max(main.scrollTop, this.maxScrollHeightAchieved);
-                this.lazyLoad(resize,);
-            }, {
-                passive: true
-            }
-        );
+				if(!element) {
 
-        if (!this.page.loadedVisualizations.size) {
+					continue;
+				}
 
-            this.container.innerHTML = '<div class="NA no-reports">No reports found!</div>';
-        }
-    }
+				element.classList.toggle('hidden', !this.editing)
+			}
+
+			if(report.resize_dimentions) {
+
+				report.resize_dimentions.position.value = report.selectedVisualizationProperties.format.position;
+				report.resize_dimentions.height.value = report.selectedVisualizationProperties.format.height;
+				report.resize_dimentions.width.value = report.selectedVisualizationProperties.format.width;
+
+				continue;
+			}
+
+			const
+				header = report.container.querySelector('header .actions'),
+				format = report.selectedVisualizationProperties.format;
+
+			if (!format.width)
+				format.width = VisualizationsCanvas.grid.columns;
+
+			if (!format.height)
+				format.height = VisualizationsCanvas.grid.rows;
+
+			header.insertAdjacentHTML('beforeend', `
+				<a class="show move-up" title="Move visualization up"><i class="fas fa-angle-double-up"></i></a>
+				<a class="show move-down" title="Move visualization down"><i class="fas fa-angle-double-down"></i></a>
+				<a class="show remove" title="Remove Graph"><i class="fa fa-times"></i></a>
+			`);
+
+			report.container.insertAdjacentHTML('beforeend', `
+				<form class="resize-dimentions overlay">
+					<span>Position:</span>
+					<span>Height:</span>
+					<span>Width:</span>
+					<input type="number" name="position" value="${report.selectedVisualizationProperties.format.position}">
+					<input type="number" name="height" max="10" value="${report.selectedVisualizationProperties.format.height}">
+					<input type="number" name="width" min="2" max="32" value="${report.selectedVisualizationProperties.format.width}">
+					<button type="submit" class="hidden"></button>
+				</form>
+				<div class="resize" draggable="true" title="Resize Graph"></div>
+			`);
+
+			const resize = report.container.querySelector('.resize');
+
+			report.resize_dimentions = report.container.querySelector('.resize-dimentions');
+
+			header.querySelector('.move-up').on('click', async () => {
+
+				const current = report.selectedVisualizationProperties;
+
+				let previous = null;
+
+				for (let [index, value] of this.visualizations.entries()) {
+
+					if (value.visualization_id === current.visualization_id) {
+
+						previous = [...this.visualizations][index - 1];
+						break;
+					}
+				}
+
+				if (!previous)
+					return;
+
+				current.format.position = Math.max(1, current.format.position - 1);
+				previous.format.position = Math.min(this.visualizations.length, previous.format.position + 1);
+
+				current.report.resize_dimentions.position.value = current.format.position;
+				previous.report.resize_dimentions.position.value = previous.format.position;
+
+				const
+					currentParameters = {
+						id: current.id,
+						format: JSON.stringify(current.format),
+					},
+					previousParameters = {
+						id: previous.id,
+						format: JSON.stringify(previous.format),
+					},
+					options = {
+						method: 'POST',
+					};
+
+				await Promise.all([
+					API.call('reports/dashboard/update', currentParameters, options),
+					API.call('reports/dashboard/update', previousParameters, options)
+				]);
+
+				this.render();
+			});
+
+			header.querySelector('.move-down').on('click', async () => {
+
+				const current = report.selectedVisualizationProperties;
+				let next = null;
+
+				for (let [index, value] of this.visualizations.entries()) {
+
+					if (value.visualization_id === current.visualization_id) {
+						next = [...this.visualizations][index + 1];
+						break;
+					}
+				}
+
+				if (!next)
+					return;
+
+				current.format.position = Math.min(this.visualizations.length, current.format.position + 1);
+				next.format.position = Math.max(1, next.format.position - 1);
+
+				current.report.resize_dimentions.position.value = current.format.position;
+				next.report.resize_dimentions.position.value = next.format.position;
+
+				const
+					currentParameters = {
+						id: current.id,
+						format: JSON.stringify(current.format),
+					},
+					nextParameters = {
+						id: next.id,
+						format: JSON.stringify(next.format),
+					},
+					options = {
+						method: 'POST',
+					}
+				;
+
+				await Promise.all([
+					API.call('reports/dashboard/update', currentParameters, options),
+					API.call('reports/dashboard/update', nextParameters, options)
+				]);
+
+				this.render();
+			});
+
+			header.querySelector('.remove').on('click', async () => {
+
+				const
+					parameters = {
+						id: report.selectedVisualizationProperties.id,
+					},
+					options = {
+						method: 'POST',
+					};
+
+				await API.call('reports/dashboard/delete', parameters, options);
+
+				report.container.remove();
+
+				this.visualizations = this.visualizations.filter(x => x.visualization_id != report.selectedVisualizationProperties.visualization_id);
+				this.loadedVisualizations.delete(report.selectedVisualizationProperties.visualization_id);
+
+				this.render();
+			});
+
+			report.resize_dimentions.on('submit', async e => {
+
+				e.preventDefault();
+
+				await this.save(report);
+			});
+
+			resize.on('dragstart', e => {
+				e.stopPropagation();
+				this.loadedVisualizations.beingResized = report
+			});
+
+			resize.on('dragend', e => {
+				e.stopPropagation();
+				this.loadedVisualizations.beingResized = null;
+			});
+		}
+
+		this.container.parentElement.on('dragover', e => {
+
+			e.preventDefault();
+			e.stopPropagation();
+
+			const report = this.loadedVisualizations.beingResized;
+
+			if (!report)
+				return;
+
+			const
+				visualizationFormat = report.selectedVisualizationProperties.format,
+				columnStart = this.getColumn(report.container.offsetLeft),
+				newColumn = this.getColumn(e.pageX - this.list.getBoundingClientRect().left) + 1,
+				rowStart = this.getRow(report.container.offsetTop),
+				newRow = this.getRow(e.pageY - this.list.getBoundingClientRect().top) + 1;
+
+			if (newRow > rowStart)
+				visualizationFormat.height = newRow - rowStart;
+
+			if (newColumn > columnStart && newColumn <= VisualizationsCanvas.grid.columns)
+				visualizationFormat.width = newColumn - columnStart;
+
+			if (
+				visualizationFormat.width != report.container.style.gridColumnEnd.split(' ')[1] ||
+				visualizationFormat.height != report.container.style.gridRowEnd.split(' ')[1]
+			) {
+
+				const dimentions = report.container.querySelector('.resize-dimentions');
+
+				dimentions.position.value = visualizationFormat.position;
+				dimentions.height.value = visualizationFormat.height;
+				dimentions.width.value = visualizationFormat.width;
+
+				report.container.setAttribute('style', `
+					order: ${report.selectedVisualizationProperties.format.position || 0};
+					grid-column: auto / span ${dimentions.width.value || Dashboard.grid.columns};
+					grid-row: auto / span ${dimentions.height.value || Dashboard.grid.rows};
+				`);
+
+				if (this.dragTimeout)
+					clearTimeout(this.dragTimeout);
+
+				this.dragTimeout = setTimeout(() => report.visualizations.selected.render({resize: true}), 100);
+
+				if (this.saveTimeout)
+					clearTimeout(this.saveTimeout);
+
+				this.saveTimeout = setTimeout(() => this.save(report), 1000);
+			}
+		});
+	}
+
+	getColumn(position) {
+
+		return Math.max(Math.floor(
+			(position - this.list.offsetLeft) /
+			((this.list.clientWidth / VisualizationsCanvas.grid.columns))
+		), 0);
+	}
+
+	getRow(position) {
+
+		return Math.max(Math.floor(
+			(position - this.list.offsetTop) / VisualizationsCanvas.grid.rowHeight), 0
+		);
+	}
+
+	async save(report) {
+
+		const
+			parameters = {
+				id: report.selectedVisualizationProperties.id,
+				format: JSON.stringify({
+					position: report.resize_dimentions.position.value,
+					height: report.resize_dimentions.height.value,
+					width: report.resize_dimentions.width.value,
+				}),
+			},
+			options = {
+				method: 'POST',
+			};
+
+		await API.call('reports/dashboard/update', parameters, options);
+
+		report.selectedVisualizationProperties.format.position = report.resize_dimentions.position.value;
+		report.selectedVisualizationProperties.format.height = report.resize_dimentions.height.value;
+		report.selectedVisualizationProperties.format.width = report.resize_dimentions.width.value;
+
+		this.render();
+	}
+
+	sort(visualizations) {
+
+		return visualizations.sort((v1, v2) => v1.format.position - v2.format.position);
+	}
+
+	async reorder() {
+
+		const promises = [];
+
+		for(const [index, visualization] of this.visualizations.entries()) {
+
+			try {
+
+				visualization.format = typeof visualization.format == 'string' ? JSON.parse(visualization.format) : visualization.format || {};
+			}
+			catch(e) {
+
+				visualization.format = {
+					position: index + 1,
+					height: 10,
+					width: 32
+				};
+			}
+
+			visualization.format.position = index + 1;
+			visualization.format.width = visualization.format.width || 32;
+			visualization.format.height = visualization.format.height || 10;
+
+			const parameters = {
+				id: visualization.id,
+				format: JSON.stringify(visualization.format),
+			};
+
+			promises.push(API.call('reports/dashboard/update', parameters, {method:'POST'}));
+
+			if(visualization.report && visualization.report.resize_dimentions) {
+
+				visualization.report.resize_dimentions.position.value = visualization.format.position;
+				visualization.report.resize_dimentions.width.value = visualization.format.width;
+				visualization.report.resize_dimentions.height.value = visualization.format.height;
+			}
+
+		}
+
+		await Promise.all(promises);
+
+		this.render();
+
+	}
+}
+
+class Canvas extends VisualizationsCanvas {
+
+	async load() {
+
+		await this.fetchDataSource();
+		this.render();
+	}
+
+	async fetchDataSource() {
+
+		for(const visualization of this.visualizations) {
+
+			try {
+
+				visualization.format = typeof visualization.format == 'string' ? JSON.parse(visualization.format) : visualization.format || {};
+			}
+			catch(e) {
+
+				visualization.format = {};
+			}
+
+			if (!DataSource.list.has(visualization.query_id)) {
+
+				continue;
+			}
+
+			const dataSource = new DataSource(DataSource.list.get(visualization.query_id), this.page);
+
+			[dataSource.visualizations.savedOnDashboard] = dataSource.visualizations.filter(v => v.visualization_id === visualization.visualization_id);
+
+			if (!dataSource.visualizations.savedOnDashboard) {
+
+				continue;
+			}
+
+			dataSource.visualizations.selected = dataSource.visualizations.savedOnDashboard;
+
+			visualization.report = dataSource;
+
+			const filters = [];
+
+			for (const filter of visualization.report.filters.values()) {
+
+				if (filter.multiSelect) {
+					filters.push(filter.fetch());
+				}
+			}
+
+			await Promise.all(filters);
+			dataSource.container.appendChild(dataSource.visualizations.savedOnDashboard.container);
+		}
+
+	}
 }
 
 DataSourceFilter.setup();

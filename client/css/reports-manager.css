@@ -302,6 +302,10 @@ main.preview-left #stages {
 		display: flex;
 		height: 100%;
 	}
+		#stage-define-report .not-saved {
+			background: var(--color-red);
+			color: #fff;
+		}
 		#stage-define-report #schema {
 			overflow: auto;
 			font-weight: normal;
@@ -333,7 +337,6 @@ main.preview-left #stages {
 				padding: 0;
 				list-style: none;
 				margin: 0;
-				/* overflow: auto; */
 			}
 			#stage-define-report #schema ul ul {
 				border-left: 1px dashed #999;
@@ -354,12 +357,12 @@ main.preview-left #stages {
 					#stage-define-report #schema li .name {
 						display: grid;
 						padding: 8px;
-						transition: background var(--transition-duration),
-									box-shadow var(--transition-duration);
 						grid-template-columns: max-content auto max-content;
 						grid-gap: var(--gap);
 						max-width: 100%;
 						overflow: hidden;
+						transition: background var(--transition-duration),
+									box-shadow var(--transition-duration);
 					}
 					#stage-define-report #schema li .name:hover {
 						background: rgba(0, 0, 0, 0.10);
@@ -453,31 +456,67 @@ main.preview-left #stages {
 			overflow: auto;
 		}
 			#stage-define-report #filters h3:first-child {
-				margin-top: 0;
-			}
-			#stage-define-report #filters h3 + p {
-				color: var(--color-grey);
-			}
-			#stage-define-report #filters #missing-filters {
-				background: var(--color-red);
-				padding: 16px;
-				flex: 1;
-				font-weight: normal;
-				margin-bottom: calc(var(--gap) * 2);
-			}
-			#stage-define-report #filters .toolbar {
+				margin: 10px 0;
+				border-bottom: 1px dashed var(--color-border);
+				padding-bottom: 10px;
 				position: sticky;
 				top: 0;
 				background: var(--color-background);
 				color: var(--color-background-text);
+				z-index: 1;
 			}
+				#stage-define-report #filters h3 > i {
+					margin: 0 var(--gap);
+					color: var(--color-secondary);
+					font-size: 90%;
+				}
+			#stage-define-report #filters h3 + p {
+				color: var(--color-grey);
+			}
+			#stage-define-report #filters .toolbar {
+				overflow: auto;
+			}
+				#stage-define-report #filters .toolbar .filter-info {
+					text-align: right;
+					white-space: nowrap;
+					font-size: 85%;
+				}
 			#stage-define-report #filters table,
 			#stage-define-report #filters .form {
 				background: var(--color-surface);
 				color: var(--color-surface-text);
 				box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
 			}
-			#stage-define-report #filters .external-parameters {
+				#stage-define-report #filters table tr.red {
+					background: rgba(175, 0, 0, 0.25);
+				}
+				#stage-define-report #filters table .action {
+					width: auto;
+				}
+				#stage-define-report #filters table .trusted .NA {
+					font-size: 80%;
+					margin-left: var(--gap);
+				}
+			#stage-define-report #filters .form {
+				grid-template-columns: 1fr 1fr;
+				align-items: flex-start;
+			}
+				#stage-define-report #filters .form .toolbar {
+					margin: calc(var(--gap) * -2);
+				}
+				#stage-define-report #filters .edit-filter .toolbar {
+					grid-template-columns: max-content max-content 1fr;
+					align-items: center;
+					grid-column: 1 / 3;
+				}
+			@media (max-width: 750px) {
+
+				#stage-define-report #filters .form {
+					grid-template-columns: 1fr;
+				}
+			}
+			#stage-define-report #filters #external-parameters,
+			#stage-define-report #filters #suggested-filters {
 				margin-top: 40px;
 			}
 		#stage-define-report .query-history {
@@ -857,6 +896,26 @@ main.preview-left #stages {
 				margin: 0;
 			}
 
+	.visualization-form .related-visualizations .form {
+		grid-template-columns: repeat(6, max-content);
+		grid-gap: calc(var(--gap) * 2);
+	}
+	.visualization-form .related-visualizations .add .form {
+		padding: 0;
+	}
+	.visualization-form .related-visualizations button.delete:hover {
+		color: var(--color-red);
+	}
+	.visualization-form .related-visualizations .list button > i {
+		margin: 0;
+	}
+		.visualization-form .related-visualizations .form label input.item {
+			width: 70px;
+		}
+		.visualization-form .related-visualizations .form .visualization {
+			width: 200px;
+		}
+
 	.visualization-form .configuration-section h3 .count {
 		color: var(--color-grey);
 		font-size: 90%;
@@ -889,7 +948,6 @@ main.preview-left #stages {
 			}
 			.visualization-form .configuration-section .body .list .form {
 				grid-gap: calc(var(--gap) * 2);
-				padding: 0;
 			}
 	.visualization-form .configuration-section .theme-list {
 		padding: 10px;

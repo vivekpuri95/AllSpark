@@ -909,98 +909,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 
 					<div id="define-report-parts">
 						<div id="schema" class="hidden"></div>
-
 						<form id="define-report-form"></form>
-
-						<div id="filters" class="hidden">
-
-							<div id="filter-list">
-
-								<h3>Report Filters</h3>
-								<p>These filters will be passed into the report before execution by the end user.</p>
-
-								<div class="toolbar">
-									<button id="add-filter"><i class="fas fa-plus"></i> Add New Filter</button>
-								</div>
-
-								<div id="missing-filters" class="hidden"></div>
-
-								<table>
-									<thead>
-										<tr>
-											<th>Name</th>
-											<th>Placeholder</th>
-											<th>Type</th>
-											<th>Dataset</th>
-											<th class="action">Edit</th>
-											<th class="action">Delete</th>
-										</tr>
-									</thead>
-									<tbody></tbody>
-								</table>
-							</div>
-
-							<div id="filter-form" class="hidden">
-
-								<div class="toolbar">
-									<button id="filter-back"><i class="fa fa-arrow-left"></i> Back</button>
-									<button type="submit" form="filter-form-f"><i class="far fa-save"></i> Save</button>
-								</div>
-
-								<form id="filter-form-f" class="form">
-
-									<label>
-										<span>Name <span class="red">*</span></span>
-										<input type="text" name="name" required>
-									</label>
-
-									<label>
-										<span>Placeholder <span class="red">*</span></span>
-										<input type="text" name="placeholder" required>
-									</label>
-
-									<label>
-										<span>Type <span class="red">*</span></span>
-										<select name="type" required></select>
-									</label>
-
-									<label>
-										<span>Description</span>
-										<input type="text" name="description">
-									</label>
-
-									<label>
-										<span>Order</span>
-										<input type="number" name="order">
-									</label>
-
-									<label>
-										<span>Default</span>
-										<select name="default_type">
-											<option value="none">None</option>
-											<option value="default_value">Default Value</option>
-											<option value="offset">Default Value Offset</option>
-										</select>
-
-										<input type="text" name="default_value">
-
-										<input type="number" name="offset">
-									</label>
-
-									<label class="dataset">
-										<span>Dataset <span class="right" data-tooltip="A set of possible values for this filter">?</span></span>
-									</label>
-
-									<label>
-										<span>Multiple</span>
-										<select name="multiple" required>
-											<option value="0">No</option>
-											<option value="1">Yes</option>
-										</select>
-									</label>
-								</form>
-							</div>
-						</div>
 					</div>
 				</section>
 
@@ -1404,8 +1313,8 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 								<th>ID</th>
 								<th>Name</th>
 								<th>Placeholder</th>
-								<th>Default Value</th>
 								<th>Type</th>
+								<th>Default Value</th>
 								<th>Multiple</th>
 								<th>Offset</th>
 								<th>Dataset</th>
@@ -1434,7 +1343,7 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 						</label>
 
 						<label>
-							<span>Placeholder <span class="red">*</span></span>
+							<span>Placeholder <span class="red">*</span><span class="right" data-tooltip="Uniquely identifies the filter in this report.">?</span></span>
 							<input type="text" name="placeholder" required>
 						</label>
 
@@ -1444,11 +1353,21 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 						</label>
 
 						<label>
-							<span>Default</span>
+							<span>Description</span>
+							<input type="text" name="description" maxlength="200">
+						</label>
+
+						<label>
+							<span>Order</span>
+							<input type="number" name="order">
+						</label>
+
+						<label>
+							<span>Default Value <span class="right" data-tooltip="Calculated and applied on first load\nif a global filter with same placeholder isn't added.">?</span></span>
 							<select name="default_type">
 								<option value="none">None</option>
-								<option value="default_value">Default Value</option>
-								<option value="offset">Default Value Offset</option>
+								<option value="default_value">Fixed</option>
+								<option value="offset">Relative</option>
 							</select>
 
 							<input type="text" name="default_value">
@@ -1457,11 +1376,11 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 						</label>
 
 						<label class="datasets">
-							<span>Dataset</span>
+							<span>Dataset <span class="right" data-tooltip="A set of possible values for this filter.">?</span></span>
 						</label>
 
 						<label>
-							<span>Multiple</span>
+							<span>Multiple <span class="right" data-tooltip="Can the user pick multiple values.">?</span></span>
 							<select name="multiple">
 								<option value="0">No</option>
 								<option value="1">Yes</option>

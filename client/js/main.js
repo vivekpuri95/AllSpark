@@ -1206,6 +1206,11 @@ class UserPrivileges extends Set {
 
 	has(name) {
 
+		if([...this.values()].some(x => x.privilege_name == 'superadmin')) {
+
+			return 1;
+		}
+
 		if(name === "superadmin") {
 
 			return Array.from(this).filter(p => p.privilege_name.toLowerCase() == name.toLowerCase()).length;
@@ -2500,17 +2505,18 @@ class MultiSelect {
 		if(!Array.isArray(values))
 			values = [values];
 
-		if(this.multiple) {
+		for(const value of values) {
 
-			for(const value of values) {
+			if(this.datalist && this.datalist.some(r => r.value == value)) {
 
-				if(this.datalist && this.datalist.some(r => r.value == value))
-					this.selectedValues.add(value.toString());
+				this.selectedValues.add(value.toString());
+
+				if (!this.multiple) {
+
+					break;
+				}
+
 			}
-		}
-		else {
-
-			this.selectedValues.add(values[0].toString());
 		}
 
 		if(this.changeCallback)
