@@ -10100,10 +10100,8 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 		container.selectAll('*').remove();
 
-		if(!this.width) {
-			this.width = this.container.clientWidth - margin.left - margin.right;
-			this.height = this.container.clientHeight - margin.top - margin.bottom - 10;
-		}
+		this.width = this.container.clientWidth - margin.left - margin.right;
+		this.height = this.container.clientHeight - margin.top - margin.bottom - 10;
 
 		const
 			data = [],
