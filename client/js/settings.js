@@ -531,14 +531,13 @@ Settings.list.set('executingRedisReports', class About extends SettingPage {
 		tbody.textContent = null;
 
 		if(!this.redisReports.size)
-			tbody.innerHTML = '<tr><td class="NA" colspan="4">No executing redis reports at this time.</td></tr>';
+			tbody.innerHTML = '<tr><td class="NA" colspan="4">No redis reports at this time.</td></tr>';
 
 		for(const report of this.redisReports.values())
 			tbody.appendChild(report.row);
 
 		await Sections.show('executing-redis-reports');
 	}
-
 });
 
 Settings.list.set('about', class About extends SettingPage {
