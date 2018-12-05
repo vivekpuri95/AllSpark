@@ -2344,7 +2344,7 @@ class ReportsManagerFilters extends Map {
 			tbody.appendChild(filter.row);
 
 		if(!this.size)
-			tbody.innerHTML = `<tr class="NA"><td colspan="6">No filters added yet!</td></tr>`;
+			tbody.innerHTML = `<tr class="NA"><td colspan="8">No filters added yet!</td></tr>`;
 
 		container.querySelector('.add-filter-button').on('click', () => this.add());
 
@@ -2440,8 +2440,7 @@ class ReportsManagerFilters extends Map {
 		else
 			form.default_type.value = 'none';
 
-		if(filter.dataset)
-			this.datasetMultiSelect.value = filter.dataset;
+		this.datasetMultiSelect.value = filter.dataset || [];
 
 		this.changeFilterType();
 		this.updateFormFields();
@@ -2628,6 +2627,7 @@ class ReportsManagerFilters extends Map {
 					description: globalFilter.description || null,
 					default_value: globalFilter.default_value || null,
 					offset: globalFilter.offset || null,
+					order: globalFilter.order || null,
 				});
 			});
 
@@ -2707,7 +2707,7 @@ class ReportsManagerFilter {
 			<td>${this.name}</td>
 			<td>${this.placeholder}</td>
 			<td>${this.type}</td>
-			<td>${this.default_value || isNaN(parseFloat(this.offset)) ? '' : this.offset}</td>
+			<td>${this.default_value || (isNaN(parseFloat(this.offset)) ? '' : this.offset)}</td>
 			<td>${datasetName}</td>
 			<td class="action green"><i class="far fa-edit"></i></td>
 			<td class="action red"><i class="far fa-trash-alt"></i></td>
@@ -3064,7 +3064,7 @@ class ReportsManagerFilter {
 		}
 
 		submit.classList.toggle('not-saved', dirty);
-		submit.title = 'Changed Field: ' + dirty;
+		submit.title = dirty ? ('Changed Field: ' + dirty) : '';
 	}
 }
 

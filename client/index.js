@@ -1313,8 +1313,8 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 								<th>ID</th>
 								<th>Name</th>
 								<th>Placeholder</th>
-								<th>Default Value</th>
 								<th>Type</th>
+								<th>Default Value</th>
 								<th>Multiple</th>
 								<th>Offset</th>
 								<th>Dataset</th>
@@ -1338,12 +1338,12 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 					<form class="block form" id="user-form">
 
 						<label>
-							<span>Name <span class="red">*</span><span class="right" data-tooltip="Uniquely identifies the filter in this report.">?</span></span>
+							<span>Name <span class="red">*</span></span>
 							<input type="text" name="name" required>
 						</label>
 
 						<label>
-							<span>Placeholder <span class="red">*</span></span>
+							<span>Placeholder <span class="red">*</span><span class="right" data-tooltip="Uniquely identifies the filter in this report.">?</span></span>
 							<input type="text" name="placeholder" required>
 						</label>
 
@@ -1366,8 +1366,8 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 							<span>Default Value <span class="right" data-tooltip="Calculated and applied on first load\nif a global filter with same placeholder isn't added.">?</span></span>
 							<select name="default_type">
 								<option value="none">None</option>
-								<option value="default_value">Default Value</option>
-								<option value="offset">Default Value Offset</option>
+								<option value="default_value">Fixed</option>
+								<option value="offset">Relative</option>
 							</select>
 
 							<input type="text" name="default_value">
