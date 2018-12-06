@@ -614,7 +614,12 @@ class Dashboard {
 			rowHeight: 50,
 		};
 
-		Dashboard.screenHeightOffset = 1.5 * screen.availHeight;
+		let offset = 1.5;
+
+		if(this.page.urlSearchParameters.get('download'))
+			offset = Math.min();
+
+		Dashboard.screenHeightOffset = offset * screen.availHeight;
 
 		this.visibleVisuliaztions = new Set;
 
