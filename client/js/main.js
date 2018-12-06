@@ -2646,10 +2646,7 @@ class MultiSelect {
 			search = this.container.querySelector('input[type=search]'),
 			options = this.container.querySelector('.options');
 
-		if(!this.datalist && !this.datalist.length)
-			return;
-
-		for(const row of this.datalist) {
+		for(const row of this.datalist || []) {
 
 			row.input.checked = this.selectedValues.has(row.input.value);
 
