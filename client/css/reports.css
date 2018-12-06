@@ -1244,6 +1244,8 @@ main .dataset {
 }
 .visualization .container > svg circle.bubble:hover {
 	opacity: 1;
+	stroke: rgba(0, 0, 0, 0.05);
+	stroke-width: 4px;
 }
 .visualization.bigtext .container .value {
 	display: flex;

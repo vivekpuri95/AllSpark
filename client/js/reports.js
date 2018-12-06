@@ -5475,6 +5475,7 @@ class LinearVisualization extends Visualization {
 					y: row.get(key),
 					y1: this.axes.right ? row.get(this.axes.right.column) : null,
 					key,
+					row,
 				});
 			}
 		}
@@ -6460,9 +6461,69 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 		if(!this.rows || !this.rows.length)
 			return;
 
+		if(!this.bubbleColumn || !this.bubbleRadiusColumn) {
+
+			return this.source.error('Bubble Column and Bubble Radius column cannot be empty');
+		}
+
 		const
 			container = d3.selectAll(`#visualization-${this.id}`),
 			that = this;
+
+		container.on('mousemove', function() {
+
+			const mouse = d3.mouse(this);
+
+			if(that.zoomRectangle) {
+
+				const
+					filteredRows = [],
+					width = Math.abs(mouse[0] - 10 - that.zoomRectangle.origin[0]);
+
+				for(const row of that.rows) {
+
+					const item = that.x(row.get(that.axes.bottom.column)) + that.axes.left.width + 10;
+
+					if(
+						(mouse[0] < that.zoomRectangle.origin[0] && item >= mouse[0] && item <= that.zoomRectangle.origin[0]) ||
+						(mouse[0] >= that.zoomRectangle.origin[0] && item <= mouse[0] && item >= that.zoomRectangle.origin[0])
+					)
+						filteredRows.push(row);
+				}
+
+				// Assign width and height to the rectangle
+				that.zoomRectangle
+					.select('rect')
+					.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0] - 10))
+					.attr('width', width)
+					.attr('height', that.height);
+
+				that.zoomRectangle
+					.select('g')
+					.selectAll('*')
+					.remove();
+
+				that.zoomRectangle
+					.select('g')
+					.append('text')
+					.text(`${Format.number(filteredRows.length)} Selected`)
+					.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]) + (width / 2))
+					.attr('y', (that.height / 2) - 5);
+
+				if(filteredRows.length) {
+
+					that.zoomRectangle
+						.select('g')
+						.append('text')
+						.text(`${filteredRows[0].get(that.axes.bottom.column)} - ${filteredRows[filteredRows.length - 1].get(that.axes.bottom.column)}`)
+						.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]) + (width / 2))
+						.attr('y', (that.height / 2) + 20);
+				}
+
+				return;
+			}
+		});
+		container.on('mouseleave', null);
 
 		this.x = d3.scale.ordinal();
 		this.y = d3.scale.linear().range([this.height, 20]);
@@ -6498,7 +6559,7 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 					this.y.min = Math.min(this.y.min, Math.ceil(value) || 0);
 				}
 
-				if(this.axes.right.columns.some(c => c.key == key)) {
+				if(this.options.bubbleRadiusColumn == key) {
 					this.bubble.max = Math.max(this.bubble.max, Math.ceil(value) || 0);
 					this.bubble.min = Math.min(this.bubble.min, Math.ceil(value) || 0);
 				}
@@ -6554,6 +6615,11 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 		// For each line appending the circle at each point
 		for(const column of this.columns) {
 
+			if(that.axes.right && column.key == that.axes.right.column) {
+
+				continue;
+			}
+
 			let dots = this.svg
 				.selectAll('dot')
 				.data(column)
@@ -6563,17 +6629,73 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 				.attr('id', (_, i) => i)
 				.style('fill', column.color)
 				.attr('cx', d => this.x(d.x) + this.axes.left.width)
-				.attr('cy', d => this.y(d.y));
+				.attr('cy', d => this.y(d.y))
+				.on('mousemove', function(d) {
 
-			if(this.options.showValues) {
+					const mouse = d3.mouse(this);
+
+					const tooltip = [];
+
+					for(const [key, _] of d.row) {
+
+						const rowColumn = d.row.source.columns.get(key);
+
+						tooltip.push(`
+							<li class="${d.row.size > 2 && that.hoverColumn && that.hoverColumn.key == key ? 'hover' : ''}">
+								<span class="circle" style="background:${rowColumn.color}"></span>
+								<span>
+									${rowColumn.drilldown && rowColumn.drilldown.query_id ? '<i class="fas fa-angle-double-down"></i>' : ''}
+									${rowColumn.name}
+								</span>
+								<span class="value">${d.row.get(key)}</span>
+							</li>
+						`);
+					}
+
+					const content = `
+						<header>${d.row.get(that.bubbleColumn)}</header>
+						<ul class="body">
+							${tooltip.join('')}
+						</ul>
+					`;
+
+					that.svg.selectAll('circle')
+						.filter(v => {
+							return v.row.get(that.bubbleColumn) != d.row.get(that.bubbleColumn);
+						})
+						.style("opacity", 0.2);
+
+					that.svg.selectAll('text')
+						.filter(x => x && x.row && x.row.get(that.bubbleColumn) != d.row.get(that.bubbleColumn))
+						.attr('fill', 'grey')
+						.attr('opacity', 0.2);
+
+					Tooltip.show(that.container, mouse, content);
+				})
+				.on('mouseleave', function(d) {
+
+					Tooltip.hide(that.container);
+
+					that.svg.selectAll('circle')
+						.style('opacity', 0.8);
+
+					that.svg.selectAll('text')
+						.attr('fill', 'black')
+						.attr('opacity', 1);
+				})
+			;
+
+			if(this.options.showValues != 'empty') {
 				this.svg
 					.selectAll('dot')
 					.data(column)
 					.enter()
 					.append('text')
-					.attr('x', d => this.x(d.x) + this.axes.left.width - (d.y1.toString().length * 4))
+					.attr('x', d => this.x(d.x) + this.axes.left.width)
 					.attr('y', d => this.y(d.y) + 6)
-					.text(d => d.y1);
+					.attr('text-anchor', 'middle')
+					.attr('font-size', '12px')
+					.text(d => d.row.get(this.options.showValues));
 			}
 
 			if(!options.resize) {
@@ -6586,7 +6708,7 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 			}
 
 			dots
-				.attr('r', d => this.bubble(d.y1));
+				.attr('r', d => this.bubble(d.row.get(that.options.bubbleRadiusColumn)) - 2);
 		}
 	}
 });
