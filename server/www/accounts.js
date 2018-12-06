@@ -229,9 +229,7 @@ exports.userQueryLogs = class extends API {
 
 		let db = await this.mysql.query("show databases", [], credentials.id);
 
-		[db] = db.filter(x => x === (credentials.db || constants.saveQueryResultDb));
-
-		if (!db) {
+		if (!db.some(x => x['Database'] === (credentials.db || constants.saveQueryResultDb))) {
 
 			await this.mysql.query(
 				`CREATE DATABASE IF NOT EXISTS ${credentials.db || constants.saveQueryResultDb}`,

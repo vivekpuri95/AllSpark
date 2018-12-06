@@ -3710,6 +3710,46 @@ ReportConnection.types.set('bigquery', class ReportConnectionMysql extends Repor
 	}
 });
 
+ReportConnection.types.set('bigquery_legacy', class ReportConnectionMysql extends ReportConnection {
+
+	constructor(report, stage, logsEditor) {
+
+		super(report, stage, logsEditor);
+
+		this.editor = new CodeEditor({mode: 'sql'});
+
+		if(this.logsEditor)
+			this.editor.editor.setTheme('ace/theme/clouds');
+
+		this.editor.on('change', () => {
+
+			this.stage.filterSuggestions();
+			this.stage.unsavedQueryValue();
+		});
+
+		setTimeout(() => this.setEditorKeyboardShortcuts());
+	}
+
+	get form() {
+
+		if(this.formElement)
+			return this.formElement;
+
+		super.form.appendChild(this.editor.container);
+
+		this.formJson = this.report.definition || {};
+
+		return super.form;
+	}
+
+	get json() {
+
+		return {
+			query: this.editor.value,
+		};
+	}
+});
+
 ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnection {
 
 	get form() {
@@ -4081,11 +4121,12 @@ ReportConnection.types.set('oracle', class ReportConnectionMysql extends ReportC
 
 class Axes extends Set {
 
-	constructor(axes, stage) {
+	constructor(axes, stage, checkMultiple = true) {
 		super();
 
 		this.stage = stage;
 		this.list = axes;
+		this.checkMultiple = checkMultiple;
 		this.clear();
 
 		for(const axis of this.list || [])
@@ -4215,7 +4256,7 @@ class Axis {
 
 		this.position = this.position || 'top';
 
-		container.multiSelectColumns = new MultiSelect({datalist: datalist, expand: true});
+		container.multiSelectColumns = new MultiSelect({datalist, expand: true, multiple: this.position != 'bottom' && this.axes.checkMultiple});
 
 		const axisColumn = container.multiSelectColumns.container;
 
@@ -4743,11 +4784,11 @@ class LinearAxis {
 
 class ReportVisualizationOptions {
 
-	constructor(visualization, page, stage, readOnly = false) {
+	constructor(visualization, page, stage) {
 		this.visualization = visualization;
 		this.page = page;
 		this.stage = stage;
-		this.readOnly = readOnly;
+		this.checkMultipleAxes = true;
 	}
 
 	get form() {
@@ -4787,6 +4828,12 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="body">
 					<div class="form subform">
+					
+						<label>
+							<span>
+								<input type="checkbox" name="showValues"> Show Values
+							</span>
+						</label>
 
 						<label>
 							<span>
@@ -4799,12 +4846,6 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 								<input type="checkbox" name="hideLegend"> Hide Legend
 							</span>
 						</label>
-
-						<label>
-							<span>
-								<input type="checkbox" name="showValues"> Show Values
-							</span>
-						</label>
 					</div>
 				</div>
 			</div>
@@ -4812,7 +4853,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		this.formContainer.axes = new Set();
 
-		this.axes = new Axes(this.visualization.options.axes, this);
+		this.axes = new Axes(this.visualization.options.axes, this, this.checkMultipleAxes);
 
 		container.querySelector('.configuration-section').appendChild(this.axes.container);
 
@@ -5401,6 +5442,78 @@ ConfigureVisualization.types.set('scatter', class ScatterOptions extends ReportV
 });
 
 ConfigureVisualization.types.set('bubble', class BubbleOptions extends ReportVisualizationLinearOptions {
+
+	constructor(visualization, page, stage) {
+
+		super(visualization, page, stage);
+
+		this.checkMultipleAxes = false;
+	}
+
+	get form() {
+
+		if(this.bubbleFormContainer) {
+
+			return this.bubbleFormContainer;
+		}
+
+		const
+			container = this.bubbleFormContainer = super.form,
+			optionsForm = container.querySelector('.configuration-section .body .form.subform');
+
+		let selectOptions = '';
+
+		for(const [key, column] of this.page.preview.report.columns) {
+
+			selectOptions = selectOptions.concat(`<option value="${key}">${column.name}</option>`);
+		}
+
+		optionsForm.querySelector('input[name=showValues]').parentElement.parentElement.remove();
+
+		const bubbleOptions = `
+			<label>
+				<span>Bubble Column</span>
+				<select name="bubbleColumn">
+					${selectOptions}
+				</select>
+			</label>
+			
+			<label>
+				<span>Radius Column</span>
+				<select name="radius">
+					${selectOptions}
+				</select>
+			</label>
+			
+			<label>
+				<span>Bubble Text</span>
+				<select name="showValues">
+					<option value="empty">Empty</option>
+					${selectOptions}
+				</select>
+			</label>
+		`;
+
+		optionsForm.insertAdjacentHTML('afterbegin', bubbleOptions);
+
+		optionsForm.querySelector('select[name=bubbleColumn]').value = this.visualization.options.bubbleColumn;
+		optionsForm.querySelector('select[name=radius]').value = this.visualization.options.bubbleRadiusColumn;
+		optionsForm.querySelector('select[name=showValues]').value = this.visualization.options.showValues || 'empty';
+
+		return container;
+	}
+
+	get json() {
+
+		return {
+			axes: this.axes.json,
+			hideHeader: this.form.querySelector('input[name=hideHeader]').checked,
+			hideLegend: this.form.querySelector('input[name=hideLegend]').checked,
+			bubbleColumn: this.form.querySelector('.configuration-section .body .form.subform select[name=bubbleColumn]').value,
+			bubbleRadiusColumn: this.form.querySelector('.configuration-section .body .form.subform select[name=radius]').value,
+			showValues: this.form.querySelector('.configuration-section .body .form.subform select[name=showValues]').value
+		}
+	}
 });
 
 ConfigureVisualization.types.set('bar', class BarOptions extends ReportVisualizationLinearOptions {

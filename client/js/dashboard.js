@@ -1100,8 +1100,7 @@ class Dashboard {
 			console.log(e);
 		}
 
-		if(!this.globalFilters.size || this.page.account.settings.get('global_filters_position') == 'top')
-			this.page.container.querySelector('#reports .side').classList.add('hidden');
+		this.page.container.querySelector('#reports .side').classList.toggle('hidden', (!this.globalFilters.size || this.page.account.settings.get('global_filters_position') == 'top'));
 	}
 
 	async render(resize) {
@@ -1110,8 +1109,7 @@ class Dashboard {
 			return;
 		}
 
-		if(!this.globalFilters.size || this.page.account.settings.get('global_filters_position') == 'top')
-			this.page.container.querySelector('#reports .side').classList.add('hidden');
+		this.page.container.querySelector('#reports .side').classList.toggle('hidden', (!this.globalFilters.size || this.page.account.settings.get('global_filters_position') == 'top'));
 
 		Sections.show('reports');
 

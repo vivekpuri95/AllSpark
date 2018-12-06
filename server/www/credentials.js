@@ -328,7 +328,7 @@ exports.update = class extends API {
 			}
 		);
 
-		await syncServer.set(`${constants.lastUpdatedKeys.connection}.${credential.type}`);
+		await syncServer.set(`${constants.lastUpdatedKeys.connection}.${connectionObj.type}`);
 
 		return response;
 	}

@@ -8,7 +8,8 @@ let gcloud = null;
 
 try {
 	gcloud = require('google-cloud');
-} catch(e) {}
+} catch (e) {
+}
 
 const gauth = function (project, file) {
 
@@ -23,18 +24,22 @@ const gauth = function (project, file) {
 
 class BigQuery {
 
-	static call(query, filters, account, file, project) {
+	static call(query, filters, account, file, project, legacySQL = false) {
 
 		return new Promise(function (resolve, reject) {
 
 			const options = {
 				"query": query,
-				"queryParameters": filters,
-				"useLegacySql": false,
-				"parameterMode": "NAMED"
+				"useLegacySql": legacySQL,
 			};
 
-			gauth(project, path.join(__dirname , "../../bigquery_files/" + account + "/" + file)).query(options, function (err, bqData) {
+			if (!legacySQL) {
+
+				options.queryParameters = filters;
+				options.parameterMode = "NAMED";
+			}
+
+			gauth(project, path.join(__dirname, "../../bigquery_files/" + account + "/" + file)).query(options, function (err, bqData) {
 
 				if (err) {
 					console.log("in error ", err);
@@ -42,7 +47,6 @@ class BigQuery {
 				}
 
 				resolve(bqData);
-
 			});
 		});
 	}
@@ -50,10 +54,10 @@ class BigQuery {
 
 	static async setup() {
 
-        if(!config.has("bigquery_files_destination")) {
+		if (!config.has("bigquery_files_destination")) {
 
-            return;
-        }
+			return;
+		}
 
 		const bigQueryConnections = await mysql.query(`
             select
@@ -65,7 +69,7 @@ class BigQuery {
                 tb_accounts a
                 using(account_id)
             where
-                type = 'bigquery'
+                type in ('bigquery', 'bigquery_legacy')
                 and c.status = 1
                 and a.status = 1
             `);
