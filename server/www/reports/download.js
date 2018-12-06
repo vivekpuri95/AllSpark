@@ -40,7 +40,7 @@ exports.pdf = class DownloadPdf extends API {
 		});
 
 		// Wait until the graphs animations rendered.
-		await new Promise(resolve => setTimeout(resolve, 10000));
+		await new Promise(resolve => setTimeout(resolve, 2000));
 
 		// Preparing for download.
 		const fileName = Math.random() + '.' + this.request.query.type;

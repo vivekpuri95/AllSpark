@@ -824,6 +824,7 @@ class Dashboard {
 
 		searchParam.set('download', true);
 		searchParam.set('external_parameters', 1);
+		searchParam.set('token', (await Storage.get('token')).body);
 		searchParam.set('refresh_token', await Storage.get('refresh_token'));
 
 		for(const [key, value] of Dashboard.urlSearchString()) {
