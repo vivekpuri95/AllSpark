@@ -12943,7 +12943,7 @@ class Canvas extends VisualizationsCanvas {
 
 	async fetchDataSource() {
 
-		for(const visualization of this.visualizations) {
+		for(const [index, visualization] of this.visualizations.entries()) {
 
 			try {
 
@@ -12956,6 +12956,7 @@ class Canvas extends VisualizationsCanvas {
 
 			if (!DataSource.list.has(visualization.query_id)) {
 
+				this.visualizations.splice(index, 1);
 				continue;
 			}
 
