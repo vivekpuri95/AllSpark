@@ -810,6 +810,21 @@ DataConnection.types.set('bigquery', class {
 	}
 });
 
+DataConnection.types.set('bigquery_legacy', class {
+
+	static render(connections = {}) {
+
+		const connectionDetails = connections.container.querySelector('#connections-form #details');
+
+		connectionDetails.innerHTML = null;
+		connectionDetails.classList.add('hidden');
+	}
+
+	static get details() {
+		return JSON.stringify({});
+	}
+});
+
 DataConnection.types.set('file', class {
 
 	static render(connections = {}) {
