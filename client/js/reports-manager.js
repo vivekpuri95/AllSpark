@@ -3723,8 +3723,10 @@ ReportConnection.types.set('bigquery_legacy', class ReportConnectionMysql extend
 
 		this.editor.on('change', () => {
 
-			this.stage.filterSuggestions();
-			this.stage.unsavedQueryValue();
+			this.stage.setDirtyForm();
+
+			if(this.stage.filtersManager)
+				this.stage.filtersManager.suggestions();
 		});
 
 		setTimeout(() => this.setEditorKeyboardShortcuts());
