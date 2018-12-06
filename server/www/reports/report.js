@@ -389,7 +389,7 @@ exports.list = class extends API {
 			}
 		}
 
-		const response = [];
+		const response = new Map;
 
 		const e = performance.now() - st;
 
@@ -435,8 +435,10 @@ exports.list = class extends API {
 				continue;
 			}
 
-			if(row.tags)
+			if(row.tags) {
+
 				row.tags = row.tags.split(',').map(t => t.trim()).filter(t => t).join(', ');
+			}
 
 			row.visibilityReason = authResponse.message;
 
@@ -564,15 +566,28 @@ exports.list = class extends API {
 				row.format = null;
 			}
 
-			response.push(row);
+			response.set(row.query_id, row);
 		}
 
-		for(const row of response) {
+		for(const row of response.values()) {
 
 			delete row.connectionObj;
+
+			for(const vis of row.visualizations) {
+
+				let l =  vis.related_visualizations.length;
+
+				while(l--) {
+
+					if(!response.has(vis.related_visualizations[l].query_id)) {
+
+						vis.related_visualizations.splice(l, 1);
+					}
+				}
+			}
 		}
 
-		return response;
+		return [...response.values()];
 	}
 };
 

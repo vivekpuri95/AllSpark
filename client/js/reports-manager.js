@@ -3710,6 +3710,46 @@ ReportConnection.types.set('bigquery', class ReportConnectionMysql extends Repor
 	}
 });
 
+ReportConnection.types.set('bigquery_legacy', class ReportConnectionMysql extends ReportConnection {
+
+	constructor(report, stage, logsEditor) {
+
+		super(report, stage, logsEditor);
+
+		this.editor = new CodeEditor({mode: 'sql'});
+
+		if(this.logsEditor)
+			this.editor.editor.setTheme('ace/theme/clouds');
+
+		this.editor.on('change', () => {
+
+			this.stage.filterSuggestions();
+			this.stage.unsavedQueryValue();
+		});
+
+		setTimeout(() => this.setEditorKeyboardShortcuts());
+	}
+
+	get form() {
+
+		if(this.formElement)
+			return this.formElement;
+
+		super.form.appendChild(this.editor.container);
+
+		this.formJson = this.report.definition || {};
+
+		return super.form;
+	}
+
+	get json() {
+
+		return {
+			query: this.editor.value,
+		};
+	}
+});
+
 ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnection {
 
 	get form() {

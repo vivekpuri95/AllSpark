@@ -274,7 +274,7 @@ class DataConnections extends Set {
 
 		this.connectionsContainer.querySelector('.toolbar #test-connection').classList.add('hidden');
 		this.connectionsContainer.querySelector('.test-result').classList.add('hidden');
-		this.connectionsContainer.querySelector('h1').textContent = `Add New ${this.type} Connection`;
+		this.connectionsContainer.querySelector('h1').textContent = `Add New ${MetaData.datasources.get(this.type).name} Connection`;
 
 		if(DataConnection.eventListener)
 			this.form.removeEventListener('submit', DataConnection.eventListener);
@@ -406,7 +406,7 @@ class DataConnection {
 
 		const test = this.container.querySelector('.toolbar #test-connection');
 
-		test.classList.toggle('hidden', ['file', 'bigquery', 'api'].includes(this.type));
+		test.classList.toggle('hidden', ['file', 'bigquery', 'api', 'bigquery_legacy'].includes(this.type));
 
 		test.removeEventListener('click', DataConnection.test_listener);
 
@@ -796,6 +796,21 @@ DataConnection.types.set('api', class {
 });
 
 DataConnection.types.set('bigquery', class {
+
+	static render(connections = {}) {
+
+		const connectionDetails = connections.container.querySelector('#connections-form #details');
+
+		connectionDetails.innerHTML = null;
+		connectionDetails.classList.add('hidden');
+	}
+
+	static get details() {
+		return JSON.stringify({});
+	}
+});
+
+DataConnection.types.set('bigquery_legacy', class {
 
 	static render(connections = {}) {
 
