@@ -823,6 +823,7 @@ class Dashboard {
 		const searchParam = new URLSearchParams(location.search);
 
 		searchParam.set('download', true);
+		searchParam.set('locale', navigator.language);
 		searchParam.set('external_parameters', 1);
 		searchParam.set('token', (await Storage.get('token')).body);
 		searchParam.set('refresh_token', await Storage.get('refresh_token'));

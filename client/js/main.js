@@ -1754,7 +1754,7 @@ class Format {
 		};
 
 		if(!Format.date.formatter)
-			Format.date.formatter = new Intl.DateTimeFormat(undefined, options);
+			Format.date.formatter = new Intl.DateTimeFormat(page.urlSearchParameters.get('locale') || undefined, options);
 
 		if(typeof date == 'string')
 			date = Date.parse(date);
@@ -1777,7 +1777,7 @@ class Format {
 		};
 
 		if(!Format.month.formatter)
-			Format.month.formatter = new Intl.DateTimeFormat(undefined, options);
+			Format.month.formatter = new Intl.DateTimeFormat(page.urlSearchParameters.get('locale') || undefined, options);
 
 		if(typeof month == 'string')
 			month = Date.parse(month);
@@ -1799,7 +1799,7 @@ class Format {
 		};
 
 		if(!Format.year.formatter)
-			Format.year.formatter = new Intl.DateTimeFormat(undefined, options);
+			Format.year.formatter = new Intl.DateTimeFormat(page.urlSearchParameters.get('locale') || undefined, options);
 
 		if(typeof year == 'string')
 			year = Date.parse(year);
@@ -1821,7 +1821,7 @@ class Format {
 		};
 
 		if(!Format.time.formatter)
-			Format.time.formatter = new Intl.DateTimeFormat(undefined, options);
+			Format.time.formatter = new Intl.DateTimeFormat(page.urlSearchParameters.get('locale') || undefined, options);
 
 		if(typeof time == 'string')
 			time = Date.parse(time);
@@ -1852,7 +1852,7 @@ class Format {
 
 			selectedFormat = {
 				format: format,
-				formatter: new Intl.DateTimeFormat(undefined, format),
+				formatter: new Intl.DateTimeFormat(page.urlSearchParameters.get('locale') || undefined, format),
 			};
 
 			Format.cachedFormat.push(selectedFormat);
@@ -1883,7 +1883,7 @@ class Format {
 		};
 
 		if(!Format.dateTime.formatter)
-			Format.dateTime.formatter = new Intl.DateTimeFormat(undefined, options);
+			Format.dateTime.formatter = new Intl.DateTimeFormat(page.urlSearchParameters.get('locale') || undefined, options);
 
 		if(typeof dateTime == 'string')
 			dateTime = Date.parse(dateTime);
