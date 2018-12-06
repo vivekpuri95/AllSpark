@@ -477,6 +477,9 @@ Settings.list.set('cachedReports', class CachedReports extends SettingPage {
 
 	async setup() {
 
+		if(this.page.querySelector('.cached-reports'))
+			this.page.querySelector('.cached-reports').remove();
+
 		this.page.appendChild(this.container);
 	}
 
