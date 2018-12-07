@@ -1380,23 +1380,32 @@ class CachedReports extends API {
 
 		const
 			allKeys = await redis.keys('*'),
-			keyInfo = [];
+			keyInfo = [],
+			promiseArray = [],
+			promiseArray2 = [];
 
 		for(const key of allKeys) {
 
 			const keyData = {
 				report_id: parseFloat(key.slice(key.indexOf('report_id') + 10)),
-				size: await redis.keyInfo(key),
+				// size: redis.keyInfo(key),
 			}
 
+			promiseArray.push(redis.keyInfo(key));
+
 			try {
-				keyData.created_at = new Date(JSON.parse(await redis.get(key)).cached.store_time);
+
+				promiseArray2.push(redis.get(key));
+
+				// keyData.created_at = new Date(JSON.parse(await redis.get(key)).cached.store_time);
 			}
 
 			catch(e) {}
 
 			keyInfo.push(keyData);
 		}
+
+
 
 		keyInfo.sort((a, b) => a.size - b.size);
 
