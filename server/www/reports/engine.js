@@ -1372,7 +1372,7 @@ class executingReports extends API {
 	}
 }
 
-class cachedReports extends API {
+class CachedReports extends API {
 
 	async cachedReports() {
 
@@ -1396,8 +1396,9 @@ class cachedReports extends API {
 			catch(e) {}
 
 			keyInfo.push(keyData);
-			keyInfo.sort((a, b) => a.size - b.size);
 		}
+
+		keyInfo.sort((a, b) => a.size - b.size);
 
 		return await commonFun.promiseParallelLimit(5, keyInfo);
 	}
@@ -1410,4 +1411,4 @@ exports.Postgres = Postgres;
 exports.APIRequest = APIRequest;
 exports.download = download;
 exports.executingReports = executingReports;
-exports.cachedReports = cachedReports;
+exports.cachedReports = CachedReports;
