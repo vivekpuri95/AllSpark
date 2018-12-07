@@ -8,7 +8,7 @@ const dbConfig = require('config').get("sql_db");
 console.log('INITIALIZE POOL###################################');
 
 
-const poolObj = {};
+let poolObj = {};
 
 for (const connection in dbConfig) {
 
@@ -26,7 +26,21 @@ class MySQL {
 		this.pool = poolObj[connectionName || 'read'] || poolObj['read'];
 	}
 
-	static async crateExternalPool() {
+	static async crateExternalPool(force) {
+
+		if(force) {
+
+			for(const connection in poolObj) {
+
+				if(Object.keys(dbConfig).includes(connection)) {
+					continue;
+				}
+
+				console.log('pooooooooool', connection);
+
+				delete(poolObj[connection]);
+			}
+		};
 
 		const query = `select * from tb_credentials c where c.status = 1 and type = "mysql"`;
 
@@ -47,7 +61,7 @@ class MySQL {
 
 		await Redis.hset(`${process.env.NODE_ENV}#credentials`, "mysql", Object.values(poolObj).filter(x => x.pool && x.connection.id).map(x => x.connection.id).join(", "));
 
-		console.log("Connections Available: ", Object.keys(poolObj));
+		console.log("MYSql Connections Available: ", Object.keys(poolObj));
 	}
 
 	async query(sql, values = null, connectionName = "read") {

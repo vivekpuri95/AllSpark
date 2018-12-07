@@ -224,7 +224,7 @@ class DataConnections extends Set {
 		if(this.containerElement)
 			return this.containerElement;
 
-		const connection = MetaData.datasources.get(this.type);
+		const connection = MetaData.datasources.get(this.type) || {};
 
 		const container = this.containerElement = document.createElement('article');
 

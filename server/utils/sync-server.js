@@ -63,7 +63,7 @@ Servers.list.set('connection.mysql', class {
 
 		global.lastUpdated['connection.mysql'] = await Redis.hget('lastUpdated', 'connection.mysql');
 
-		await mysql.crateExternalPool();
+		await mysql.crateExternalPool(true);
 
 		console.log('###### Updated mysql');
 	}
