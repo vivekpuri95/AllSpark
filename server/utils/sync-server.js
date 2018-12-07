@@ -1,6 +1,7 @@
 const Redis = require("./redis").Redis;
 const account = require("../onServerStart");
 const constants = require('./constants');
+const mysql = require('./mysql');
 
 class Servers {
 
@@ -22,11 +23,16 @@ class Servers {
 		}
 	}
 
-	static async set(key) {
+	static async set(key, type) {
 
 		global.lastUpdated[key] = Date.now();
 
 		await Redis.hset('lastUpdated', key, global.lastUpdated[key]);
+
+		if(type == 'connection' && Servers.type.connection[key.split('.').pop()]) {
+
+			Servers.type.connection[key.split('.').pop()].crateExternalPool(true);
+		}
 	}
 
 	static async get(key) {
@@ -53,6 +59,12 @@ class Servers {
 
 		await Servers.list.get(type.name.toLowerCase()).call(type.object);
 	}
+}
+
+Servers.type = {
+	connection: {
+		'mysql': mysql
+	},
 }
 
 Servers.list = new Map;
