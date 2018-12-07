@@ -9022,7 +9022,7 @@ class EditReportData {
 			await API.call('reports/engine/report', parameter, options);
 
 			new SnackBar({
-				message: 'Data saved successfuly',
+				message: 'Data saved successfully',
 			});
 		}
 
