@@ -1380,45 +1380,40 @@ class CachedReports extends API {
 
 		const
 			allKeys = await redis.keys('*'),
+			keyDetails = [],
 			keyInfo = [],
-			promiseArray = [],
-			promiseArray2 = [];
+			keyValues = [];
 
 		for(const key of allKeys) {
 
-			promiseArray.push(redis.keyInfo(key));
-
-			promiseArray2.push(redis.get(key));
-
-			// keyInfo.push(keyData);
+			keyInfo.push(redis.keyInfo(key));
+			keyValues.push(redis.get(key).catch(x => console.log(x)));
 		}
 
-		for(const key of allKeys) {
+		const
+			sizeArray = await commonFun.promiseParallelLimit(5, keyInfo),
+			keyArray = await commonFun.promiseParallelLimit(5, keyValues);
 
-			const keyData = {
-				report_id: parseFloat(key.slice(key.indexOf('report_id') + 10)),
-				// size: redis.keyInfo(key),
-			}
+		for(const [index, value] of allKeys.entries()) {
 
-			promiseArray.push(redis.keyInfo(key));
+			const keyDetail = {
+				report_id: parseFloat(value.slice(value.indexOf('report_id') + 10)),
+				size: sizeArray[index],
+			};
 
 			try {
 
-				promiseArray2.push(redis.get(key));
-
-				// keyData.created_at = new Date(JSON.parse(await redis.get(key)).cached.store_time);
+				keyDetail.created_at = new Date(JSON.parse(keyArray[index]).cached.store_time);
 			}
 
 			catch(e) {}
 
-			keyInfo.push(keyData);
+			keyDetails.push(keyDetail);
 		}
 
+		keyDetails.sort((a, b) => a.size - b.size);
 
-
-		keyInfo.sort((a, b) => a.size - b.size);
-
-		return await commonFun.promiseParallelLimit(5, keyInfo);
+		return await commonFun.promiseParallelLimit(5, keyDetails);
 	}
 }
 
