@@ -786,21 +786,21 @@ class Dashboard {
 			downloadOptions.classList.toggle('hidden');
 		});
 
-		document.querySelector('body').on('click', () => {
+		document.on('click', () => {
 			downloadOptions.classList.add('hidden');
 		});
 
-		downloadOptions.querySelector('#pdf').on('click', e => {
+		downloadOptions.querySelector('.pdf').on('click', e => {
 			e.stopPropagation();
 			Dashboard.download('pdf')
 		});
 
-		downloadOptions.querySelector('#png').on('click', e => {
+		downloadOptions.querySelector('.png').on('click', e => {
 			e.stopPropagation();
 			Dashboard.download('png')
 		});
 
-		downloadOptions.querySelector('#jpeg').on('click', e => {
+		downloadOptions.querySelector('.jpeg').on('click', e => {
 			e.stopPropagation();
 			Dashboard.download('jpeg')
 		});
@@ -842,7 +842,21 @@ class Dashboard {
 				type: type,
 			};
 
-		let content = await API.call('reports/download/pdf', parameter, options);
+		let content;
+
+		try {
+
+			content = await API.call('reports/download/pdf', parameter, options);
+		}
+		catch(e) {
+
+			return new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message || e,
+				icon: 'fas fa-ban',
+				type: 'error',
+			});
+		}
 
 		if(content.headers.get('content-type').includes('pdf')) {
 
@@ -850,7 +864,7 @@ class Dashboard {
 
 			const link = document.createElement('a');
 			link.href = window.URL.createObjectURL(content);
-			link.download = page.list.get(page.currentDashboard).name + '_' + Format.dateTime(Date.now()) + '.pdf';
+			link.download = page.list.get(page.currentDashboard).name + '-' + Format.dateTime(Date.now()) + '.pdf';
 			link.click();
 		}
 		else if(content.headers.get('content-type').includes('image')) {
@@ -859,7 +873,7 @@ class Dashboard {
 
 			const link = document.createElement('a');
 			link.href = window.URL.createObjectURL(content);
-			link.download = page.list.get(page.currentDashboard).name + '_' + Format.dateTime(Date.now()) + '.' + type;
+			link.download = page.list.get(page.currentDashboard).name + '-' + Format.dateTime(Date.now()) + '.' + type;
 			link.click();
 		}
 		else {
