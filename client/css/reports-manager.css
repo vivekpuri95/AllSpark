@@ -405,12 +405,12 @@ main.preview-left #stages {
 			}
 		#stage-define-report .upload-file {
 			order: 2;
-			background: #fff;
+			background: var(--color-surface);
+			color: var(--color-surface-text);
 			height: 100%;
 			align-items: center;
 			display: flex;
 			flex-direction: column;
-			color: #999;
 			justify-content: center;
 			cursor: pointer;
 			transition: background var(--transition-duration),
@@ -421,7 +421,8 @@ main.preview-left #stages {
 			box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.15);
 		}
 		#stage-define-report .upload-file.drag-over {
-			background: #ccc;
+			background: var(--color-hover);
+			color: var(--color-hover-text);
 		}
 			#stage-define-report .upload-file h2 {
 				font-weight: normal;
@@ -438,15 +439,14 @@ main.preview-left #stages {
 				background: none;
 				padding: 0;
 				box-shadow: none;
-				color: #666;
 				font-size: calc(20px + 0.8vw);
 				pointer-events: none;
 			}
 			#stage-define-report .upload-file .warning {
-				color: #a00;
+				color: var(--color-red);
 			}
 			#stage-define-report .upload-file .notice {
-				color: #191;
+				color: var(--color-green);
 			}
 
 		#stage-define-report #filters {
@@ -530,31 +530,38 @@ main.preview-left #stages {
 		#stage-define-report .edit-report-data {
 			overflow: auto;
 			width: 100%;
-			border-top: 1px dashed #ccc;
+			border-top: 1px dashed var(--color-border);
 			padding-top: calc(var(--gap) * 2);
 		}
 			#stage-define-report .edit-report-data table {
-				background: #fff;
+				background: var(--color-surface);
+				color: var(--color-surface-text);
 			}
+				#stage-define-report .edit-report-data table thead th {
+					position: sticky;
+					top: 0;
+				}
 				#stage-define-report .edit-report-data table thead th:not(.action) {
 					cursor: pointer;
 					transition: background var(--transition-duration),
 								box-shadow var(--transition-duration);
 				}
 				#stage-define-report .edit-report-data table thead th:not(.action):hover {
-					background: rgba(255, 255, 255, 0.3);
+					background: var(--color-hover);
+					color: var(--color-hover-text);
 				}
 				#stage-define-report .edit-report-data table thead th:not(.action):active {
 					box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5);
 				}
 				#stage-define-report .edit-report-data table tfoot {
 					text-align: center;
-					border-top: 1px solid #999;
+					border-top: 1px solid var(--color-border);
 					transition: background var(--transition-duration),
 								box-shadow var(--transition-duration);
 				}
 				#stage-define-report .edit-report-data table tfoot:hover {
-					background: #ddd;
+					background: var(--color-hover);
+					color: var(--color-hover-text);
 					cursor: pointer;
 				}
 				#stage-define-report .edit-report-data table tfoot:active {
