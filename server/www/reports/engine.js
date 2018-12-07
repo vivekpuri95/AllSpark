@@ -998,7 +998,14 @@ class BigqueryLegacy {
 
 			if (Array.isArray(filter.value)) {
 
-				this.reportObj.query = this.reportObj.query.replace((new RegExp(`{{${filter.placeholder}}}`, "g")), '"' + filter.value.join('", "') + '"');
+				if(filter.type == 'number') {
+
+					this.reportObj.query = this.reportObj.query.replace((new RegExp(`{{${filter.placeholder}}}`, "g")), filter.value.map(x => parseInt(x)).join(', '));
+				}
+				else {
+
+					this.reportObj.query = this.reportObj.query.replace((new RegExp(`{{${filter.placeholder}}}`, "g")), '"' + filter.value.join('", "') + '"');
+				}
 			}
 
 			else {
