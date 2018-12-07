@@ -60,8 +60,27 @@ class Requests extends API {
 
 		mergeRequestApprovals.forEach(x => mergeRequestObj[x.merge_request_id].approvals.push(x));
 
-		const reportObj = new report.list();
+		const reportObj = new report.list(this);
 		Object.assign(reportObj, this);
+
+		{
+
+			const
+				reports = await reportObj.list(),
+				response = [];
+
+			for(const request of Object.values(mergeRequestObj)) {
+
+				if(
+					(request.source == 'query' && reports.some(q => q.query_id == request.source_id)) ||
+					(request.source == 'visualization' && reports.some(q => q.visualizations.some(v => v.visualization_id == request.source_id)))
+				) response.push(request);
+
+				console.log(request.id, request.source, request.source_id, reports.some(q => q.visualizations.some(v => v.visualization_id == request.source_id)));
+			}
+
+			return response;
+		}
 
 		const visibleReports = new Set((await reportObj.list()).map(x => x.query_id));
 
@@ -95,13 +114,14 @@ class Requests extends API {
 			insert into
 				tb_merge_requests
 				(
+					title,
 					source,
 					source_id,
 					destination_id,
 					account_id,
 					added_by
 				)
-				values (?, ?, ?, ?, ?)
+				values (?, ?, ?, ?, ?, ?)
 		`,
 			columns.map(x => this.request.body[x]).concat(this.account.account_id, this.user.user_id)
 		)

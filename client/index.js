@@ -36,7 +36,7 @@ class HTMLAPI extends API {
 
 		let theme = 'light';
 
-		if(!this.user && this.request.cookies.token) {
+		if(!this.user && (this.request.cookies.token)) {
 
 			const token_details = await commonFunctions.getUserDetailsJWT(this.request.cookies.token);
 

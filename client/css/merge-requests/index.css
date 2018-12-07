@@ -207,7 +207,8 @@
 			}
 		.merge-requests .merge-request > .approvers {
 			grid-column: 2 / 3;
-			grid-row: 3 / 4;
+			grid-row: 3 / 5;
+			overflow: auto;
 		}
 			.merge-requests .merge-request > .approvers h3 {
 				margin: 0 0 calc(var(--gap) * 2);
@@ -215,9 +216,17 @@
 			.merge-requests .merge-request > .approvers .list {
 				padding: calc(var(--gap) * 2);
 			}
-				.merge-requests .merge-request > .approvers .approver i {
-					margin-right: var(--gap);
+				.merge-requests .merge-request > .approvers .approver {
+					display: grid;
+					grid-template-columns: max-content 1fr;
+					grid-row-gap: 3px;
+					grid-column-gap: 10px;
 				}
+					.merge-requests .merge-request > .approvers .approver i {
+						grid-row: 1 / 3;
+						align-self: center;
+						font-size: 115%;
+					}
 
 
 	@media (max-width: 750px) {

@@ -109,29 +109,15 @@ class MergeRequests extends Map {
 
 		this.clear();
 
-		for(const request of response)
-			this.set(request.id, new MergeRequest(request, this));
+		for(const request of response) {
+
+			if(!MergeRequest.sources.has(request.source))
+				continue;
+
+			this.set(request.id, new (MergeRequest.sources.get(request.source))(request, this));
+		}
 
 		this.searchBar.data = Array.from(this.values());
-
-		// Load datalists for source/destination multiselects
-		{
-			const datalist = [];
-
-			for(const report of Reports.DataSource.list.values()) {
-
-				datalist.push({
-					name: `<span class="NA">#${report.query_id}</span> ${report.name}`,
-					value: report.query_id,
-				});
-			}
-
-			this.sourceMultiSelect.datalist = JSON.parse(JSON.stringify(datalist));
-			this.sourceMultiSelect.render();
-
-			this.destinationMultiSelect.datalist = JSON.parse(JSON.stringify(datalist));
-			this.destinationMultiSelect.render();
-		}
 	}
 
 	render() {
@@ -214,10 +200,7 @@ class MergeRequests extends Map {
 
 					<label>
 						<span>Type <span class="red">*</span></span>
-						<select name="source" required>
-							<option value="report">Report</option>
-							<option value="visualization">Visualization</option>
-						</select>
+						<select name="source" required></select>
 					</label>
 
 					<div class="report-picker">
@@ -235,6 +218,13 @@ class MergeRequests extends Map {
 				</form>
 			<section>
 		`;
+
+		const addForm = this.container.querySelector('form');
+
+		for(const [key, source] of MergeRequest.sources)
+			addForm.source.insertAdjacentHTML('beforeend', `<option value="${key}">${source.name}</option>`);
+
+		addForm.source.on('change', () => this.renderDatalists());
 
 		container.querySelector('.new-merge-request-button').on('click', () => this.add());
 		container.querySelector('.merge-request-back').on('click', () => this.back());
@@ -268,8 +258,7 @@ class MergeRequests extends Map {
 
 		this.container.querySelector('form').reset();
 
-		this.sourceMultiSelect.value = [];
-		this.destinationMultiSelect.value = [];
+		this.renderDatalists();
 
 		AllSpark.Sections.show('new-merge-request');
 	}
@@ -312,6 +301,10 @@ class MergeRequests extends Map {
 
 			AllSpark.Sections.show('merge-request-list');
 
+			this.container.querySelector('form').reset();
+
+			this.renderDatalists();
+
 		} catch(e) {
 
 			new AllSpark.SnackBar({
@@ -320,6 +313,25 @@ class MergeRequests extends Map {
 				type: 'error',
 			});
 		}
+	}
+
+	renderDatalists() {
+
+		const
+			source = this.container.querySelector('form').source.value,
+			sourceClass = MergeRequest.sources.get(source);
+
+		this.sourceMultiSelect.value = [];
+		this.destinationMultiSelect.value = [];
+
+		if(!source)
+			return;
+
+		this.sourceMultiSelect.datalist = sourceClass.multiSelectDatalist;
+		this.sourceMultiSelect.render();
+
+		this.destinationMultiSelect.datalist = sourceClass.multiSelectDatalist;
+		this.destinationMultiSelect.render();
 	}
 }
 
@@ -360,7 +372,7 @@ class MergeRequest {
 			<div class="subtitle">
 
 				<span>
-					<a href="/report/${this.destination_id}" target="_blank">
+					<a href="/${this.constructor.sourceLink}/${this.source_id}" target="_blank">
 						${source.name}
 					</a>
 					<span class="NA">#${this.source_id}</span>
@@ -369,7 +381,7 @@ class MergeRequest {
 				<span class="NA"><i class="fas fa-long-arrow-alt-right"></i></span>
 
 				<span>
-					<a href="/report/${this.destination_id}" target="_blank">
+					<a href="/${this.constructor.sourceLink}/${this.destination_id}" target="_blank">
 						${destination.name}
 					</a>
 					<span class="NA">#${this.destination_id}</span>
@@ -383,7 +395,7 @@ class MergeRequest {
 				&middot;
 				<a class="edit">Edit</a>
 				&middot;
-				<span>${this.source[0].toUpperCase() + this.source.slice(1)}</span>
+				<span>${this.constructor.name}</span>
 			</div>
 
 			<div class="status">${this.status[0].toUpperCase() + this.status.slice(1)}</div>
@@ -417,27 +429,6 @@ class MergeRequest {
 		if(this.formElement)
 			return this.formElement;
 
-		// Load datalists for source/destination multiselects
-		{
-			const datalist = [];
-
-			for(const report of Reports.DataSource.list.values()) {
-
-				datalist.push({
-					name: `<span class="NA">#${report.query_id}</span> ${report.name}`,
-					value: report.query_id,
-				});
-			}
-
-			this.sourceMultiSelect.datalist = JSON.parse(JSON.stringify(datalist));
-			this.sourceMultiSelect.render();
-			this.sourceMultiSelect.value = this.source_id;
-
-			this.destinationMultiSelect.datalist = JSON.parse(JSON.stringify(datalist));
-			this.destinationMultiSelect.render();
-			this.destinationMultiSelect.value = this.destination_id;
-		}
-
 		const container = this.formElement = document.createElement('section');
 
 		container.classList.add('section');
@@ -469,10 +460,7 @@ class MergeRequest {
 
 				<label>
 					<span>Type <span class="red">*</span></span>
-					<select name="source" required>
-						<option value="report">Report</option>
-						<option value="visualization">Visualization</option>
-					</select>
+					<select name="source" required></select>
 				</label>
 
 				<div class="report-picker">
@@ -491,6 +479,16 @@ class MergeRequest {
 		`;
 
 		const form = container.querySelector('form');
+
+		for(const [key, source] of MergeRequest.sources)
+			form.source.insertAdjacentHTML('beforeend', `<option value="${key}">${source.name}</option>`);
+
+		form.source.on('change', () => this.renderDatalists());
+
+		this.renderDatalists();
+
+		this.sourceMultiSelect.value = this.source_id;
+		this.destinationMultiSelect.value = this.destination_id;
 
 		container.querySelector('.merge-request-back').on('click', () => this.back());
 
@@ -515,6 +513,25 @@ class MergeRequest {
 		});
 
 		return container;
+	}
+
+	renderDatalists() {
+
+		const
+			source = this.form.querySelector('form').source.value,
+			sourceClass = MergeRequest.sources.get(source);
+
+		this.sourceMultiSelect.value = [];
+		this.destinationMultiSelect.value = [];
+
+		if(!source)
+			return;
+
+		this.sourceMultiSelect.datalist = sourceClass.multiSelectDatalist;
+		this.sourceMultiSelect.render();
+
+		this.destinationMultiSelect.datalist = sourceClass.multiSelectDatalist;
+		this.destinationMultiSelect.render();
 	}
 
 	setDirtyForm() {
@@ -612,7 +629,7 @@ class MergeRequest {
 				<h3>
 					<span>
 						<span class="NA">#${this.source_id}</span>
-						<a href="/report/${this.destination_id}" target="_blank">
+						<a href="/${this.constructor.sourceLink}/${this.destination_id}" target="_blank">
 							${source.name}
 						</a>
 					</span>
@@ -621,7 +638,7 @@ class MergeRequest {
 
 					<span>
 						<span class="NA">#${this.destination_id}</span>
-						<a href="/report/${this.destination_id}" target="_blank">
+						<a href="/${this.constructor.sourceLink}/${this.destination_id}" target="_blank">
 							${destination.name}
 						</a>
 					</span>
@@ -636,7 +653,9 @@ class MergeRequest {
 
 					<div>
 						<div class="key">Created</div>
-						<div class="value">${AllSpark.Format.ago(this.created_at)}</div>
+						<div class="value" title="${AllSpark.Format.dateTime(this.created_at)}">
+							${AllSpark.Format.ago(this.created_at)}
+						</div>
 					</div>
 
 					<div>
@@ -695,8 +714,6 @@ class MergeRequest {
 			approveButton = this.container.querySelector('.approve-merge-request'),
 			approvals = [];
 
-		approvalsContainer.innerHTML = null;
-
 		for(const approver of this.approvers) {
 
 			if(approver.approval && approver.approval.status == 'approved')
@@ -709,7 +726,18 @@ class MergeRequest {
 
 		approveButton.classList.toggle('approved', this.approvers.current.approval && this.approvers.current.approval.status == 'approved' ? true : false);
 
-		if(!approvals.length)
+		approvalsContainer.innerHTML = null;
+
+		if(approvals.length) {
+
+			const
+				links = approvals.map(a => `<a href="/user/profile/${a.user_id}" target="_blank">${a.name}</a>`),
+				last = links.pop();
+
+			approvalsContainer.innerHTML =	'Approved by ' + [links.join(', '), last].filter(a => a).join(' and ') + '.';
+		}
+
+		else
 			approvalsContainer.innerHTML = '<span class="NA">No one has approved this merge request yet.</span>';
 	}
 
@@ -746,6 +774,68 @@ class MergeRequest {
 		}
 	}
 }
+
+MergeRequest.sources = new Map;
+
+MergeRequest.sources.set('query', class MergeRequestReport extends MergeRequest {
+
+	static get name() {
+		return 'Report'
+	}
+
+	static get sourceLink() {
+		return 'report';
+	}
+
+	static get multiSelectDatalist() {
+
+		const datalist = [];
+
+		for(const report of Reports.DataSource.list.values()) {
+
+			datalist.push({
+				name: `<span class="NA">#${report.query_id}</span> ${report.name}`,
+				value: report.query_id,
+			});
+		}
+
+		return datalist;
+	}
+});
+
+MergeRequest.sources.set('visualization', class MergeRequestReport extends MergeRequest {
+
+	static get name() {
+		return 'Visualization'
+	}
+
+	static get name() {
+		return 'visualization';
+	}
+
+	static get sourceLink() {
+		return 'visualization';
+	}
+
+	static get multiSelectDatalist() {
+
+		const datalist = [];
+
+		for(const report of Reports.DataSource.list.values()) {
+
+			for(const visualization of report.visualizations) {
+
+				datalist.push({
+					name: `<span class="NA">#${visualization.visualization_id}</span> ${visualization.name}`,
+					subtitle: `<span class="NA">#${report.query_id}</span> ${report.name}`,
+					value: visualization.visualization_id,
+				});
+			}
+		}
+
+		return datalist;
+	}
+});
 
 class MergeRequestApprovers extends Set {
 
@@ -824,7 +914,8 @@ class MergeRequestApprover {
 	render() {
 
 		this.container.innerHTML = `
-			<i class="far ${this.approval && this.approval.status == 'approved' ? 'fa-check-square' : 'fa-square'}"></i> ${this.name}
+			<i class="far ${this.approval && this.approval.status == 'approved' ? 'fa-check-square' : 'fa-square'}"></i>
+			<span>${this.name}</span>
 			${this.approval ? '<span class="NA">' + (this.approval.updated_at ? AllSpark.Format.ago(this.approval.updated_at) : '') + '</span>' : ''}
 		`;
 
