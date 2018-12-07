@@ -36,8 +36,6 @@ class MySQL {
 					continue;
 				}
 
-				console.log('pooooooooool', connection);
-
 				delete(poolObj[connection]);
 			}
 		};
