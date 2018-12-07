@@ -9017,6 +9017,22 @@ class EditReportData {
 				method: 'POST',
 			};
 
-		await API.call('reports/engine/report', parameter, options);
+		try {
+
+			await API.call('reports/engine/report', parameter, options);
+
+			new SnackBar({
+				message: 'Data saved successfuly',
+			});
+		}
+
+		catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message || e,
+				type: 'error',
+			});
+		}
 	}
 }
