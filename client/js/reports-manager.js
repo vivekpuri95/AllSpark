@@ -3928,6 +3928,8 @@ ReportConnection.types.set('file', class ReportConnectionAPI extends ReportConne
 				this.onUpload();
 
 			this.message('Upload Complete', 'notice');
+
+			this.stage.preview();
 		};
 
 		fileReader.readAsText(file);
@@ -4830,7 +4832,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="body">
 					<div class="form subform">
-					
+
 						<label>
 							<span>
 								<input type="checkbox" name="showValues"> Show Values
@@ -5479,14 +5481,14 @@ ConfigureVisualization.types.set('bubble', class BubbleOptions extends ReportVis
 					${selectOptions}
 				</select>
 			</label>
-			
+
 			<label>
 				<span>Radius Column</span>
 				<select name="radius">
 					${selectOptions}
 				</select>
 			</label>
-			
+
 			<label>
 				<span>Bubble Text</span>
 				<select name="showValues">
