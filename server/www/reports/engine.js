@@ -1386,6 +1386,15 @@ class CachedReports extends API {
 
 		for(const key of allKeys) {
 
+			promiseArray.push(redis.keyInfo(key));
+
+			promiseArray2.push(redis.get(key));
+
+			// keyInfo.push(keyData);
+		}
+
+		for(const key of allKeys) {
+
 			const keyData = {
 				report_id: parseFloat(key.slice(key.indexOf('report_id') + 10)),
 				// size: redis.keyInfo(key),
