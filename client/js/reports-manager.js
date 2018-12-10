@@ -7080,7 +7080,7 @@ ReportTransformation.types.set('stream', class ReportTransformationStream extend
 
 			for(const visualisation of report.visualizations) {
 
-				if(visualisation.visualization_id != this.stage.visualization.visualization_id) {
+				if(visualisation.visualization_id && visualisation.visualization_id != this.stage.visualization.visualization_id) {
 
 					datalist.push({
 						'name': visualisation.name,
@@ -9022,7 +9022,7 @@ class EditReportData {
 			await API.call('reports/engine/report', parameter, options);
 
 			new SnackBar({
-				message: 'Data saved successfully',
+				message: 'Data saved successfuly',
 			});
 		}
 
