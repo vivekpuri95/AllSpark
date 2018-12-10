@@ -4366,6 +4366,12 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 
 		[report.visualizations.selected] = report.visualizations.filter(v => v.visualization_id == this.visualization_id)
 
+		for(const filter of report.filters.values()) {
+
+			if(this.source.filters.has(filter.placeholder))
+				filter.value = this.source.filters.get(filter.placeholder).value;
+		}
+
 		await report.fetch();
 
 		const streamResponse = await report.response();
