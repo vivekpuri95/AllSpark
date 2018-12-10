@@ -668,7 +668,10 @@ router.get('/:type(dashboard|report|visualization)/:id?', API.serve(class extend
 						<div class="options hidden">
 							<span class="item pdf">
 								<i class="far fa-file-pdf"></i>
-								PDF
+								<div>
+									PDF&nbsp;
+									<span class="NA">(BETA)</span>
+								</div>
 							</span>
 							<span class="item png">
 								<i class="far fa-image"></i>
