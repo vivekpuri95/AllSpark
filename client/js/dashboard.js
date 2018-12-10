@@ -880,7 +880,7 @@ class Dashboard {
 
 			new SnackBar({
 				message: 'Request Failed',
-				subtitle: 'Unable to download pdf',
+				subtitle: `Unable to download ${type}`,
 				icon: 'fas fa-ban',
 				type: 'error',
 			});

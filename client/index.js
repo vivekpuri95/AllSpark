@@ -662,7 +662,7 @@ router.get('/:type(dashboard|report|visualization)/:id?', API.serve(class extend
 
 					<div class="download">
 						<button>
-							<i class="fas fa-save"></i>
+							<i class="fas fa-download"></i>
 							Download
 						</button>
 						<div class="options hidden">
