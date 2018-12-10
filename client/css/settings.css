@@ -143,6 +143,10 @@ main .executing-reports {
 		text-decoration: underline;
 		cursor: pointer;
 	}
+main .cached-reports table {
+	margin-top: calc(var(--gap) * 2);
+}
+
 .dialog-box-blanket .body.executing-query-info {
 	padding: 0 calc(var(--gap) * 2);
 }

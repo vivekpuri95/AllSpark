@@ -22,6 +22,7 @@ const oracle = require('../../utils/oracle').Oracle;
 const PromiseManager = require("../../utils/promisesManager").promiseManager;
 const promiseManager = new PromiseManager("executingReports");
 const pgsql = require("../../utils/pgsql").Postgres;
+const child_process = require('child_process');
 
 // prepare the raw data
 class report extends API {
@@ -1425,6 +1426,50 @@ class executingReports extends API {
 	}
 }
 
+class CachedReports extends API {
+
+	async cachedReports() {
+
+		this.user.privilege.needs("superadmin");
+
+		const
+			allKeys = await redis.keys('*'),
+			keyDetails = [],
+			keyInfo = [],
+			keyValues = [];
+
+		for(const key of allKeys) {
+
+			keyInfo.push(redis.keyInfo(key));
+			keyValues.push(redis.get(key).catch(x => console.log(x)));
+		}
+
+		const
+			sizeArray = await commonFun.promiseParallelLimit(5, keyInfo),
+			keyArray = await commonFun.promiseParallelLimit(5, keyValues);
+
+		for(const [index, value] of allKeys.entries()) {
+
+			const keyDetail = {
+				report_id: parseFloat(value.slice(value.indexOf('report_id') + 10)),
+				size: sizeArray[index],
+			};
+
+			try {
+
+				keyDetail.created_at = new Date(JSON.parse(keyArray[index]).cached.store_time);
+			}
+
+			catch(e) {}
+
+			keyDetails.push(keyDetail);
+		}
+
+		keyDetails.sort((a, b) => a.size - b.size);
+
+		return await commonFun.promiseParallelLimit(5, keyDetails);
+	}
+}
 
 exports.query = query;
 exports.report = report;
@@ -1433,3 +1478,4 @@ exports.Postgres = Postgres;
 exports.APIRequest = APIRequest;
 exports.download = download;
 exports.executingReports = executingReports;
+exports.cachedReports = CachedReports;

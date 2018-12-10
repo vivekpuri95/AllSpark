@@ -10,7 +10,7 @@ class Settings extends Page {
 
 			for (const [key, settings] of Settings.list) {
 
-				if(['executingReports', 'accounts'].includes(key) && !this.user.privileges.has('superadmin'))
+				if(['executingReports', 'accounts', 'cachedReports'].includes(key) && !this.user.privileges.has('superadmin'))
 					continue;
 
 				if(key == 'categories' && !user.privileges.has('category.insert') && !user.privileges.has('category.update') && !user.privileges.has('category.delete'))
@@ -462,6 +462,93 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 			tbody.appendChild(report.row);
 
 		await Sections.show('executing-reports');
+	}
+});
+
+Settings.list.set('cachedReports', class CachedReports extends SettingPage {
+
+	constructor(...params) {
+
+		super(...params);
+		this.reports = new Set();
+	}
+
+	get name() {
+		return 'Cached Reports';
+	}
+
+	async setup() {
+
+		if(this.page.querySelector('.cached-reports'))
+			this.page.querySelector('.cached-reports').remove();
+
+		this.page.appendChild(this.container);
+	}
+
+	async load() {
+
+		const response = await this.fetch();
+
+		this.process(response);
+
+		this.render();
+	}
+
+	async fetch() {
+
+		return API.call('reports/engine/cachedReports');
+	}
+
+	process(response) {
+
+		this.reports.clear();
+
+		for(const report of response) {
+			this.reports.add(new CachedReport(report));
+		}
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('setting-page', 'cached-reports', 'hidden');
+
+		container.innerHTML = `
+			<section class="section show" id="cached-reports">
+				<h1>Cached Reports</h1>
+
+				<table class="block">
+					<thead>
+						<tr>
+							<th>Query Id</th>
+							<th>Size</th>
+							<th>Created At</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</section>
+		`;
+
+		return container;
+	}
+
+	render() {
+
+		const tbody = this.container.querySelector('table tbody');
+
+		tbody.textContent = null;
+
+		if(!this.reports.size)
+			tbody.innerHTML = '<tr><td class="NA" colspan="4">No redis reports at this time.</td></tr>';
+
+		for(const report of this.reports.values())
+			tbody.appendChild(report.row);
+
+		Sections.show('cached-reports');
 	}
 });
 
@@ -2199,5 +2286,28 @@ class ExecutingReport {
 		});
 
 		return tr;
+	}
+}
+
+class CachedReport {
+
+	constructor(report) {
+
+		Object.assign(this, report);
+	}
+
+	get row() {
+
+		if(this.rowElement)
+			return this.rowElement;
+
+		this.rowElement = document.createElement('tr');
+		this.rowElement.innerHTML = `
+			<td>${this.report_id}</td>
+			<td>${Format.number(this.size)}</td>
+			<td title="${Format.dateTime(this.created_at)}">${Format.ago(this.created_at)}</td>
+		`;
+
+		return this.rowElement;
 	}
 }
