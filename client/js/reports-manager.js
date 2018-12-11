@@ -249,7 +249,9 @@ class ReportsMangerPreview {
 
 		this.page.container.classList.add('preview-' + this._position);
 
-		await this.report.visualizations.selected.load();
+		try {
+			await this.report.visualizations.selected.load();
+		} catch(e) {}
 
 		this.move({render: false});
 	}
@@ -2620,7 +2622,7 @@ class ReportsManagerFilters extends Map {
 
 				this.add({
 					name,
-					type,
+					type: globalFilter.type || type,
 					placeholder,
 					dataset: globalFilter.dataset || null,
 					multiple: isNaN(globalFilter.multiple) ? null : globalFilter.multiple,
@@ -7122,6 +7124,7 @@ ReportTransformation.types.set('stream', class ReportTransformationStream extend
 
 		for(const column of this.container.querySelectorAll('.column')) {
 			response.columns.push({
+				stream: column.querySelector('select[name=stream]').value,
 				column: column.querySelector('input[name=column]').value,
 				function: column.querySelector('select[name=function]').value,
 				name: column.querySelector('input[name=name]').value,
@@ -7177,6 +7180,10 @@ ReportTransformation.types.set('stream', class ReportTransformationStream extend
 		container.classList.add('form-row', 'column');
 
 		container.insertAdjacentHTML('beforeend',`
+			<select name="stream">
+				<option value="base">Base</option>
+				<option value="stream">Stream</option>
+			</select>
 			<input type="text" name="column" value="${column.column || ''}" placeholder="Column">
 			<select name="function">
 				<option value="sum">Sum</option>
@@ -7191,6 +7198,9 @@ ReportTransformation.types.set('stream', class ReportTransformationStream extend
 			<input type="text" name="name" value="${column.name || ''}" placeholder="Name">
 			<button type="button"><i class="far fa-trash-alt"></i></button>
 		`);
+
+		if(column.stream)
+			container.querySelector('select[name=stream]').value = column.stream;
 
 		if(column.function)
 			container.querySelector('select[name=function]').value = column.function;
