@@ -3167,7 +3167,6 @@ class DataSourceColumnDrilldownParameters extends Set {
 		this.load();
 
 		return container;
-
 	}
 
 	load() {
@@ -4393,9 +4392,8 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 				if(column.stream != 'base')
 					continue;
 
-				if(!(column.column in baseRow)) {
-					this.source.error(`Unknown column '${column.column}' in base report.`);
-				}
+				if(!(column.column in baseRow))
+					continue;
 
 				newRow[column.name || column.column] = column.column in baseRow ? baseRow[column.column] : '';
 			}
@@ -4417,7 +4415,7 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 						continue;
 
 					if(!streamRow.has(column.column))
-						this.source.error(`Unknown column '${column.column}' in base report.`);
+						continue;
 
 					let joinGroup = [];
 
@@ -4480,8 +4478,11 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 				{
 					const row = [];
 
-					for(const column of this.columns)
-						row[column.name || column.column] = newRow[column.name || column.column];
+					for(const column of this.columns) {
+
+						if((column.name || column.column) in newRow)
+							row[column.name || column.column] = newRow[column.name || column.column];
+					}
 
 					newRow = row;
 				}
@@ -6086,8 +6087,13 @@ Visualization.list.set('table', class Table extends Visualization {
 		}
 
 		if(!this.rows.length) {
+
 			tbody.insertAdjacentHTML('beforeend', `
-				<tr class="NA"><td colspan="${this.source.columns.size}">${this.source.originalResponse.message || 'No data found!'}</td></tr>
+				<tr class="NA">
+					<td colspan="${this.source.columns.size}">
+						${this.source.originalResponse && this.source.originalResponse.message ? this.source.originalResponse.message : 'No data found!'}
+					</td>
+				</tr>
 			`);
 		}
 
@@ -6113,7 +6119,7 @@ Visualization.list.set('table', class Table extends Visualization {
 			<span>
 				<span class="label">Total:</span>
 				<strong title="Total number of rows in the dataset">
-					${Format.number(this.source.originalResponse.data ? this.source.originalResponse.data.length : 0)}
+					${Format.number(this.source.originalResponse && this.source.originalResponse.data ? this.source.originalResponse.data.length : 0)}
 				</strong>
 			</span>
 		`;
@@ -9808,7 +9814,6 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 		this.map.set('styles', this.themes.get(this.options.theme).config || []);
 
 		this.layers.render();
-
 	}
 });
 
@@ -10364,7 +10369,6 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 		return color ? 'green' : 'red';
 	}
-
 });
 
 Visualization.list.set('json', class JSONVisualization extends Visualization {
@@ -12272,7 +12276,6 @@ class SpatialMapThemes extends Map {
 		}
 
 		return container;
-
 	}
 }
 
@@ -12483,7 +12486,6 @@ class ReportLog {
 			this.state = JSON.parse(this.state);
 		}
 		catch(e) {}
-
 	}
 
 	get container() {
@@ -13073,7 +13075,6 @@ class VisualizationsCanvas {
 		await Promise.all(promises);
 
 		this.render();
-
 	}
 }
 
@@ -13128,7 +13129,6 @@ class Canvas extends VisualizationsCanvas {
 			await Promise.all(filters);
 			dataSource.container.appendChild(dataSource.visualizations.savedOnDashboard.container);
 		}
-
 	}
 }
 
