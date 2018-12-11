@@ -764,7 +764,7 @@ class DataSource {
 		if(!this.columns.list.size)
 			return this.error();
 
-		for(const row of data)
+		for(const row of data || [])
 			response.push(new DataSourceRow(row, this));
 
 		if(this.postProcessors.selected) {
@@ -4013,7 +4013,7 @@ class DataSourceTransformation {
 		if(!this.disabled)
 			response = await this.execute(response);
 
-		this.outgoing.rows = response.length || 0;
+		this.outgoing.rows = response ? response.length : 0;
 		this.outgoing.columns.update(response);
 
 		this.executionDuration = performance.now() - time;
@@ -4384,56 +4384,62 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 		for(const filter of DataSourceColumnFilter.types)
 			filters[filter.slug] = filter;
 
-		for(const row of response) {
+		for(const baseRow of response) {
 
-			for(const newColumn of newColumns) {
+			let newRow = [];
 
-				// If the stream's column doesn't exists in base report then add it
-				if(!(newColumn in row))
-					row[newColumn] = [];
+			for(const column of this.columns) {
+
+				if(column.stream != 'base')
+					continue;
+
+				if(!(column.column in baseRow)) {
+					this.source.error(`Unknown column '${column.column}' in base report.`);
+				}
+
+				newRow[column.name || column.column] = column.column in baseRow ? baseRow[column.column] : '';
 			}
 
+			// Make a LEFT JOIN on the current row with the stream report
+			outer:
 			for(const streamRow of streamResponse) {
 
-				let matched = true;
-
+				// If any of the stream's join conditions don't match then skip this row
 				for(const join of this.joins) {
 
-					if(!filters[join.function].apply(row[join.sourceColumn], streamRow.get(join.streamColumn))) {
-						matched = false;
-						break
-					}
+					if(!filters[join.function].apply(baseRow[join.sourceColumn], streamRow.get(join.streamColumn)))
+						continue outer;
 				}
 
-				if(!matched)
-					continue;
+				for(const column of this.columns) {
 
-				for(const [key, value] of streamRow) {
+					if(column.stream != 'stream')
+						continue;
 
-					const array = row[key];
+					if(!streamRow.has(column.column))
+						this.source.error(`Unknown column '${column.column}' in base report.`);
 
-					if(Array.isArray(array))
-						array.push(value);
+					let joinGroup = [];
+
+					if(!((column.name || column.column) in newRow)) {
+						newRow[column.name || column.column] = joinGroup;
+						joinGroup.column = column;
+					}
+
+					joinGroup.push(streamRow.get(column.column));
 				}
 			}
 
-			for(const key in row) {
+			for(const key in newRow) {
 
-				const [column] = this.columns.filter(c => c.column == key);
-
-				if(!column) {
-					delete row[key];
-					continue;
-				}
-
-				const values = row[key];
+				const values = newRow[key];
 
 				if(!Array.isArray(values))
 					continue;
 
 				let value = null;
 
-				switch(column.function) {
+				switch(values.column.function) {
 
 					case 'sum':
 						value = values.reduce((sum, value) => sum + (parseFloat(value) || 0), 0);
@@ -4471,11 +4477,22 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 						value = values.length;
 				}
 
-				row[key] = value;
+				{
+					const row = [];
+
+					for(const column of this.columns)
+						row[column.name || column.column] = newRow[column.name || column.column];
+
+					newRow = row;
+				}
+
+				newRow[key] = value;
 			}
+
+			newResponse.push(newRow);
 		}
 
-		return response;
+		return newResponse;
 	}
 });
 
@@ -11208,7 +11225,6 @@ class SpatialMapLayer {
 		});
 
 		return container;
-
 	}
 }
 
