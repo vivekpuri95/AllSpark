@@ -7250,7 +7250,7 @@ ReportTransformation.types.set('restrict-columns', class ReportTransformationRes
 			label = document.createElement('label');
 
 		columns.classList.add('columns');
-		label.classList.add('restrict-column');
+		label.classList.add('restrict-columns');
 
 		columns.appendChild(this.multiSelect.container);
 
@@ -7603,7 +7603,80 @@ ReportTransformation.types.set('linear-regression', class ReportTransformationRe
 				extrapolate: this.extrapolateUnits.value
 			},
 		};
-	};
+	}
+});
+
+ReportTransformation.types.set('custom-column', class ReportTransformationMultipleColumn extends ReportTransformation {
+
+	get key() {
+		return 'custom-column';
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = super.container.querySelector('.transformation');
+
+		container.innerHTML = `
+
+			<label>
+				<span>Formula</span>
+				<input type="text" name="column" value="${this.column || ''}">
+			</label>
+
+			<label>
+				<span>Formula</span>
+				<textarea name="formula">${this.formula || ''}</textarea>
+				<small class="error"></small>
+			</label>
+		`;
+
+		container.querySelector('textarea[name=formula]').on('keyup', () => this.render());
+		container.querySelector('textarea[name=formula]').on('change', () => this.render());
+
+		this.render();
+
+		return super.container;
+	}
+
+	render() {
+
+		const textarea = this.container.querySelector('textarea[name=formula]');
+
+		let formula = textarea.value;
+
+		for(const column of this.incoming.columns.values()) {
+
+			if(formula.includes(`{{${column.key}}}`))
+				formula = formula.replace(new RegExp(`{{${column.key}}}`, 'gi'), 1);
+		}
+
+		try {
+			eval(formula);
+		}
+
+		catch(e) {
+
+			textarea.parentElement.querySelector('small').textContent = e.message;
+			textarea.parentElement.querySelector('small').classList.remove('hidden');
+
+			return;
+		}
+
+		textarea.parentElement.querySelector('small').innerHTML = '&nbsp;';
+		textarea.parentElement.querySelector('small').classList.add('hidden');
+	}
+
+	get json() {
+
+		return {
+			type: this.key,
+			column: this.container.querySelector('label input[name="column"]').value,
+			formula: this.container.querySelector('label textarea[name="formula"]').value,
+		};
+	}
 });
 
 class ReportVisualizationDashboards extends Set {

@@ -4719,7 +4719,54 @@ DataSourceTransformation.types.set('linear-regression', class DataSourceTransfor
 
 		return response;
 	}
+});
 
+DataSourceTransformation.types.set('custom-column', class DataSourceTransformationCustomColumn extends DataSourceTransformation {
+
+	get name() {
+		return 'Custom Column';
+	}
+
+	async execute(response = []) {
+
+		if(!response || !response.length || !this.formula)
+			return response;
+
+		const newResponse = [];
+
+		for(const row of response) {
+
+			let formula = this.formula;
+
+			for(const key in row) {
+
+				if(!formula.includes(`{{${key}}}`))
+					continue;
+
+				let value = parseFloat(row[key]);
+
+				if(isNaN(value))
+					value = `'${row[key]}'` || '';
+
+				formula = formula.replace(new RegExp(`{{${key}}}`, 'gi'), value);
+			}
+
+			try {
+
+				row[this.column] = eval(formula);
+
+				if(!isNaN(parseFloat(row[this.column])))
+					row[this.column] = parseFloat(row[this.column]);
+
+			} catch(e) {
+				row[this.column] = null;
+			}
+
+			newResponse.push(row);
+		}
+
+		return newResponse;
+	}
 });
 
 DataSourcePostProcessors.processors = new Map;
