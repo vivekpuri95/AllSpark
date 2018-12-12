@@ -7622,7 +7622,7 @@ ReportTransformation.types.set('custom-column', class ReportTransformationMultip
 		container.innerHTML = `
 
 			<label>
-				<span>Formula</span>
+				<span>Column Name</span>
 				<input type="text" name="column" value="${this.column || ''}">
 			</label>
 
