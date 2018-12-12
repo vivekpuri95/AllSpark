@@ -6,7 +6,7 @@ exports.insert = class extends API {
 
 		const expectedFields = ["owner", "owner_id", "target", "target_id", "category_id"];
 
-		this.assert(expectedFields.every(x => this.request.body[x]), "required data owner, ownerId, target, category_id, targetId, some are missing");
+		this.assert(expectedFields.every(x => this.request.body[x]), "Required data is missing.");
 
 		let multipleTargets = false;
 		if (Array.isArray(this.request.body.target_id)) {
@@ -18,10 +18,10 @@ exports.insert = class extends API {
 		this.assert(
 			(multipleTargets && this.request.body.target_id.length) ||
 			this.request.body.target_id == parseInt(this.request.body.target_id),
-			"target id is not found"
+			`${this.request.body.target} Id is not found.`
 		);
 
-		this.assert(this.request.body.category_id == parseInt(this.request.body.category_id), "category id is not found");
+		this.assert(this.request.body.category_id == parseInt(this.request.body.category_id), "Category Id is not found.");
 
 		const categories = Array.isArray(this.request.body.category_id) ? this.request.body.category_id : [this.request.body.category_id];
 
