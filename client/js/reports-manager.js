@@ -5,7 +5,9 @@ class ReportsManger extends Page {
 		super(page, key);
 
 		this.stages = new Map;
-		this.preview = new ReportsMangerPreview(this);
+		this.preview = new TabsManager(this);
+
+		this.container.querySelector('#stages').insertAdjacentElement('afterend', this.preview.container);
 
 		this.setup();
 	}
@@ -203,20 +205,64 @@ window.addEventListener('beforeunload', function (event) {
 		event.returnValue = 'Sure';
 });
 
-class ReportsMangerPreview {
+class TabsManager extends Array {
 
 	constructor(page) {
 
-		this.page = page;
-		this.container = this.page.container.querySelector('#preview');
+		super();
 
-		this.position('right');
+		this.page = page;
+
+		this.previewCount = 0;
 	}
 
-	async load(options = {}) {
+	get container() {
 
-		this.container.textContent = null;
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('tabs');
+
+		container.innerHTML = `
+			<div class="tabs-header">
+				<div class="headers"></div>
+				<span class="add">
+					<button type="button" class="add-tab">
+						<i class="fa fa-plus add-icon"></i>
+					</button>
+				</span>
+			</div>
+			<div class="tabs-body"></div>
+		`;
+
+		container.querySelector('.add-tab').on('click', () => this.addTab());
+
+		this.loadTab();
+
+		return container;
+	}
+
+	async loadTab(options = {}) {
+
 		this.container.classList.add('hidden');
+
+		if(!Object.keys(options).length)
+			return;
+
+		if(options.tab == 'current') {
+
+			if(!this.length)
+				this.addTab();
+			else
+				this.selected.body.textContent = null;
+		}
+
+		else if(options.tab == 'new') {
+
+			this.addTab(options.name);
+		}
 
 		if(!DataSource.list.has(options.query_id))
 			return this.report = false;
@@ -244,7 +290,24 @@ class ReportsMangerPreview {
 		this.report.container;
 		this.report.visualizations.selected.container.classList.toggle('unsaved', this.report.definitionOverride ? 1 : 0);
 
-		this.container.appendChild(this.report.container);
+		this.selected.body.appendChild(this.report.container);
+
+		if(options.name)
+			this.selected.header.querySelector('span').innerText = options.name;
+
+		if(options.valueChanged) {
+
+			for(const tab of this) {
+
+				if(tab.header.querySelector('.unsaved'))
+					tab.header.querySelector('.unsaved').remove();
+
+				if(tab != this.selected) {
+					tab.header.querySelector('span').insertAdjacentHTML('afterend','<span class="unsaved"> * </span>');
+				}
+			}
+		}
+
 		this.container.classList.remove('hidden');
 
 		this.page.container.classList.add('preview-' + this._position);
@@ -282,6 +345,126 @@ class ReportsMangerPreview {
 
 		if(render)
 			await this.report.visualizations.selected.render({resize: true});
+	}
+
+	addTab(reportName) {
+
+		if(!reportName)
+			this.previewCount++;
+
+		this.previewTab = new PreviewTab(this, reportName, this.previewCount);
+
+		this.container.querySelector('.tabs-header .headers').appendChild(this.previewTab.header);
+		this.container.querySelector('.tabs-body').appendChild(this.previewTab.body);
+
+		this.selected = this.previewTab;
+
+		this.selected.header.querySelector('.tab-header .close').classList.remove('hidden');
+
+		this.push(this.previewTab);
+
+		this.applySelected();
+	}
+
+	render() {
+
+		const
+			tabsHeader = this.container.querySelector('.tabs-header .headers'),
+			tabsBody = this.container.querySelector('.tabs-body');
+
+		tabsHeader.textContent = null;
+		tabsBody.textContent = null;
+
+		for(const tab of this) {
+
+			tabsHeader.appendChild(tab.header);
+			tabsBody.appendChild(tab.body);
+		}
+
+		if(!this.length)
+			this.addTab();
+	}
+
+	applySelected() {
+
+		for(const [index, tab] of this.entries()) {
+
+			tab.body.classList.toggle('hidden', this.selected != tab);
+			tab.header.classList.toggle('fade-header', this.selected != tab);
+			tab.header.classList.toggle('remove-border', this[index+1] == this.selected);
+		}
+	}
+}
+
+class PreviewTab {
+
+	constructor(tab, reportName, previewCount) {
+
+		this.tabs = tab;
+
+		this.reportName = reportName;
+		this.previewCount = previewCount;
+
+		this.header;
+	}
+
+	get header() {
+
+		if(this.headerContainer)
+			return this.headerContainer;
+
+		const container = this.headerContainer = document.createElement('div');
+		container.classList.add('tab-header');
+
+		container.innerHTML = `
+			<span>${this.reportName || `Preview ${this.previewCount}`}</span>
+			<span class="close">
+				<i class="fa fa-times close-icon" aria-hidden="true"></i>
+			</span>
+		`;
+
+		container.querySelector('.close').on('click', (e) => {
+
+			e.stopPropagation();
+
+			if(!this.tabs.selected.bodyContainer.children.length && this.tabs.length == 1)
+				return;
+
+			const tabIndex = this.tabs.indexOf(this);
+
+			if(tabIndex == this.tabs.length - 1)
+				this.tabs.selected = this.tabs[tabIndex - 1];
+			else
+				this.tabs.selected = this.tabs[tabIndex + 1];
+
+			if(tabIndex > -1)
+				this.tabs.splice(tabIndex, 1);
+
+			this.tabs.applySelected();
+
+			this.tabs.render();
+		});
+
+		container.on('click', () => {
+
+			this.tabs.selected = this;
+			this.tabs.applySelected();
+		});
+
+		return container;
+	}
+
+	get body() {
+
+		if(this.bodyContainer)
+			return this.bodyContainer;
+
+		const container = this.bodyContainer = document.createElement('div');
+
+		container.innerHTML = ``;
+		container.classList.add('tab-body');
+
+		return container;
 	}
 }
 
@@ -1050,9 +1233,10 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		const options = {
 			query_id: this.report.query_id,
 			definition: definition,
+			tab: 'current',
 		};
 
-		await this.page.preview.load(options);
+		await this.page.preview.loadTab(options);
 
 		this.page.preview.hidden = false;
 		this.container.querySelector('#preview-toggle').classList.add('selected');
@@ -1392,7 +1576,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 						columns.classList.toggle('hidden')
 					});
 
-					li.querySelector('.name small a').on('click', e => {
+					li.querySelector('.name small a').on('click', async(e) => {
 
 						e.stopPropagation();
 
@@ -1401,12 +1585,21 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 						this.container.querySelector('#preview-toggle').classList.add('selected');
 
-						this.page.preview.load({
+						const options = {
+
 							definition: {
 								query: `SELECT * FROM \`${database.name}\`.\`${table.name}\` LIMIT 100`,
 							},
 							query_id: this.report.query_id,
-						});
+							name: name,
+						}
+
+						if (e.metaKey || e.ctrlKey)
+							options['tab'] = 'new';
+						else
+							options['tab'] = 'current';
+
+						this.page.preview.loadTab(options);
 					});
 
 					tables.appendChild(li);
@@ -1945,11 +2138,12 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 			row.querySelector('.preview').on('click', () => {
 
-				this.page.preview.load({
+				this.page.preview.loadTab({
 					query_id: this.report.query_id,
 					visualization: {
 						id: visualization.visualization_id
 					},
+					tab: 'current',
 				});
 			});
 
@@ -2024,11 +2218,12 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			if(historyToggle.classList.contains('selected') && !this.visualizationLogs.size)
 				await this.visualizationLogs.load();
 
-			await this.page.preview.load({
+			await this.page.preview.loadTab({
 				query_id: this.report.query_id,
 				visualization: {
 					id: this.visualization.visualization_id
 				},
+				tab: 'current',
 			});
 		});
 	}
@@ -2079,11 +2274,12 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		if(this.container.querySelector('.configuration-section.dashboards'))
 			this.container.querySelector('.configuration-section.dashboards').remove();
 
-		await this.page.preview.load({
+		await this.page.preview.loadTab({
 			query_id: this.report.query_id,
 			visualization: {
 				id: this.visualization.visualization_id
 			},
+			tab: 'current',
 		});
 
 		await this.loadVisualizationForm();
@@ -2986,9 +3182,11 @@ class VisualizationManager {
 
 	async preview() {
 
-		this.stage.page.preview.load({
+		this.stage.page.preview.loadTab({
 			query_id: this.query_id,
 			visualizationOptions: this.json.options,
+			tab: 'current',
+			valueChanged: true,
 			visualization: {
 				id: this.visualization_id,
 				type: this.json.type,
@@ -6180,11 +6378,13 @@ class ReportTransformations extends Set {
 		report.transformationVisualization.options.transformations = this.json;
 		report.transformationVisualization.options.transformationsStopAt = stopAt;
 
-		await this.page.preview.load({
+		await this.page.preview.loadTab({
 			query_id: this.stage.report.query_id,
 			visualization: {
 				id: report.transformationVisualization.visualization_id
 			},
+			tab: 'current',
+			valueChanged: true,
 		});
 
 		this.render();
@@ -8254,11 +8454,13 @@ class RelatedVisualizations extends Set {
 
 		if(force) {
 
-			await this.stage.page.preview.load({
+			await this.stage.page.preview.loadTab({
 				query_id: this.stage.report.query_id,
 				visualization: {
-					id: this.stage.visualization.visualization_id
+					id: this.stage.visualization.visualization_id,
 				},
+				tab: 'current',
+				valueChanged: true,
 			});
 		}
 	}
