@@ -5,7 +5,7 @@ class ReportsManger extends Page {
 		super(page, key);
 
 		this.stages = new Map;
-		this.preview = new TabsManager(this);
+		this.preview = new PreviewTabsManager(this);
 
 		this.container.querySelector('#stages').insertAdjacentElement('afterend', this.preview.container);
 
@@ -205,7 +205,7 @@ window.addEventListener('beforeunload', function (event) {
 		event.returnValue = 'Sure';
 });
 
-class TabsManager extends Array {
+class PreviewTabsManager extends Array {
 
 	constructor(page) {
 
@@ -303,12 +303,10 @@ class TabsManager extends Array {
 					tab.header.querySelector('.unsaved-tab').remove();
 					tab.header.title = '';
 				}
-
-				if(tab == this.selected) {
-					tab.header.querySelector('span').insertAdjacentHTML('afterend','<span class="unsaved-tab"> * </span>');
-					tab.header.title = 'Last updated';
-				}
 			}
+
+			this.selected.header.querySelector('span').insertAdjacentHTML('afterend','<span class="unsaved-tab"> * </span>');
+			this.selected.header.title = 'Last updated';
 		}
 
 		this.container.classList.remove('hidden');
@@ -355,18 +353,16 @@ class TabsManager extends Array {
 		if(!reportName)
 			this.previewCount++;
 
-		this.previewTab = new PreviewTab(this, reportName, this.previewCount);
+		this.selected = new PreviewTab(this, reportName);
 
-		this.container.querySelector('.tabs-header .headers').appendChild(this.previewTab.header);
-		this.container.querySelector('.tabs-body').appendChild(this.previewTab.body);
-
-		this.selected = this.previewTab;
+		this.container.querySelector('.tabs-header .headers').appendChild(this.selected.header);
+		this.container.querySelector('.tabs-body').appendChild(this.selected.body);
 
 		this.selected.header.querySelector('.tab-header .close').classList.remove('hidden');
 
-		this.push(this.previewTab);
+		this.push(this.selected);
 
-		this.applySelected();
+		this.render();
 	}
 
 	render() {
@@ -378,35 +374,30 @@ class TabsManager extends Array {
 		tabsHeader.textContent = null;
 		tabsBody.textContent = null;
 
-		for(const tab of this) {
+		for(const [index, tab] of this.entries()) {
 
 			tabsHeader.appendChild(tab.header);
 			tabsBody.appendChild(tab.body);
+
+			tab.body.classList.toggle('hidden', this.selected != tab);
+			tab.header.classList.toggle('fade-header', this.selected != tab);
+			tab.header.classList.toggle('remove-border', this[index+1] == this.selected);
+
 		}
 
 		if(!this.length)
 			this.addTab();
 	}
-
-	applySelected() {
-
-		for(const [index, tab] of this.entries()) {
-
-			tab.body.classList.toggle('hidden', this.selected != tab);
-			tab.header.classList.toggle('fade-header', this.selected != tab);
-			tab.header.classList.toggle('remove-border', this[index+1] == this.selected);
-		}
-	}
 }
 
 class PreviewTab {
 
-	constructor(tab, reportName, previewCount) {
+	constructor(tab, reportName) {
 
 		this.tabs = tab;
 
 		this.reportName = reportName;
-		this.previewCount = previewCount;
+		this.previewCount = tab.previewCount;
 
 		this.header;
 	}
@@ -440,10 +431,9 @@ class PreviewTab {
 			else
 				this.tabs.selected = this.tabs[tabIndex + 1];
 
-			if(tabIndex > -1)
+			if(tabIndex > -1) {
 				this.tabs.splice(tabIndex, 1);
-
-			this.tabs.applySelected();
+			}
 
 			this.tabs.render();
 		});
@@ -451,7 +441,7 @@ class PreviewTab {
 		container.on('click', () => {
 
 			this.tabs.selected = this;
-			this.tabs.applySelected();
+			this.tabs.render();
 		});
 
 		return container;
