@@ -516,7 +516,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				<td title="${report.filters.map(f => f.name).join(', ')}" >
 					${report.filters.length}
 				</td>
-				<td class="action visualizations green" title="${report.visualizations.map(f => f.name).join(', ')}" >
+				<td class="action visualizations green ${report.visualizations.some(rv => rv.editable) ? 'clickable' : 'disabled'}" title="${report.visualizations.map(f => f.name).join(', ')}" >
 					${report.visualizations.length}
 				</td>
 				<td>${report.is_enabled ? 'Yes' : 'No'}</td>
@@ -566,7 +566,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				});
 			}
 
-			if(row.querySelector('.visualizations.green')) {
+			if(row.querySelector('.visualizations.clickable')) {
 				row.querySelector('.visualizations').on('click', () => {
 
 					window.history.pushState({}, '', `/reports/pick-visualization/${report.query_id}`);
@@ -1074,6 +1074,10 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		if(this.container.querySelector('#define-report-parts > form#define-report-form'))
 			this.container.querySelector('#define-report-parts > form#define-report-form').remove();
+
+		if(this.report.editable) {
+			this.container.querySelector('#schema-toggle').classList.remove('hidden');
+		}
 
 		this.container.querySelector('#define-report-parts').appendChild(this.report.connection.form);
 
