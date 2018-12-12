@@ -18,7 +18,7 @@ exports.insert = class extends API {
 		this.assert(
 			(multipleTargets && this.request.body.target_id.length) ||
 			this.request.body.target_id == parseInt(this.request.body.target_id),
-			`${this.request.body.target} Id is not found.`
+			`${this.request.body.target} id is not found.`
 		);
 
 		this.assert(this.request.body.category_id == parseInt(this.request.body.category_id), "Category Id is not found.");
