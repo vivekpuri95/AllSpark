@@ -2116,7 +2116,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		this.container.querySelector('.visualization-form.stage-form').insertBefore(this.dashboards.container, this.container.querySelector('.visualization-form.stage-form .filters'));
 
 		this.dashboards.clear();
-		await this.page.preview.position('right');
+		this.page.preview.position('right');
 
 		this.dashboards.load();
 
@@ -3442,7 +3442,6 @@ class VisualizationLog extends ReportLog {
 		queryInfo.appendChild(this.logsVisualizationManager.container);
 
 		this.logsVisualizationManager.load();
-
 	}
 }
 
@@ -3485,7 +3484,6 @@ class ReportConnection {
 
 			this.editor.value = json.query;
 		}
-
 	}
 
 	get json() {
@@ -5787,7 +5785,6 @@ ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends R
 		container.querySelector('.map-themes').appendChild(this.themes.container);
 
 		return container;
-
 	}
 
 	get json() {
@@ -8505,7 +8502,6 @@ class RelatedVisualizations extends Set {
 			this.relatedVisualizationsMultiSelect.datalist = datalist;
 			this.relatedVisualizationsMultiSelect.render();
 		}
-
 	}
 
 	async insert() {
@@ -8572,7 +8568,6 @@ class RelatedVisualizations extends Set {
 
 		form.reset();
 		this.relatedVisualizationsMultiSelect.clear();
-
 	}
 }
 
