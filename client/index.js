@@ -34,6 +34,15 @@ class HTMLAPI extends API {
 
 		let theme = 'light';
 
+		if(this.request.query.download) {
+
+			const token_details = await commonFunctions.getUserDetailsJWT(this.request.query.refresh_token);
+
+			if(!token_details.error) {
+				this.user = new User(token_details);
+			}
+		}
+
 		if(!this.user && (this.request.cookies.token)) {
 
 			const token_details = await commonFunctions.getUserDetailsJWT(this.request.cookies.token);

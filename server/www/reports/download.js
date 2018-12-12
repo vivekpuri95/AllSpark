@@ -25,20 +25,6 @@ exports.pdf = class DownloadPdf extends API {
 			child_process.execSync('mkdir /tmp/Allspark');
 		}
 
-		// Render the visualization.
-		await page.evaluate(async () => {
-
-			const visibleVisuliaztions = page.list.get(page.currentDashboard).visibleVisuliaztions;
-
-			const promiseList = [];
-
-			for(const report of visibleVisuliaztions) {
-				promiseList.push(report.visualizations.selected.render());
-			}
-
-			await Promise.all(promiseList);
-		});
-
 		// Wait until the graphs animations rendered.
 		await new Promise(resolve => setTimeout(resolve, 2000));
 
