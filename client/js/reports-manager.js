@@ -249,7 +249,9 @@ class ReportsMangerPreview {
 
 		this.page.container.classList.add('preview-' + this._position);
 
-		await this.report.visualizations.selected.load();
+		try {
+			await this.report.visualizations.selected.load();
+		} catch(e) {}
 
 		this.move({render: false});
 	}
@@ -2114,7 +2116,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		this.container.querySelector('.visualization-form.stage-form').insertBefore(this.dashboards.container, this.container.querySelector('.visualization-form.stage-form .filters'));
 
 		this.dashboards.clear();
-		await this.page.preview.position('right');
+		this.page.preview.position('right');
 
 		this.dashboards.load();
 
@@ -2620,7 +2622,7 @@ class ReportsManagerFilters extends Map {
 
 				this.add({
 					name,
-					type,
+					type: globalFilter.type || type,
 					placeholder,
 					dataset: globalFilter.dataset || null,
 					multiple: isNaN(globalFilter.multiple) ? null : globalFilter.multiple,
@@ -3440,7 +3442,6 @@ class VisualizationLog extends ReportLog {
 		queryInfo.appendChild(this.logsVisualizationManager.container);
 
 		this.logsVisualizationManager.load();
-
 	}
 }
 
@@ -3483,7 +3484,6 @@ class ReportConnection {
 
 			this.editor.value = json.query;
 		}
-
 	}
 
 	get json() {
@@ -5785,7 +5785,6 @@ ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends R
 		container.querySelector('.map-themes').appendChild(this.themes.container);
 
 		return container;
-
 	}
 
 	get json() {
@@ -7122,6 +7121,7 @@ ReportTransformation.types.set('stream', class ReportTransformationStream extend
 
 		for(const column of this.container.querySelectorAll('.column')) {
 			response.columns.push({
+				stream: column.querySelector('select[name=stream]').value,
 				column: column.querySelector('input[name=column]').value,
 				function: column.querySelector('select[name=function]').value,
 				name: column.querySelector('input[name=name]').value,
@@ -7177,6 +7177,10 @@ ReportTransformation.types.set('stream', class ReportTransformationStream extend
 		container.classList.add('form-row', 'column');
 
 		container.insertAdjacentHTML('beforeend',`
+			<select name="stream">
+				<option value="base">Base</option>
+				<option value="stream">Stream</option>
+			</select>
 			<input type="text" name="column" value="${column.column || ''}" placeholder="Column">
 			<select name="function">
 				<option value="sum">Sum</option>
@@ -7191,6 +7195,9 @@ ReportTransformation.types.set('stream', class ReportTransformationStream extend
 			<input type="text" name="name" value="${column.name || ''}" placeholder="Name">
 			<button type="button"><i class="far fa-trash-alt"></i></button>
 		`);
+
+		if(column.stream)
+			container.querySelector('select[name=stream]').value = column.stream;
 
 		if(column.function)
 			container.querySelector('select[name=function]').value = column.function;
@@ -7240,7 +7247,7 @@ ReportTransformation.types.set('restrict-columns', class ReportTransformationRes
 			label = document.createElement('label');
 
 		columns.classList.add('columns');
-		label.classList.add('restrict-column');
+		label.classList.add('restrict-columns');
 
 		columns.appendChild(this.multiSelect.container);
 
@@ -7593,7 +7600,80 @@ ReportTransformation.types.set('linear-regression', class ReportTransformationRe
 				extrapolate: this.extrapolateUnits.value
 			},
 		};
-	};
+	}
+});
+
+ReportTransformation.types.set('custom-column', class ReportTransformationMultipleColumn extends ReportTransformation {
+
+	get key() {
+		return 'custom-column';
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = super.container.querySelector('.transformation');
+
+		container.innerHTML = `
+
+			<label>
+				<span>Column Name</span>
+				<input type="text" name="column" value="${this.column || ''}">
+			</label>
+
+			<label>
+				<span>Formula</span>
+				<textarea name="formula">${this.formula || ''}</textarea>
+				<small class="error"></small>
+			</label>
+		`;
+
+		container.querySelector('textarea[name=formula]').on('keyup', () => this.render());
+		container.querySelector('textarea[name=formula]').on('change', () => this.render());
+
+		this.render();
+
+		return super.container;
+	}
+
+	render() {
+
+		const textarea = this.container.querySelector('textarea[name=formula]');
+
+		let formula = textarea.value;
+
+		for(const column of this.incoming.columns.values()) {
+
+			if(formula.includes(`{{${column.key}}}`))
+				formula = formula.replace(new RegExp(`{{${column.key}}}`, 'gi'), 1);
+		}
+
+		try {
+			eval(formula);
+		}
+
+		catch(e) {
+
+			textarea.parentElement.querySelector('small').textContent = e.message;
+			textarea.parentElement.querySelector('small').classList.remove('hidden');
+
+			return;
+		}
+
+		textarea.parentElement.querySelector('small').innerHTML = '&nbsp;';
+		textarea.parentElement.querySelector('small').classList.add('hidden');
+	}
+
+	get json() {
+
+		return {
+			type: this.key,
+			column: this.container.querySelector('label input[name="column"]').value,
+			formula: this.container.querySelector('label textarea[name="formula"]').value,
+		};
+	}
 });
 
 class ReportVisualizationDashboards extends Set {
@@ -8495,7 +8575,6 @@ class RelatedVisualizations extends Set {
 			this.relatedVisualizationsMultiSelect.datalist = datalist;
 			this.relatedVisualizationsMultiSelect.render();
 		}
-
 	}
 
 	async insert() {
@@ -8562,7 +8641,6 @@ class RelatedVisualizations extends Set {
 
 		form.reset();
 		this.relatedVisualizationsMultiSelect.clear();
-
 	}
 }
 

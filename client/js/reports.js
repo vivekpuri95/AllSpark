@@ -764,7 +764,7 @@ class DataSource {
 		if(!this.columns.list.size)
 			return this.error();
 
-		for(const row of data)
+		for(const row of data || [])
 			response.push(new DataSourceRow(row, this));
 
 		if(this.postProcessors.selected) {
@@ -3167,7 +3167,6 @@ class DataSourceColumnDrilldownParameters extends Set {
 		this.load();
 
 		return container;
-
 	}
 
 	load() {
@@ -4013,7 +4012,7 @@ class DataSourceTransformation {
 		if(!this.disabled)
 			response = await this.execute(response);
 
-		this.outgoing.rows = response.length || 0;
+		this.outgoing.rows = response ? response.length : 0;
 		this.outgoing.columns.update(response);
 
 		this.executionDuration = performance.now() - time;
@@ -4384,56 +4383,61 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 		for(const filter of DataSourceColumnFilter.types)
 			filters[filter.slug] = filter;
 
-		for(const row of response) {
+		for(const baseRow of response) {
 
-			for(const newColumn of newColumns) {
+			let newRow = [];
 
-				// If the stream's column doesn't exists in base report then add it
-				if(!(newColumn in row))
-					row[newColumn] = [];
+			for(const column of this.columns) {
+
+				if(column.stream != 'base')
+					continue;
+
+				if(!(column.column in baseRow))
+					continue;
+
+				newRow[column.name || column.column] = column.column in baseRow ? baseRow[column.column] : '';
 			}
 
+			// Make a LEFT JOIN on the current row with the stream report
+			outer:
 			for(const streamRow of streamResponse) {
 
-				let matched = true;
-
+				// If any of the stream's join conditions don't match then skip this row
 				for(const join of this.joins) {
 
-					if(!filters[join.function].apply(row[join.sourceColumn], streamRow.get(join.streamColumn))) {
-						matched = false;
-						break
-					}
+					if(!filters[join.function].apply(baseRow[join.sourceColumn], streamRow.get(join.streamColumn)))
+						continue outer;
 				}
 
-				if(!matched)
-					continue;
+				for(const column of this.columns) {
 
-				for(const [key, value] of streamRow) {
+					if(column.stream != 'stream')
+						continue;
 
-					const array = row[key];
+					if(!streamRow.has(column.column))
+						continue;
 
-					if(Array.isArray(array))
-						array.push(value);
+					let joinGroup = [];
+
+					if(!((column.name || column.column) in newRow)) {
+						newRow[column.name || column.column] = joinGroup;
+						joinGroup.column = column;
+					}
+
+					joinGroup.push(streamRow.get(column.column));
 				}
 			}
 
-			for(const key in row) {
+			for(const key in newRow) {
 
-				const [column] = this.columns.filter(c => c.column == key);
-
-				if(!column) {
-					delete row[key];
-					continue;
-				}
-
-				const values = row[key];
+				const values = newRow[key];
 
 				if(!Array.isArray(values))
 					continue;
 
 				let value = null;
 
-				switch(column.function) {
+				switch(values.column.function) {
 
 					case 'sum':
 						value = values.reduce((sum, value) => sum + (parseFloat(value) || 0), 0);
@@ -4471,11 +4475,25 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 						value = values.length;
 				}
 
-				row[key] = value;
+				{
+					const row = [];
+
+					for(const column of this.columns) {
+
+						if((column.name || column.column) in newRow)
+							row[column.name || column.column] = newRow[column.name || column.column];
+					}
+
+					newRow = row;
+				}
+
+				newRow[key] = value;
 			}
+
+			newResponse.push(newRow);
 		}
 
-		return response;
+		return newResponse;
 	}
 });
 
@@ -4702,7 +4720,54 @@ DataSourceTransformation.types.set('linear-regression', class DataSourceTransfor
 
 		return response;
 	}
+});
 
+DataSourceTransformation.types.set('custom-column', class DataSourceTransformationCustomColumn extends DataSourceTransformation {
+
+	get name() {
+		return 'Custom Column';
+	}
+
+	async execute(response = []) {
+
+		if(!response || !response.length || !this.formula)
+			return response;
+
+		const newResponse = [];
+
+		for(const row of response) {
+
+			let formula = this.formula;
+
+			for(const key in row) {
+
+				if(!formula.includes(`{{${key}}}`))
+					continue;
+
+				let value = parseFloat(row[key]);
+
+				if(isNaN(value))
+					value = `'${row[key]}'` || '';
+
+				formula = formula.replace(new RegExp(`{{${key}}}`, 'gi'), value);
+			}
+
+			try {
+
+				row[this.column] = eval(formula);
+
+				if(!isNaN(parseFloat(row[this.column])))
+					row[this.column] = parseFloat(row[this.column]);
+
+			} catch(e) {
+				row[this.column] = null;
+			}
+
+			newResponse.push(row);
+		}
+
+		return newResponse;
+	}
 });
 
 DataSourcePostProcessors.processors = new Map;
@@ -6069,8 +6134,13 @@ Visualization.list.set('table', class Table extends Visualization {
 		}
 
 		if(!this.rows.length) {
+
 			tbody.insertAdjacentHTML('beforeend', `
-				<tr class="NA"><td colspan="${this.source.columns.size}">${this.source.originalResponse.message || 'No data found!'}</td></tr>
+				<tr class="NA">
+					<td colspan="${this.source.columns.size}">
+						${this.source.originalResponse && this.source.originalResponse.message ? this.source.originalResponse.message : 'No data found!'}
+					</td>
+				</tr>
 			`);
 		}
 
@@ -6096,7 +6166,7 @@ Visualization.list.set('table', class Table extends Visualization {
 			<span>
 				<span class="label">Total:</span>
 				<strong title="Total number of rows in the dataset">
-					${Format.number(this.source.originalResponse.data ? this.source.originalResponse.data.length : 0)}
+					${Format.number(this.source.originalResponse && this.source.originalResponse.data ? this.source.originalResponse.data.length : 0)}
 				</strong>
 			</span>
 		`;
@@ -7408,7 +7478,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 					column.push({
 						x: index,
-						y: row.get(column.key),
+						y: parseFloat(row.get(column.key)),
 					});
 				}
 
@@ -9791,7 +9861,6 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 		this.map.set('styles', this.themes.get(this.options.theme).config || []);
 
 		this.layers.render();
-
 	}
 });
 
@@ -10347,7 +10416,6 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 		return color ? 'green' : 'red';
 	}
-
 });
 
 Visualization.list.set('json', class JSONVisualization extends Visualization {
@@ -11208,7 +11276,6 @@ class SpatialMapLayer {
 		});
 
 		return container;
-
 	}
 }
 
@@ -12256,7 +12323,6 @@ class SpatialMapThemes extends Map {
 		}
 
 		return container;
-
 	}
 }
 
@@ -12467,7 +12533,6 @@ class ReportLog {
 			this.state = JSON.parse(this.state);
 		}
 		catch(e) {}
-
 	}
 
 	get container() {
@@ -13057,7 +13122,6 @@ class VisualizationsCanvas {
 		await Promise.all(promises);
 
 		this.render();
-
 	}
 }
 
@@ -13112,7 +13176,6 @@ class Canvas extends VisualizationsCanvas {
 			await Promise.all(filters);
 			dataSource.container.appendChild(dataSource.visualizations.savedOnDashboard.container);
 		}
-
 	}
 }
 

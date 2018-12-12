@@ -6,13 +6,28 @@ exports.insert = class extends API {
 
 		const expectedFields = ["owner", "owner_id", "target", "target_id", "category_id"];
 
-		this.assert(expectedFields.every(x => this.request.body[x]), "required data owner, ownerId, target, category_id, targetId, some are missing");
+		this.assert(expectedFields.every(x => this.request.body[x]), "Required data is missing.");
+
+		let multipleTargets = false;
+		if (Array.isArray(this.request.body.target_id)) {
+
+			this.request.body.target_id = this.request.body.target_id.map(x => parseInt(x));
+			multipleTargets = true;
+		}
+
+		this.assert(
+			(multipleTargets && this.request.body.target_id.length) ||
+			this.request.body.target_id == parseInt(this.request.body.target_id),
+			`${this.request.body.target} id is not found.`
+		);
+
+		this.assert(this.request.body.category_id == parseInt(this.request.body.category_id), "Category Id is not found.");
 
 		const categories = Array.isArray(this.request.body.category_id) ? this.request.body.category_id : [this.request.body.category_id];
 
 		expectedFields.splice(expectedFields.indexOf("category_id"), 1);
 
-		if(categories.map(x => expectedFields.map(x => this.request.body[x])).length !== categories.map(x => expectedFields.map(x => this.request.body[x]).filter(x => x)).length) {
+		if (categories.map(x => expectedFields.map(x => this.request.body[x])).length !== categories.map(x => expectedFields.map(x => this.request.body[x]).filter(x => x)).length) {
 
 			return "Some values are missing";
 		}
@@ -23,7 +38,7 @@ exports.insert = class extends API {
 			"write"
 		);
 
-		if(insertDetails.insertId) {
+		if (insertDetails.insertId) {
 
 			return await this.mysql.query(
 				"update tb_object_roles set group_id = ? where id between ? and ?",
@@ -55,7 +70,7 @@ exports.update = class extends API {
 
 		let categoryIds = this.request.body.category_id;
 
-		if(!Array.isArray(categoryIds)) {
+		if (!Array.isArray(categoryIds)) {
 
 			categoryIds = [categoryIds]
 		}
@@ -67,12 +82,12 @@ exports.update = class extends API {
 			[this.request.body.group_id, this.account.account_id]
 		);
 
-		if(!rows.length)  {
+		if (!rows.length) {
 
 			return 'done'
 		}
 
-		if((rows.filter(x => !categoryIds.includes(x.category_id)).length)) {
+		if ((rows.filter(x => !categoryIds.includes(x.category_id)).length)) {
 
 			await this.mysql.query(
 				"DELETE FROM tb_object_roles WHERE group_id = ? AND category_id IN (?) AND account_id = ?",
@@ -83,7 +98,7 @@ exports.update = class extends API {
 
 		categoryIds = categoryIds.filter(x => x);
 
-		if(!categoryIds.length) {
+		if (!categoryIds.length) {
 
 			return "Done";
 		}
@@ -122,7 +137,7 @@ exports.list = class extends API {
 
 		else {
 
-			result =  await this.mysql.query(
+			result = await this.mysql.query(
 				"SELECT * FROM tb_object_roles WHERE account_id = ? and group_id is not null",
 				[this.account.account_id]
 			)
@@ -130,9 +145,9 @@ exports.list = class extends API {
 
 		const groupIdObject = {};
 
-		for(const row of result) {
+		for (const row of result) {
 
-			if(!groupIdObject.hasOwnProperty(row.group_id)) {
+			if (!groupIdObject.hasOwnProperty(row.group_id)) {
 
 				groupIdObject[row.group_id] = {...row, category_id: [row.category_id]};
 			}
@@ -193,9 +208,9 @@ exports.get = class extends API {
 
 		const groupIdObject = {};
 
-		for(const row of result) {
+		for (const row of result) {
 
-			if(!groupIdObject.hasOwnProperty(row.group_id)) {
+			if (!groupIdObject.hasOwnProperty(row.group_id)) {
 
 				groupIdObject[row.group_id] = {...row, category_id: [row.category_id]};
 			}
