@@ -566,7 +566,7 @@ body.floating header > .menu-toggle  {
 body.floating main  {
 	grid-template-columns: 1fr;
 }
-	body.floating main nav {
+	body.floating main > nav {
 		position: fixed;
 		width: 220px;
 		transform: translateX(-220px);
