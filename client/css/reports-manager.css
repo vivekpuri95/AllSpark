@@ -803,13 +803,19 @@ main.preview-left #stages {
 						padding-bottom: var(--gap);
 						font-size: 90%;
 					}
-				.visualization-form .transformations .transformation > .restrict-column {
+				.visualization-form .transformations .transformation > .restrict-columns {
 					display: grid;
 					grid-template-columns: repeat(2, max-content);
 				}
-					.visualization-form .transformations .transformation > .restrict-column input[disabled]:not(:checked) + span {
+					.visualization-form .transformations .transformation > .restrict-columns input[disabled]:not(:checked) + span {
 						color: var(--color-grey);
 					}
+				.visualization-form .transformations .transformation.custom-column textarea {
+					padding: 5px 10px;
+				}
+				.visualization-form .transformations .transformation.custom-column .error {
+					color: var(--color-red);
+				}
 
 				.visualization-form .transformations .transformation .form-row {
 					display: grid;
