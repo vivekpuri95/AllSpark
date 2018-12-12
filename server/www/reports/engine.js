@@ -232,7 +232,7 @@ class report extends API {
 				flag = flag || userCategories.every(x => category.includes(x.toString()));
 			}
 
-			flag = flag || (userCategories.some(x => constants.adminPrivilege.includes(x)) && userCategories.length);
+			flag = (flag && userCategories.length) || userCategories.some(x => constants.adminPrivilege.includes(x));
 			flag = flag || this.user.privilege.has('superadmin') || this.reportObj.added_by == this.user.user_id;
 
 			this.assert(flag, "Query not editable by user");
