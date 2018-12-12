@@ -348,12 +348,12 @@ class PreviewTabsManager extends Array {
 			await this.report.visualizations.selected.render({resize: true});
 	}
 
-	addTab(reportName) {
+	addTab(title) {
 
-		if(!reportName)
+		if(!title)
 			this.previewCount++;
 
-		this.selected = new PreviewTab(this, reportName);
+		this.selected = new PreviewTab(this, title);
 
 		this.container.querySelector('.tabs-header .headers').appendChild(this.selected.header);
 		this.container.querySelector('.tabs-body').appendChild(this.selected.body);
@@ -392,11 +392,11 @@ class PreviewTabsManager extends Array {
 
 class PreviewTab {
 
-	constructor(tab, reportName) {
+	constructor(tab, title) {
 
 		this.tabs = tab;
 
-		this.reportName = reportName;
+		this.title = title;
 		this.previewCount = tab.previewCount;
 
 		this.header;
@@ -411,7 +411,7 @@ class PreviewTab {
 		container.classList.add('tab-header');
 
 		container.innerHTML = `
-			<span>${this.reportName || `Preview ${this.previewCount}`}</span>
+			<span>${this.title || `Preview ${this.previewCount}`}</span>
 			<span class="close">
 				<i class="fa fa-times close-icon" aria-hidden="true"></i>
 			</span>
@@ -421,7 +421,7 @@ class PreviewTab {
 
 			e.stopPropagation();
 
-			if(!this.tabs.selected.bodyContainer.children.length && this.tabs.length == 1)
+			if(!this.tabs.selected.body.children.length && this.tabs.length == 1)
 				return;
 
 			const tabIndex = this.tabs.indexOf(this);
@@ -454,7 +454,6 @@ class PreviewTab {
 
 		const container = this.bodyContainer = document.createElement('div');
 
-		container.innerHTML = ``;
 		container.classList.add('tab-body');
 
 		return container;
@@ -524,13 +523,13 @@ class ReportsMangerStage {
 		this.page.stages.selected = this;
 
 		const
-			reportName = this.page.stages.get('pick-report').switcher.querySelector('small'),
+			title = this.page.stages.get('pick-report').switcher.querySelector('small'),
 			visualizationsName = this.page.stages.get('pick-visualization').switcher.querySelector('small'),
 			report = this.selectedReport;
 
 		if(report) {
 
-			reportName.textContent = report ? `${report.name} #${report.query_id}` : 'Add New Report';
+			title.textContent = report ? `${report.name} #${report.query_id}` : 'Add New Report';
 
 			let visualization,
 				id = parseInt(location.pathname.split('/').pop())
