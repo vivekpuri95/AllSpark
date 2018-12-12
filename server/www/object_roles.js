@@ -15,13 +15,13 @@ exports.insert = class extends API {
 			multipleTargets = true;
 		}
 
-		this.assert(this.request.body.category_id == parseInt(this.request.body.category_id), "category id is not found");
-
 		this.assert(
 			(multipleTargets && this.request.body.target_id.length) ||
 			this.request.body.target_id == parseInt(this.request.body.target_id),
 			"target id is not found"
 		);
+
+		this.assert(this.request.body.category_id == parseInt(this.request.body.category_id), "category id is not found");
 
 		const categories = Array.isArray(this.request.body.category_id) ? this.request.body.category_id : [this.request.body.category_id];
 
