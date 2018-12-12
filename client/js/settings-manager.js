@@ -36,11 +36,13 @@ class SettingsManager {
 
 		this.profiles.clear();
 
-		for(const data of this.response)
+		for(const data of this.response) {
 			this.profiles.set(data.id, new SettingsManagerProfile(data, this));
+		}
 
-		if(!this.profiles.selected && this.profiles.size)
+		if(!this.profiles.selected && this.profiles.size) {
 			this.profiles.selected = Array.from(this.profiles.values())[0];
+		}
 	}
 
 	render() {
@@ -49,19 +51,23 @@ class SettingsManager {
 
 		tbody.textContent = null;
 
-		for(const data of this.profiles.values())
+		for(const data of this.profiles.values()) {
 			tbody.appendChild(data.row);
+		}
 
-		if(!this.profiles.size)
+		if(!this.profiles.size) {
 			tbody.innerHTML = `<tr><td colspan="2" class="NA">No profile found</td></tr>`;
+		}
 
-		if(this.container.querySelector('section.profile'))
+		if(this.container.querySelector('section.profile')) {
 			this.container.querySelector('section.profile').remove();
+		}
 
 		this.container.querySelector('.no-profile').classList.toggle('hidden', this.profiles.selected ? true : false);
 
-		for(const [key, profiles] of this.profiles)
+		for(const [key, profiles] of this.profiles) {
 			profiles.row.classList.remove('selected');
+		}
 
 		if(this.profiles.selected) {
 			this.profiles.selected.row.classList.add('selected');
@@ -71,8 +77,9 @@ class SettingsManager {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 		container.classList.add('settings-manager');
@@ -164,8 +171,9 @@ class SettingsManager {
 
 	on(event, callback) {
 
-		if(!this.callbacks.has(event))
+		if(!this.callbacks.has(event)) {
 			this.callbacks.set(event, new Set);
+		}
 
 		this.callbacks.get(event).add(callback);
 	}
@@ -175,8 +183,9 @@ class SettingsManagerProfile {
 
 	constructor(setting, settingsManager) {
 
-		for(const key in setting)
+		for(const key in setting) {
 			this[key] = setting[key];
+		}
 
 		this.settingsManager = settingsManager;
 	}
@@ -211,8 +220,9 @@ class SettingsManagerProfile {
 
 	get section() {
 
-		if(this.sectionElement)
+		if(this.sectionElement) {
 			return this.sectionElement;
+		}
 
 		const section = this.sectionElement = document.createElement('section');
 
@@ -241,14 +251,17 @@ class SettingsManagerProfile {
 
 			let setting = SettingsManager.types.get(format.type.toLowerCase());
 
-			if(!setting)
+			if(!setting) {
 				continue;
+			}
 
 			setting = new setting(format);
 
 			for(const value of this.value || []) {
-				if(format.key == value.key)
+
+				if(format.key == value.key) {
 					setting.value = value.value;
+				}
 			}
 
 			this.settings.push(setting);
@@ -256,8 +269,9 @@ class SettingsManagerProfile {
 
 		const form = this.section.querySelector('form');
 
-		for(const setting of this.settings)
+		for(const setting of this.settings) {
 			form.appendChild(setting.container);
+		}
 
 		section.querySelector('form').on('submit', (e) => this.update(e));
 
@@ -315,8 +329,9 @@ class SettingsManagerProfile {
 		}
 
 		// Call any assigned callbacks when the settings are saved
-		for(const callback of this.settingsManager.callbacks.get('submit') || [])
+		for(const callback of this.settingsManager.callbacks.get('submit') || []) {
 			callback();
+		}
 	}
 
 	async delete(e) {
@@ -367,10 +382,12 @@ class SettingsManagerProfile {
 
 			let found = false;
 
-			if(!query)
+			if(!query) {
 				found = true;
+			}
 
 			for(const key of ['key', 'name', 'description', 'type']) {
+
 				if(setting[key] && setting[key].toLowerCase().includes(query.toLowerCase())) {
 					found = true;
 					break;
@@ -386,8 +403,9 @@ class SettingsManagerType {
 
 	constructor(format) {
 
-		for(const key in format)
+		for(const key in format) {
 			this[key] = format[key];
+		}
 	}
 }
 
@@ -397,8 +415,9 @@ SettingsManager.types.set('string', class extends SettingsManagerType {
 
 	get container() {
 
-		if(this.div)
+		if(this.div) {
 			return this.div;
+		}
 
 		const container = this.div = document.createElement('label');
 
@@ -426,8 +445,9 @@ SettingsManager.types.set('url', class extends SettingsManagerType {
 
 	get container() {
 
-		if(this.div)
+		if(this.div) {
 			return this.div;
+		}
 
 		const container = this.div = document.createElement('label');
 
@@ -455,8 +475,9 @@ SettingsManager.types.set('toggle', class extends SettingsManagerType {
 
 	get container() {
 
-		if(this.div)
+		if(this.div) {
 			return this.div;
+		}
 
 		const container = this.div = document.createElement('label');
 
@@ -487,8 +508,9 @@ SettingsManager.types.set('number', class extends SettingsManagerType {
 
 	get container() {
 
-		if(this.div)
+		if(this.div) {
 			return this.div;
+		}
 
 		const container = this.div = document.createElement('label');
 
@@ -516,8 +538,9 @@ SettingsManager.types.set('code', class extends SettingsManagerType {
 
 	get container() {
 
-		if(this.div)
+		if(this.div) {
 			return this.div;
+		}
 
 		const container = this.div = document.createElement('label');
 		container.classList.add('code-editor');
@@ -550,8 +573,9 @@ SettingsManager.types.set('code', class extends SettingsManagerType {
 
 	get value() {
 
-		if(this.editor)
+		if(this.editor) {
 			return this.editor.value;
+		}
 
 		return this.data;
 	}
@@ -560,10 +584,12 @@ SettingsManager.types.set('code', class extends SettingsManagerType {
 
 		this.data = data;
 
-		if(this.editor)
+		if(this.editor) {
 			this.editor.value = this.data;
-		else
+		}
+		else {
 			this.container.querySelector('.edit .content').textContent = this.data.split(';')[0];
+		}
 	}
 });
 
@@ -571,8 +597,9 @@ SettingsManager.types.set('json', class extends SettingsManagerType {
 
 	get container() {
 
-		if(this.div)
+		if(this.div) {
 			return this.div;
+		}
 
 		const container = this.div = document.createElement('label');
 
@@ -606,8 +633,9 @@ SettingsManager.types.set('json', class extends SettingsManagerType {
 
 	get value() {
 
-		if(this.editor)
+		if(this.editor) {
 			return JSON.parse(this.editor.value);
+		}
 
 		return this.data;
 	}
@@ -618,10 +646,12 @@ SettingsManager.types.set('json', class extends SettingsManagerType {
 
 		const value = JSON.stringify(this.data, 0, 4);
 
-		if(this.editor)
+		if(this.editor) {
 			this.editor.value = value;
-		else
+		}
+		else {
 			this.container.querySelector('.edit .content').textContent = value.split('')[0];
+		}
 	}
 });
 
@@ -636,8 +666,9 @@ SettingsManager.types.set('multiselect', class extends SettingsManagerType {
 
 	get container() {
 
-		if(this.div)
+		if(this.div) {
 			return this.div;
+		}
 
 		const container = this.div = document.createElement('label');
 
@@ -658,8 +689,9 @@ SettingsManager.types.set('multiselect', class extends SettingsManagerType {
 
 	set value(params) {
 
-		if(!Array.isArray(params))
+		if(!Array.isArray(params)) {
 			params = [params];
+		}
 
 		this.multiselect.value = params;
 	}

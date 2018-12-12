@@ -52,8 +52,9 @@ Page.class = class Dashboards extends Page {
 			history.pushState(null, '', window.location.pathname.slice(0, window.location.pathname.lastIndexOf('/')));
 		});
 
-		for(const category of MetaData.categories.values())
+		for(const category of MetaData.categories.values()) {
 			this.listContainer.form.subtitle.insertAdjacentHTML('beforeend', `<option value="${category.category_id}">${category.name}</option>`);
+		}
 
 		this.listContainer.form.subtitle.on('change', () => this.renderList());
 
@@ -71,8 +72,9 @@ Page.class = class Dashboards extends Page {
 
 	get searchBar() {
 
-		if(this.searchBarFilter)
+		if(this.searchBarFilter) {
 			return this.searchBarFilter;
+		}
 
 		const filters = [
 			{
@@ -107,8 +109,8 @@ Page.class = class Dashboards extends Page {
 				key: 'Visualizations Type',
 				rowValue: row => {
 					return row.visualizations.map(f => f.type)
-											 .map(m => MetaData.visualizations.has(m) ?
-											 (MetaData.visualizations.get(m)).name : []);
+						 .map(m => MetaData.visualizations.has(m) ?
+						 (MetaData.visualizations.get(m)).name : []);
 				},
 			},
 			{
@@ -148,17 +150,14 @@ Page.class = class Dashboards extends Page {
 		const parents = [id];
 
 		if (!dashboard) {
-
 			return [];
 		}
 
 		if (!dashboard.parent) {
-
 			return parents
 		}
 
 		while (dashboard && dashboard.parent && this.list.has(dashboard.parent)) {
-
 			parents.push(dashboard.parent);
 			dashboard = this.list.get(dashboard.parent);
 		}
@@ -174,18 +173,20 @@ Page.class = class Dashboards extends Page {
 			this.container.querySelector('.nav-blanket').classList.add('hidden');
 
 			(async () => {
+
 				this.loadedVisualizations.clear();
+
 				history.pushState({
 					filter: dashboardId,
 					type: 'dashboard'
 				}, '', `/dashboard/${dashboardId}${searchParam}`);
+
 				await this.list.get(dashboardId).load();
 				await this.list.get(dashboardId).render();
 			})()
 		}
 
 		if (renderNav) {
-
 			this.renderList();
 			this.navbar.render();
 		}
@@ -199,7 +200,6 @@ Page.class = class Dashboards extends Page {
 				const submenu = label.parentElement.querySelector('.submenu');
 
 				if (submenu) {
-
 					submenu.classList.add('hidden');
 				}
 
@@ -212,7 +212,6 @@ Page.class = class Dashboards extends Page {
 				const label = this.nav.querySelector(`#${element}`);
 
 				if (!label) {
-
 					continue;
 				}
 
@@ -235,8 +234,9 @@ Page.class = class Dashboards extends Page {
 
 			const values = filter.json;
 
-			if(values.functionName == 'equalto' && values.query == value && values.searchValue == 'Tags')
+			if(values.functionName == 'equalto' && values.query == value && values.searchValue == 'Tags') {
 				return;
+			}
 		}
 
 		this.searchBarFilter.container.classList.remove('hidden');
@@ -277,18 +277,17 @@ Page.class = class Dashboards extends Page {
 
 		let reports = [];
 
-		if(this.searchBar)
+		if(this.searchBar) {
 			reports = this.searchBar.filterData;
+		}
 
 		for (const report of reports) {
 
 			if (!report.is_enabled || report.is_deleted) {
-
 				continue;
 			}
 
 			if (this.listContainer.form.subtitle.value && report.subtitle != this.listContainer.form.subtitle.value) {
-
 				continue;
 			}
 
@@ -297,7 +296,6 @@ Page.class = class Dashboards extends Page {
 			let description = report.description ? report.description.split(' ').slice(0, 20) : [];
 
 			if (description.length === 20) {
-
 				description.push('&hellip;');
 			}
 
@@ -323,8 +321,9 @@ Page.class = class Dashboards extends Page {
 				<td><div class="visualisation-display">${report.visualizations.map(v => `<div class="visualization-name">${v.name} `+` <br> <span class="NA"> ${v.type}` + `</span></div>`).join('')}</div></td>
 			`;
 
-			for (const tag of tags)
+			for (const tag of tags) {
 				tr.querySelector('.tags').appendChild(tag);
+			}
 
 			tr.querySelector('.link').on('click', e => e.stopPropagation());
 
@@ -352,7 +351,6 @@ Page.class = class Dashboards extends Page {
 		for (const node of this.list.keys()) {
 
 			if (!simplifiedTreeMapping.has(node)) {
-
 				simplifiedTreeMapping.set(node, new Set);
 			}
 
@@ -420,12 +418,10 @@ Page.class = class Dashboards extends Page {
 				}
 
 				for (const element of toDelete) {
-
 					simplifiedTreeMapping.get(dashboardId).delete(element);
 				}
 
 				for (const element of toReplace) {
-
 					simplifiedTreeMapping.get(dashboardId).add(element);
 				}
 			}
@@ -434,7 +430,6 @@ Page.class = class Dashboards extends Page {
 		for (const [k, v] of simplifiedTreeMapping) {
 
 			if (v.has(k)) {
-
 				this.list.delete(k);
 			}
 		}
@@ -461,8 +456,7 @@ Page.class = class Dashboards extends Page {
 		for (const dashboard of this.list.values()) {
 
 			if (dashboard.parent && this.list.has(dashboard.parent)) {
-
-				(this.list.get(dashboard.parent)).children.add(dashboard);
+				this.list.get(dashboard.parent).children.add(dashboard);
 			}
 		}
 
@@ -471,13 +465,11 @@ Page.class = class Dashboards extends Page {
 		for (const dashboard of this.list.values()) {
 
 			if (dashboard.visibleVisuliaztions.size === 0) {
-
 				emptyDashboards.push(this.parents(dashboard.id));
 			}
 		}
 
 		for (const dashboard of emptyDashboards) {
-
 			this.list.delete(dashboard);
 		}
 
@@ -521,20 +513,18 @@ Page.class = class Dashboards extends Page {
 		this.render({dashboardId: 0});
 
 		if (!currentId) {
-
 			return await Sections.show('list');
 		}
 
-		if(window.location.pathname.split('/').some(x => x == 'report'))
+		if(window.location.pathname.split('/').some(x => x == 'report')) {
 			return await this.report(currentId);
-
-		if(window.location.pathname.split('/').some(x => x == 'visualization'))
-			return await this.report(currentId, true);
-
-		else {
-
-			return this.render({dashboardId: currentId, renderNav: true, updateNav: false, searchParam: location.search});
 		}
+
+		if(window.location.pathname.split('/').some(x => x == 'visualization')) {
+			return await this.report(currentId, true);
+		}
+
+		return this.render({dashboardId: currentId, renderNav: true, updateNav: false, searchParam: location.search});
 	}
 
 	async report(id, visualization = false) {
@@ -543,8 +533,9 @@ Page.class = class Dashboards extends Page {
 
 		if(visualization) {
 			for(const source of DataSource.list.values()) {
-				if(source.visualizations.some(v => v.visualization_id == id))
+				if(source.visualizations.some(v => v.visualization_id == id)) {
 					report = source;
+				}
 			}
 		}
 
@@ -577,13 +568,15 @@ Page.class = class Dashboards extends Page {
 
 		this.container.querySelector('#reports .global-filters').classList.add('hidden');
 
-		if(visualization)
+		if(visualization) {
 			[report.visualizations.selected] = report.visualizations.filter(v => v.visualization_id == id);
+		}
 
 		report.menu.classList.remove('hidden');
 
-		if (!report.container.contains(report.menu))
+		if (!report.container.contains(report.menu)) {
 			report.container.appendChild(report.menu);
+		}
 
 		container.appendChild(report.container);
 
@@ -628,12 +621,10 @@ class Dashboard {
 		for (const visualization of this.visualizations) {
 
 			if (!visualization.format) {
-
 				visualization.format = {};
 			}
 
 			if (!DataSource.list.has(visualization.query_id)) {
-
 				continue;
 			}
 
@@ -646,12 +637,10 @@ class Dashboard {
 			`);
 
 			dataSource.selectedVisualization = dataSource.visualizations.filter(v =>
-
 				v.visualization_id === visualization.visualization_id
 			);
 
 			if (!dataSource.selectedVisualization.length) {
-
 				continue;
 			}
 
@@ -716,36 +705,44 @@ class Dashboard {
 
 			if(document.isFullScreen || document.webkitIsFullScreen || document.mozIsFullScreen) {
 
-				if(document.exitFullscreen)
+				if(document.exitFullscreen) {
 					document.exitFullscreen();
+				}
 
-				else if(document.webkitExitFullscreen)
+				else if(document.webkitExitFullscreen) {
 					document.webkitExitFullscreen();
+				}
 
-				else if(document.mozExitFullscreen)
+				else if(document.mozExitFullscreen) {
 					document.mozExitFullscreen();
+				}
 			}
 
 			else {
 
-				if(dashboardList.requestFullscreen)
+				if(dashboardList.requestFullscreen) {
 					dashboardList.requestFullscreen();
+				}
 
-				else if(dashboardList.webkitRequestFullscreen)
+				else if(dashboardList.webkitRequestFullscreen) {
 					dashboardList.webkitRequestFullscreen();
+				}
 
-				else if(dashboardList.mozRequestFullscreen)
+				else if(dashboardList.mozRequestFullscreen) {
 					dashboardList.mozRequestFullscreen();
+				}
 			}
 		});
 
 		document.on('webkitfullscreenchange', () => {
 
-			if(document.isFullScreen || document.webkitIsFullScreen || document.mozIsFullScreen)
+			if(document.isFullScreen || document.webkitIsFullScreen || document.mozIsFullScreen) {
 				fullScreenButton.innerHTML = `<i class="fas fa-compress"></i> Exit Full Screen`;
+			}
 
-			else
+			else {
 				fullScreenButton.innerHTML = `<i class="fas fa-expand"></i> Full Screen`;
+			}
 		});
 
 		const share = page.container.querySelector('#share');
@@ -756,8 +753,9 @@ class Dashboard {
 				parameters = new URLSearchParams(),
 				dialougeBox = new DialogBox();
 
-			for(const [key, value] of Dashboard.selectedValues)
+			for(const [key, value] of Dashboard.selectedValues) {
 				parameters.set(key, value);
+			}
 
 			const shareURL = `${location.origin}${location.pathname}?${parameters}`;
 
@@ -858,8 +856,9 @@ class Dashboard {
 
 			report.selectedVisualization = selectedVisualizationProperties
 
-			if (!report.format)
+			if (!report.format) {
 				report.format = {};
+			}
 
 			report.format.format = selectedVisualizationProperties.format;
 
@@ -867,11 +866,13 @@ class Dashboard {
 				header = report.container.querySelector('header .actions'),
 				format = report.selectedVisualization.format;
 
-			if (!format.width)
+			if (!format.width) {
 				format.width = Dashboard.grid.columns;
+			}
 
-			if (!format.height)
+			if (!format.height) {
 				format.height = Dashboard.grid.rows;
+			}
 
 			header.insertAdjacentHTML('beforeend', `
 				<a class="show move-up" title="Move visualization up"><i class="fas fa-angle-double-up"></i></a>
@@ -893,8 +894,9 @@ class Dashboard {
 					}
 				}
 
-				if (!previous)
+				if (!previous) {
 					return;
+				}
 
 				current.format.position = Math.max(1, current.format.position - 1);
 				previous.format.position = Math.min(this.visualizations.length, previous.format.position + 1);
@@ -938,8 +940,9 @@ class Dashboard {
 
 				}
 
-				if (!next)
+				if (!next) {
 					return;
+				}
 
 				current.format.position = Math.min(this.visualizations.length, current.format.position + 1);
 				next.format.position = Math.max(1, next.format.position - 1);
@@ -1009,13 +1012,15 @@ class Dashboard {
 
 			const report = this.page.loadedVisualizations.beingResized;
 
-			if (!report)
+			if (!report) {
 				return;
+			}
 
 			let format = report.format || {};
 
-			if (!format.format)
+			if (!format.format) {
 				format.format = {};
+			}
 
 			const
 				visualizationFormat = format.format,
@@ -1024,11 +1029,13 @@ class Dashboard {
 				rowStart = getRow(report.container.offsetTop),
 				newRow = getRow(e.pageY) + 1;
 
-			if (newRow > rowStart)
+			if (newRow > rowStart) {
 				visualizationFormat.height = newRow - rowStart;
+			}
 
-			if (newColumn > columnStart && newColumn <= Dashboard.grid.columns)
+			if (newColumn > columnStart && newColumn <= Dashboard.grid.columns) {
 				visualizationFormat.width = newColumn - columnStart;
+			}
 
 			if (
 				visualizationFormat.width != report.container.style.gridColumnEnd.split(' ')[1] ||
@@ -1046,13 +1053,15 @@ class Dashboard {
 					grid-row: auto / span ${visualizationFormat.height || Dashboard.grid.rows};
 				`);
 
-				if (this.dragTimeout)
+				if (this.dragTimeout) {
 					clearTimeout(this.dragTimeout);
+				}
 
 				this.dragTimeout = setTimeout(() => report.visualizations.selected.render({resize: true}), 100);
 
-				if (this.saveTimeout)
+				if (this.saveTimeout) {
 					clearTimeout(this.saveTimeout);
+				}
 
 				this.saveTimeout = setTimeout(() => this.save(visualizationFormat, report.selectedVisualization.id), 1000);
 			}
@@ -1082,7 +1091,6 @@ class Dashboard {
 
 			//removing selected from other containers
 			for (const element of this.page.container.querySelectorAll('.selected') || []) {
-
 				element.classList.remove('selected');
 			}
 
@@ -1177,7 +1185,6 @@ class Dashboard {
 		);
 
 		if (!this.page.loadedVisualizations.size) {
-
 			Dashboard.container.innerHTML = '<div class="NA no-reports">No reports found!</div>';
 		}
 
@@ -1195,7 +1202,6 @@ class Dashboard {
 			});
 
 			if (Dashboard.editing) {
-
 				edit.click();
 			}
 
@@ -1209,11 +1215,13 @@ class Dashboard {
 
 		const mailto = Dashboard.toolbar.querySelector('#mailto');
 
-		if (this.page.account.settings.get('enable_dashboard_share'))
+		if (this.page.account.settings.get('enable_dashboard_share')) {
 			mailto.classList.remove('hidden');
+		}
 
-		if (Dashboard.mail_listener)
+		if (Dashboard.mail_listener) {
 			mailto.removeEventListener('click', Dashboard.mail_listener);
+		}
 
 		mailto.on('click', Dashboard.mail_listener = () => {
 			mailto.classList.toggle('selected');
@@ -1221,7 +1229,6 @@ class Dashboard {
 		});
 
 		if((Dashboard.selectedValues && Dashboard.selectedValues.size && this.globalFilters.size) || this.globalFilters.validGlobalFilters) {
-
 			this.globalFilters.apply();
 		}
 	}
@@ -1257,13 +1264,11 @@ class Navbar {
 			for (const dashboard of this.dashboards.values()) {
 
 				if (!dashboard.parent) {
-
 					this.list.set(dashboard.id, new Nav(dashboard.id, dashboard));
 				}
 			}
 
 			for (const dashboard of dashboards.values()) {
-
 				this.list.set(dashboard.id, new Nav(dashboard, this.page));
 			}
 		}
@@ -1279,13 +1284,11 @@ class Navbar {
 		for (const dashboardItem of this.list.values()) {
 
 			if (!dashboardItem.dashboard.parent) {
-
 				dashboardHirachy.append(dashboardItem.menuItem);
 			}
 		}
 
 		if (dashboardHirachy.querySelectorAll('.item:not(.hidden)').length > 40) {
-
 			search.classList.remove('hidden');
 		}
 
@@ -1324,18 +1327,15 @@ class Navbar {
 			let toShowItems = [];
 
 			try {
-
 				toShowItems = this.page.nav.querySelectorAll([...new Set(matching)].join(', '));
 			}
-			catch (e) {
-			}
+			catch (e) {}
 
 			for (const item of toShowItems) {
 
 				const submenu = item.parentNode.querySelector('.submenu');
 
 				if (submenu) {
-
 					submenu.classList.remove('hidden');
 				}
 
@@ -1362,12 +1362,10 @@ class Nav {
 		let icon;
 
 		if (this.dashboard.icon && this.dashboard.icon.startsWith('http')) {
-
 			icon = `<img src="${this.dashboard.icon}" height="20" width="20">`;
 		}
 
 		else if (this.dashboard.icon && this.dashboard.icon.startsWith('fa')) {
-
 			icon = `<i class="${this.dashboard.icon}"></i>`
 		}
 
@@ -1379,7 +1377,6 @@ class Nav {
 		container.classList.add('item');
 
 		if (!allVisualizations.length && (!this.dashboard.format || !parseInt(this.dashboard.format.category_id))) {
-
 			container.classList.add('hidden');
 		}
 
@@ -1395,19 +1392,18 @@ class Nav {
 		const submenu = container.querySelector('.submenu');
 
 		for (const child of this.dashboard.children.values()) {
-
 			submenu.appendChild(this.page.navbar.list.get(child.id).menuItem);
 		}
 
 		if (this.dashboard.format && this.dashboard.format.hidden) {
-
 			container.classList.add('hidden');
 		}
 
 		container.querySelector('.label').on('click', e => {
 
-			if(e.ctrlKey || e.metaKey)
+			if(e.ctrlKey || e.metaKey) {
 				return window.open('/dashboard/' + this.dashboard.id);
+			}
 
 			this.page.render({
 				dashboardId: this.dashboard.visualizations.length || (this.dashboard.format && this.dashboard.format.category_id) ? this.dashboard.id : 0,
@@ -1416,12 +1412,10 @@ class Nav {
 			});
 
 			if (this.dashboard.page.container.querySelector('nav.collapsed')) {
-
 				this.dashboard.page.render({dashboardId: this.dashboard.id});
 			}
 
 			if (this.dashboard.children.size) {
-
 				container.querySelector('.angle').classList.toggle('down');
 				submenu.classList.toggle('hidden');
 			}
@@ -1452,7 +1446,6 @@ class Nav {
 			visibleVisuliaztions = visibleVisuliaztions.concat([...dashboard.visibleVisuliaztions]);
 
 			for (const child of dashboard.children.values()) {
-
 				getChildrenVisualizations(child);
 			}
 		}
@@ -1473,8 +1466,9 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 			for (const filter of visualization.filters.values()) {
 
-				if (!Array.from(MetaData.globalFilters.values()).some(a => a.placeholder.includes(filter.placeholder)))
+				if (!Array.from(MetaData.globalFilters.values()).some(a => a.placeholder.includes(filter.placeholder))) {
 					continue;
+				}
 
 				const globalFilter = Array.from(MetaData.globalFilters.values()).filter(a => a.placeholder.includes(filter.placeholder));
 
@@ -1530,8 +1524,9 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 		const promises = [];
 
-		for (const filter of this.values())
+		for (const filter of this.values()) {
 			promises.push(filter.fetch());
+		}
 
 		await Promise.all(promises);
 	}
@@ -1545,8 +1540,9 @@ class DashboardGlobalFilters extends DataSourceFilters {
 		container.classList.remove('show');
 		container.classList.toggle('hidden', !this.size);
 
-		if (!this.size)
+		if (!this.size) {
 			return;
+		}
 
 		container.innerHTML = `
 			<div class="head heading">
@@ -1572,8 +1568,9 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 				filter.label.classList.remove('hidden');
 
-				if (!filter.name.toLowerCase().trim().includes(searchInput.value.toLowerCase().trim()))
+				if (!filter.name.toLowerCase().trim().includes(searchInput.value.toLowerCase().trim())) {
 					filter.label.classList.add('hidden');
+				}
 			}
 
 			const shown = container.querySelectorAll('.filters > label:not(.hidden)');
@@ -1598,19 +1595,22 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 				let [matchingFilter] = Array.from(this.values()).filter(gfl => gfl.placeholders.includes(filter.placeholder))
 
-				if (!matchingFilter)
+				if (!matchingFilter) {
 					continue;
+				}
 
 				filter.value = matchingFilter.value;
 
 				found = true;
 			}
 
-			if (options.dontLoad)
+			if (options.dontLoad) {
 				return;
+			}
 
-			if (found && Array.from(this.page.loadedVisualizations).some(v => v.query == report))
+			if (found && Array.from(this.page.loadedVisualizations).some(v => v.query == report)) {
 				report.visualizations.selected.load(options);
+			}
 
 			report.visualizations.selected.subReportDialogBox = null;
 			report.container.style.opacity = found ? 1 : 0.4;
@@ -1619,23 +1619,28 @@ class DashboardGlobalFilters extends DataSourceFilters {
 		Dashboard.selectedValues.clear();
 
 		// Save the value of each filter for use on other dashboards
-		for (const [placeholder, filter] of this)
+		for (const [placeholder, filter] of this) {
 			Dashboard.selectedValues.set(placeholder, filter.value);
+		}
 	}
 
 	clear() {
 
 		for (const filter of this.values()) {
-			if (filter.multiSelect)
+
+			if (filter.multiSelect) {
 				filter.multiSelect.clear();
+			}
 		}
 	}
 
 	all() {
 
 		for (const filter of this.values()) {
-			if (filter.multiSelect)
+
+			if (filter.multiSelect) {
 				filter.multiSelect.all();
+			}
 		}
 	}
 }

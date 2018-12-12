@@ -4,12 +4,12 @@ Page.class = class Signup extends Page {
 
 		super();
 
-		if(account.settings.get('enable_account_signup'))
+		if(account.settings.get('enable_account_signup')) {
 			Sections.show('signup');
+		}
 
 		if(this.user.id) {
-			location.href = '/';
-			return;
+			return location.href = '/';
 		}
 
 		this.form = this.container.querySelector('form#signup-form');

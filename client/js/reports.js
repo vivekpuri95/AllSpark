@@ -4,8 +4,9 @@ class DataSource {
 
 	static async load(force = false) {
 
-		if(DataSource.list && !force)
+		if(DataSource.list && !force) {
 			return;
+		}
 
 		const response = await API.call('reports/report/list');
 
@@ -14,14 +15,17 @@ class DataSource {
 
 	constructor(source, page) {
 
-		for(const key in source)
+		for(const key in source) {
 			this[key] = source[key];
+		}
 
-		if(!this.format)
+		if(!this.format) {
 			this.format = {};
+		}
 
-		if(!this.format.columns)
+		if(!this.format.columns) {
 			this.format.columns = [];
+		}
 
 		this.page = page;
 
@@ -34,11 +38,13 @@ class DataSource {
 		this.pipeline = new DataSourcePipeline(this);
 		this.visualizations = [];
 
-		if(!source.visualizations)
+		if(!source.visualizations) {
 			source.visualizations = [];
+		}
 
-		if(!source.visualizations.filter(v => v.type == 'table').length)
+		if(!source.visualizations.filter(v => v.type == 'table').length) {
 			source.visualizations.push({ name: this.name, visualization_id: 0, type: 'table' });
+		}
 
 		source.visualizations = source.visualizations.filter(v => Visualization.list.has(v.type));
 
@@ -53,14 +59,16 @@ class DataSource {
 		const parameters = new URLSearchParams(_parameters);
 
 		if(typeof _parameters == 'object') {
-			for(const key in _parameters)
+			for(const key in _parameters) {
 				parameters.set(key, _parameters[key]);
+			}
 		}
 
 		parameters.set('query_id', this.query_id);
 
-		if(this.definitionOverride)
+		if(this.definitionOverride) {
 			parameters.set('query', this.definition.query);
+		}
 
 		for(const filter of this.filters.values()) {
 
@@ -73,7 +81,9 @@ class DataSource {
 				}
 			}
 
-			else parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, filter.value);
+			else {
+				parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, filter.value);
+			}
 		}
 
 		const external_parameters = await Storage.get('external_parameters');
@@ -82,8 +92,9 @@ class DataSource {
 
 			for(const key of account.settings.get('external_parameters')) {
 
-				if(key in external_parameters)
+				if(key in external_parameters) {
 					parameters.set(DataSourceFilter.placeholderPrefix + key, external_parameters[key]);
+				}
 			}
 		}
 
@@ -102,8 +113,9 @@ class DataSource {
 			clearTimeout(this.refreshRateTimeout);
 
 			this.refreshRateTimeout = setTimeout(() => {
-				if(this.containerElement && document.body.contains(this.container))
+				if(this.containerElement && document.body.contains(this.container)) {
 					this.visualizations.selected.load();
+				}
 			}, this.refresh_rate * 1000);
 		}
 
@@ -151,8 +163,9 @@ class DataSource {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		this.containerElement = document.createElement('section');
 
@@ -220,8 +233,9 @@ class DataSource {
 
 		container.querySelector('.api-documentation').on('click', async () => {
 
-			if(this.apiDocumentationDialogueBox)
+			if(this.apiDocumentationDialogueBox) {
 				return this.apiDocumentationDialogueBox.show();
+			}
 
 			const resultUrl = new URLSearchParams();
 
@@ -231,8 +245,9 @@ class DataSource {
 
 			for(const entry of this.filters.values()) {
 
-				if(entry.placeholder != 'daterange')
+				if(entry.placeholder != 'daterange') {
 					resultUrl.set('param_' + entry.placeholder, entry.default_value);
+				}
 			}
 
 			this.apiDocumentationDialogueBox = new DialogBox();
@@ -308,8 +323,9 @@ class DataSource {
 
 				for(const entry of this.filters.values()) {
 
-					if(entry.placeholder == 'daterange')
+					if(entry.placeholder == 'daterange') {
 						continue;
+					}
 
 					const tr = document.createElement('tr');
 					tr.innerHTML = `
@@ -335,13 +351,15 @@ class DataSource {
 
 			e.stopPropagation();
 
-			if(!container.contains(this.menu))
+			if(!container.contains(this.menu)) {
 				container.appendChild(this.menu);
+			}
 
 			const alreadyVisibleMenu = this.container.parentElement.querySelector('.data-source > .menu:not(.hidden)');
 
-			if(alreadyVisibleMenu && alreadyVisibleMenu != this.menu)
+			if(alreadyVisibleMenu && alreadyVisibleMenu != this.menu) {
 				alreadyVisibleMenu.classList.add('hidden');
+			}
 
 			this.menu.classList.toggle('hidden');
 			this.menu.style.left = menuToggle.offsetLeft + 'px';
@@ -356,8 +374,9 @@ class DataSource {
 
 					const allVisibleMenu = this.container.parentElement.querySelectorAll('.data-source > .menu:not(.hidden)');
 
-					for(const item of allVisibleMenu)
+					for(const item of allVisibleMenu) {
 						item.parentElement.querySelector('.menu-toggle').click();
+					}
 				});
 			}
 		});
@@ -368,8 +387,9 @@ class DataSource {
 
 			container.querySelector('.description .visible-to .count').on('click', () => {
 
-				if(this.dialogue)
+				if(this.dialogue) {
 					return this.dialogue.show();
+				}
 
 				this.dialogue = new DialogBox();
 
@@ -398,15 +418,18 @@ class DataSource {
 
 			for(const visualization of this.visualizations) {
 
-				if(visualization.default)
+				if(visualization.default) {
 					this.visualizations.selected = visualization;
+				}
 			}
 
-			if(!this.visualizations.selected)
+			if(!this.visualizations.selected) {
 				this.visualizations.selected = Array.from(this.visualizations)[0];
+			}
 
-			if(this.visualizations.selected)
+			if(this.visualizations.selected) {
 				container.appendChild(this.visualizations.selected.container);
+			}
 		}
 
 		if(this.drilldown) {
@@ -428,8 +451,9 @@ class DataSource {
 
 				const title = [];
 
-				for(const p of source.drilldown.parameters)
+				for(const p of source.drilldown.parameters) {
 					title.push(`${source.drilldown.parent.filters.has(p.placeholder) ? source.drilldown.parent.filters.get(p.placeholder).name : p.placeholder}: ${p.selectedValue}`);
+				}
 
 				link.title = title.join('\n');
 
@@ -455,7 +479,9 @@ class DataSource {
 					list.insertBefore(fragment, list.children[0]);
 				}
 
-				else list.appendChild(fragment);
+				else {
+					list.appendChild(fragment);
+				}
 
 				source = source.drilldown.parent;
 			}
@@ -468,8 +494,9 @@ class DataSource {
 
 	get menu() {
 
-		if(this.menuElement)
+		if(this.menuElement) {
 			return this.menuElement;
+		}
 
 		const menu = this.menuElement = document.createElement('div');
 
@@ -557,8 +584,9 @@ class DataSource {
 
 			for(const toggle of [filtersToggle, queryToggle, descriptionToggle, pipelineToggle]) {
 
-				if(overlay != toggle && toggle.parentElement.classList.contains('selected'))
+				if(overlay != toggle && toggle.parentElement.classList.contains('selected')) {
 					toggle.click();
+				}
 			}
 
 			overlay.parentElement.classList.toggle('selected');
@@ -566,8 +594,9 @@ class DataSource {
 			this.visualizations.selected.container.classList.toggle('blur');
 			this.container.querySelector('.columns').classList.toggle('blur');
 
-			if(this.container.querySelector('.postprocessors-state'))
+			if(this.container.querySelector('.postprocessors-state')) {
 				this.container.querySelector('.postprocessors-state').classList.toggle('blur');
+			}
 		};
 
 		const
@@ -590,8 +619,9 @@ class DataSource {
 				'.menu .define-visualization',
 			];
 
-			for(const element of elementsToShow)
+			for(const element of elementsToShow) {
 				menu.querySelector(element).parentElement.classList.remove('hidden');
+			}
 		}
 
 		if(this.visualizations.selected.editable)
@@ -601,13 +631,15 @@ class DataSource {
 
 			const options = {};
 
-			if(e.altKey)
+			if(e.altKey) {
 				options.cached = 0;
+			}
 
 			this.visualizations.selected.load(options);
 
-			if(e.altKey)
+			if(e.altKey) {
 				new SnackBar({message: 'Report Reloaded Without Cache.'});
+			}
 		});
 
 		relatedVisualizations.on('click', async () => {
@@ -624,8 +656,9 @@ class DataSource {
 		});
 
 		// If there are filters and every filter is not of hidden type then show the filters toggle
-		if(this.filters.size && !Array.from(this.filters.values()).every(f => f.type == 'hidden'))
+		if(this.filters.size && !Array.from(this.filters.values()).every(f => f.type == 'hidden')) {
 			filtersToggle.parentElement.classList.remove('hidden');
+		}
 
 		descriptionToggle.on('click', async () => {
 
@@ -660,10 +693,12 @@ class DataSource {
 		menu.querySelector('.xlsx-download').on('click', (e) => this.download(e, {mode: 'xlsx'}));
 		menu.querySelector('.expand-toggle').on('click', () => {
 
-			if(this.visualizations.selected.visualization_id)
+			if(this.visualizations.selected.visualization_id) {
 				window.location = `/visualization/${this.visualizations.selected.visualization_id}`
-			else
+			}
+			else {
 				window.location = `/report/${this.query_id}`;
+			}
 		});
 
 		if(this.visualizations.length) {
@@ -678,17 +713,21 @@ class DataSource {
 
 				item.on('click', () => {
 
-					if(descriptionToggle.parentElement.classList.contains('selected'))
+					if(descriptionToggle.parentElement.classList.contains('selected')) {
 						descriptionToggle.click();
+					}
 
-					if(queryToggle.parentElement.classList.contains('selected'))
+					if(queryToggle.parentElement.classList.contains('selected')) {
 						queryToggle.click();
+					}
 
-					if(filtersToggle.parentElement.classList.contains('selected'))
+					if(filtersToggle.parentElement.classList.contains('selected')) {
 						filtersToggle.click();
+					}
 
-					if(pipelineToggle.parentElement.classList.contains('selected'))
+					if(pipelineToggle.parentElement.classList.contains('selected')) {
 						pipelineToggle.click();
+					}
 
 					this.menu.querySelector('.related-visualizations').parentElement.classList.toggle('hidden', !(visualization.related_visualizations && visualization.related_visualizations.length));
 
@@ -709,12 +748,14 @@ class DataSource {
 				changeVisualization.parentElement.querySelector('.submenu').appendChild(item);
 			}
 
-			if(this.visualizations.length > 1)
+			if(this.visualizations.length > 1) {
 				changeVisualization.classList.remove('hidden');
+			}
 		}
 
-		if(this.visualizations.selected.visualization_id)
+		if(this.visualizations.selected.visualization_id) {
 			menu.querySelector('.configure-visualization').href = `/reports/configure-visualization/${this.visualizations.selected.visualization_id}`;
+		}
 
 		for(const submenu of menu.querySelectorAll('.item > .submenu')) {
 
@@ -734,8 +775,9 @@ class DataSource {
 
 	async userList() {
 
-		if(this.visibleTo)
+		if(this.visibleTo) {
 			return this.visibleTo;
+		}
 
 		this.visibleTo =  await API.call('reports/report/userPrvList', {report_id : this.query_id});
 	}
@@ -745,27 +787,32 @@ class DataSource {
 		// Empty out the pipeline
 		for(const event of this.pipeline) {
 
-			if(event.title != 'Report Executed')
+			if(event.title != 'Report Executed') {
 				this.pipeline.delete(event);
+			}
 		}
 
 		this.resetError();
 
-		if(!this.originalResponse || !this.originalResponse.data)
+		if(!this.originalResponse || !this.originalResponse.data) {
 			return [];
+		}
 
 		let response = [];
 
-		if(!Array.isArray(this.originalResponse.data))
+		if(!Array.isArray(this.originalResponse.data)) {
 			return [];
+		}
 
 		const data = await this.transformations.run(this.originalResponse.data);
 
-		if(!this.columns.list.size)
+		if(!this.columns.list.size) {
 			return this.error();
+		}
 
-		for(const row of data || [])
+		for(const row of data || []) {
 			response.push(new DataSourceRow(row, this));
+		}
 
 		if(this.postProcessors.selected) {
 
@@ -793,8 +840,9 @@ class DataSource {
 			str = [],
 			response;
 
-		if(!(['filtered-json', 'filtered-csv'].includes(what.mode)))
+		if(!(['filtered-json', 'filtered-csv'].includes(what.mode))) {
 			response = await this.fetch({download: 1});
+		}
 
 		if(what.mode == 'json') {
 
@@ -844,8 +892,9 @@ class DataSource {
 			};
 
 			for(const axis of this.visualizations.selected.options.axes || []) {
-				if(axis.columns.length)
+				if(axis.columns.length) {
 					obj[axis.position] = axis.columns[0].key;
+				}
 			}
 
 			return await this.excelSheetDownloader(response, obj);
@@ -859,8 +908,9 @@ class DataSource {
 
 				const line = [];
 
-				for(const value of row.values())
+				for(const value of row.values()) {
 					line.push(JSON.stringify(String(value === null ? '' : value).replace(/"/g,"'")));
+				}
 
 				str.push(line.join());
 			}
@@ -964,8 +1014,9 @@ class DataSource {
 			fileName.push(values.date_time);
 		}
 
-		if(fileName.length == 1)
+		if(fileName.length == 1) {
 			fileName.push(new Intl.DateTimeFormat('en-IN', {year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric'}).format(new Date));
+		}
 
 		a.href = window.URL.createObjectURL(blob);
 
@@ -976,8 +1027,9 @@ class DataSource {
 
 	get xlsxDownloadable() {
 
-		if(!this.visualizations.selected || !MetaData.visualizations.has(this.visualizations.selected.type))
+		if(!this.visualizations.selected || !MetaData.visualizations.has(this.visualizations.selected.type)) {
 			return false;
+		}
 
 		return MetaData.visualizations.get(this.visualizations.selected.type).excel_format;
 	}
@@ -1007,8 +1059,9 @@ class DataSource {
 		const parameters = new URLSearchParams();
 
 		for(const [_, filter] of this.filters) {
-			if(this.filters.container && filter.placeholder in this.filters.container.elements)
+			if(this.filters.container && filter.placeholder in this.filters.container.elements) {
 				parameters.set(filter.placeholder, this.filters.container.elements[filter.placeholder].value);
+			}
 		}
 
 		return link + '?' + parameters.toString();
@@ -1016,16 +1069,18 @@ class DataSource {
 
 	resetError() {
 
-		if(this.container.querySelector('pre.warning'))
+		if(this.container.querySelector('pre.warning')) {
 			this.container.removeChild(this.container.querySelector('pre.warning'));
+		}
 
 		this.visualizations.selected.container.classList.remove('hidden');
 	}
 
 	error(message = '', {retry = false} = {}) {
 
-		if(this.container.querySelector('pre.warning'))
+		if(this.container.querySelector('pre.warning')) {
 			return;
+		}
 
 		this.resetError();
 
@@ -1053,8 +1108,9 @@ class DataSource {
 
 		for(const column of this.columns.values()) {
 
-			if(column.drilldown && column.drilldown.query_id)
+			if(column.drilldown && column.drilldown.query_id) {
 				drilldown.push(column.name);
+			}
 		}
 
 		if(drilldown.length) {
@@ -1082,39 +1138,48 @@ class DataSource {
 			description.innerHTML = 'No description found!';
 		}
 		else {
-			if (this.description)
+			if (this.description) {
 				description.insertAdjacentHTML('beforeend', '<h3>Report Description</h3>' + this.description);
+			}
 
-			if (this.visualizations.selected.description)
+			if (this.visualizations.selected.description) {
 				description.insertAdjacentHTML('beforeend', '<h3>Visualization Description</h3>' + this.visualizations.selected.description);
+			}
 		}
 
-		for(const item of this.menu.querySelectorAll('.change-visualization + .submenu .item'))
+		for(const item of this.menu.querySelectorAll('.change-visualization + .submenu .item')) {
 			item.classList.toggle('selected', item.dataset.id == this.visualizations.selected.visualization_id);
+		}
 
 		this.container.querySelector('.query code').innerHTML = new FormatSQL(this.originalResponse.query).query;
 
 		let age = this.originalResponse.cached ? Math.floor(this.originalResponse.cached.age * 100) / 100 : 0;
 
-		if(age < 1000)
+		if(age < 1000) {
 			age += 'ms';
+		}
 
-		else if(age < 1000 * 60)
+		else if(age < 1000 * 60) {
 			age = Format.number((age / 1000)) + 's';
+		}
 
-		else if(age < 1000 * 60 * 60)
+		else if(age < 1000 * 60 * 60) {
 			age = Format.number((age / (1000 * 60))) + 'h';
+		}
 
 		let runtime = Math.floor(this.originalResponse.runtime * 100) / 100;
 
-		if(runtime < 1000)
+		if(runtime < 1000) {
 			runtime += 'ms';
+		}
 
-		else if(runtime < 1000 * 60)
+		else if(runtime < 1000 * 60) {
 			runtime = (runtime / 1000) + 's';
+		}
 
-		else if(runtime < 1000 * 60 * 60)
+		else if(runtime < 1000 * 60 * 60) {
 			runtime = (runtime / (1000 * 60)) + 'h';
+		}
 
 		this.container.querySelector('.description .cached').textContent = this.originalResponse.cached && this.originalResponse.cached.status ? age : 'No';
 		this.container.querySelector('.description .runtime').textContent = runtime;
@@ -1130,8 +1195,9 @@ class DataSource {
 
 		for(const key in this) {
 
-			if(typeof this[key] != 'object')
+			if(typeof this[key] != 'object') {
 				response[key] = this[key];
+			}
 		}
 
 		response.format = JSON.stringify(this.format);
@@ -1146,8 +1212,9 @@ class DataSource {
 
 			for(const key in filter) {
 
-				if(typeof filter[key] != 'object')
+				if(typeof filter[key] != 'object') {
 					newFilter[key] = filter[key];
+				}
 			}
 
 			response.filters.push(newFilter);
@@ -1159,8 +1226,9 @@ class DataSource {
 
 			for(const key in visualization) {
 
-				if(typeof visualization[key] != 'object')
+				if(typeof visualization[key] != 'object') {
 					newVisualization[key] = visualization[key];
+				}
 			}
 
 			newVisualization.options = JSON.stringify(visualization.options);
@@ -1194,8 +1262,9 @@ class DataSourceFilters extends Map {
 
 		this.source = source;
 
-		if(!filters || !filters.length)
+		if(!filters || !filters.length) {
 			return;
+		}
 
 		filters = new Map(filters.map(f => [f.placeholder, f]));
 
@@ -1206,8 +1275,9 @@ class DataSourceFilters extends Map {
 		// The goal is to group together the start and end dates of any one filter name
 		for(const filter of filters.values()) {
 
-			if(filter.type != 'date' || (!filter.name.toLowerCase().includes('start') && !filter.name.toLowerCase().includes('end')))
+			if(filter.type != 'date' || (!filter.name.toLowerCase().includes('start') && !filter.name.toLowerCase().includes('end'))) {
 				continue;
+			}
 
 			// Remove the 'start', 'end', 'date' and spaces to create a name that would (hopefuly) identify the filter pairs.
 			const name = filter.name.replace(/(start|end|date)/ig, '').trim();
@@ -1239,11 +1309,13 @@ class DataSourceFilters extends Map {
 			// Make sure the Date Range filter comes first, followed by start date and then finally the end date.
 			filterGroup = filterGroup.sort((a, b) => {
 
-				if(a.type == 'daterange')
+				if(a.type == 'daterange') {
 					return -1;
+				}
 
-				if(a.name.toLowerCase().includes('start') && b.type != 'daterange')
+				if(a.name.toLowerCase().includes('start') && b.type != 'daterange') {
 					return -1;
+				}
 
 				return 1;
 			});
@@ -1254,8 +1326,9 @@ class DataSourceFilters extends Map {
 			}
 		}
 
-		for(const filter of filters.values())
+		for(const filter of filters.values()) {
 			this.set(filter.placeholder, new DataSourceFilter(filter, this));
+		}
 	}
 
 	/**
@@ -1266,8 +1339,9 @@ class DataSourceFilters extends Map {
 	 */
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('form');
 
@@ -1286,8 +1360,9 @@ class DataSourceFilters extends Map {
 
 			this.apply();
 
-			if(this.source)
+			if(this.source) {
 				this.source.container.querySelector('.filters-toggle').click()
+			}
 		});
 
 		container.insertAdjacentHTML('beforeend', `
@@ -1313,15 +1388,17 @@ class DataSourceFilters extends Map {
 	 */
 	async apply() {
 
-		if(!this.source)
+		if(!this.source) {
 			return;
+		}
 
 		this.source.visualizations.selected.load();
 
 		const toggle = this.source.container.querySelector('.filters-toggle.selected');
 
-		if(toggle)
+		if(toggle) {
 			toggle.click();
+		}
 	}
 }
 
@@ -1389,13 +1466,15 @@ class DataSourceFilter {
 
 		this.valueHistory = [];
 
-		if(this.type != 'daterange')
+		if(this.type != 'daterange') {
 			return;
+		}
 
 		this.dateRanges = JSON.parse(JSON.stringify(DataSourceFilter.dateRanges));
 
-		if(account.settings.has('global_filters_date_ranges'))
+		if(account.settings.has('global_filters_date_ranges')) {
 			this.dateRanges = account.settings.has('global_filters_date_ranges');
+		}
 
 		this.dateRanges.push({name: 'Custom'});
 	}
@@ -1409,23 +1488,27 @@ class DataSourceFilter {
 
 		container.style.order = this.order;
 
-		if(!MetaData.filterTypes.has(this.type))
+		if(!MetaData.filterTypes.has(this.type)) {
 			return container;
+		}
 
-		if(this.type == 'hidden')
+		if(this.type == 'hidden') {
 			container.classList.add('hidden');
+		}
 
 		let input;
 
-		if(this.multiSelect)
+		if(this.multiSelect) {
 			input = this.multiSelect.container;
+		}
 
 		else if(this.type == 'daterange') {
 
 			input = document.createElement('select');
 
-			for(const [index, range] of this.dateRanges.entries())
+			for(const [index, range] of this.dateRanges.entries()) {
 				input.insertAdjacentHTML('beforeend', `<option value="${index}">${range.name}</option>`);
+			}
 
 			input.value = this.value;
 
@@ -1458,15 +1541,18 @@ class DataSourceFilter {
 
 	get value() {
 
-		if(this.multiSelect)
+		if(this.multiSelect) {
 			return this.multiSelect.value;
+		}
 
-		if(this.labelContainer)
+		if(this.labelContainer) {
 			return this.label.querySelector(this.type == 'daterange' ? 'select' : 'input').value;
+		}
 
 		// If a value was recieved before the container could be created
-		if('valueCache' in this)
+		if('valueCache' in this) {
 			return this.valueCache;
+		}
 
 		// If the filter's type is a date range then it's default value depends on it's companion filters' values
 		if(this.type == 'daterange') {
@@ -1487,18 +1573,22 @@ class DataSourceFilter {
 						date = Date.parse(companion.value),
 						today = new Date(new Date().toISOString().substring(0, 10)).getTime();
 
-					if(!date)
+					if(!date) {
 						break;
+					}
 
-					if(companion.name.toLowerCase().includes('start') && date != today + ((range.start) * 24 * 60 * 60 * 1000))
+					if(companion.name.toLowerCase().includes('start') && date != today + ((range.start) * 24 * 60 * 60 * 1000)) {
 						match = false;
+					}
 
-					else if(companion.name.toLowerCase().includes('end') && date != today + ((range.end) * 24 * 60 * 60 * 1000))
+					else if(companion.name.toLowerCase().includes('end') && date != today + ((range.end) * 24 * 60 * 60 * 1000)) {
 						match = false;
+					}
 				}
 
-				if(!match)
+				if(!match) {
 					continue;
+				}
 
 				value = index;
 				break
@@ -1518,33 +1608,40 @@ class DataSourceFilter {
 
 			const [visualization_filter] = this.filters.source.visualizations.selected.options.filters.filter(x => x.filter_id == this.filter_id);
 
-			if(visualization_filter && visualization_filter.default_value)
+			if(visualization_filter && visualization_filter.default_value) {
 			   return visualization_filter.default_value;
+			}
 
-			else if(visualization_filter && visualization_filter.offset)
+			else if(visualization_filter && visualization_filter.offset) {
 			   this.offset = visualization_filter.offset;
+			}
 	   }
 
 		if(!isNaN(parseFloat(this.offset))) {
 
 			const date = new Date();
 
-			if(this.type == 'time')
+			if(this.type == 'time') {
 				value = new Date(date.getTime() + (1000 * this.offset)).toTimeString().substring(0, 8);
+			}
 
-			else if(this.type.includes('date'))
+			else if(this.type.includes('date')) {
 				value = new Date(Date.nowUTC() + (this.offset * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10);
+			}
 
-			else if(this.type == 'month')
+			else if(this.type == 'month') {
 				value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + this.offset, 1)).toISOString().substring(0, 7);
+			}
 
-			else if(this.type == 'year')
+			else if(this.type == 'year') {
 				value = date.getFullYear() + parseFloat(this.offset);
+			}
 		}
 
 		// If an offset and a default value was provided for the offset then create a new default value
-		if(this.type == 'datetime' && this.default_value && value)
+		if(this.type == 'datetime' && this.default_value && value) {
 			value = value + 'T' + this.default_value;
+		}
 
 		return value;
 	}
@@ -1553,11 +1650,13 @@ class DataSourceFilter {
 
 		this.valueHistory.push(value);
 
-		if(this.multiSelect)
+		if(this.multiSelect) {
 			return this.multiSelect.value = value;
+		}
 
-		if(!this.labelContainer)
+		if(!this.labelContainer) {
 			return this.valueCache = value;
+		}
 
 		if(this.type == 'daterange') {
 			this.label.querySelector('select').value = value;
@@ -1570,8 +1669,9 @@ class DataSourceFilter {
 
 	async fetch() {
 
-		if(!this.dataset || !this.multiSelect)
+		if(!this.dataset || !this.multiSelect) {
 			return [];
+		}
 
 		await DataSource.load();
 
@@ -1581,17 +1681,20 @@ class DataSourceFilter {
 
 		const report = new DataSource(DataSource.list.get(this.dataset), window.page);
 
-		if(Array.from(report.filters.values()).some(f => f.dataset == this.dataset))
+		if(Array.from(report.filters.values()).some(f => f.dataset == this.dataset)) {
 			return [];
+		}
 
-		if (await Storage.has(`dataset.${this.dataset}`))
+		if (await Storage.has(`dataset.${this.dataset}`)) {
 			({values, timestamp} = await Storage.get(`dataset.${this.dataset}`));
+		}
 
 		if(!timestamp || Date.now() - timestamp > DataSourceFilter.timeout) {
 
 			const
 				response = await report.fetch({download: true}),
 				values = response.data;
+
 			await Storage.set(`dataset.${this.dataset}`, {values, timestamp: Date.now()});
 		}
 
@@ -1608,15 +1711,17 @@ class DataSourceFilter {
 
 	dateRangeUpdate() {
 
-		if(this.type != 'daterange')
+		if(this.type != 'daterange') {
 			return;
+		}
 
 		const
 			select = this.label.querySelector('select'),
 			range = this.dateRanges[select.value];
 
-		if(!range)
+		if(!range) {
 			return;
+		}
 
 		// Show / hide other companion inputs depending on if custom was picked.
 		for(let companion of this.companions || []) {
@@ -1629,8 +1734,9 @@ class DataSourceFilter {
 
 			const date = companion.name.toLowerCase().includes('start') ? range.start : range.end;
 
-			if(date === undefined)
+			if(date === undefined) {
 				continue;
+			}
 
 			companion.value = new Date(Date.nowUTC() + date * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 		}
@@ -1643,8 +1749,9 @@ class DataSourceRow extends Map {
 
 		super();
 
-		for(const key in row)
+		for(const key in row) {
 			this.set(key, row[key]);
+		}
 
 		this.source = source;
 
@@ -1667,13 +1774,15 @@ class DataSourceRow extends Map {
 
 				for(const column of columnsList.values()) {
 
-					if(!formula.includes(column.key))
+					if(!formula.includes(column.key)) {
 						continue;
+					}
 
 					let value = parseFloat(row[column.key]);
 
-					if(isNaN(value))
+					if(isNaN(value)){
 						value = `'${row[column.key]}'` || '';
+					}
 
 					formula = formula.replace(new RegExp(column.key, 'gi'), value);
 				}
@@ -1682,8 +1791,9 @@ class DataSourceRow extends Map {
 
 					row[key] = eval(formula);
 
-					if(!isNaN(parseFloat(row[key])))
+					if(!isNaN(parseFloat(row[key]))) {
 						row[key] = parseFloat(row[key]);
+					}
 
 				} catch(e) {
 					row[key] = null;
@@ -1698,8 +1808,9 @@ class DataSourceRow extends Map {
 
 		this.clear();
 
-		for(const [key, value] of values)
+		for(const [key, value] of values) {
 			this.set(key, value);
+		}
 
 		this.annotations = new Set();
 	}
@@ -1719,40 +1830,50 @@ class DataSourceRow extends Map {
 	 */
 	getTypedValue(key, value = null) {
 
-		if(!this.has(key))
+		if(!this.has(key)) {
 			return undefined;
+		}
 
-		if(!this.source.columns.has(key))
+		if(!this.source.columns.has(key)) {
 			return undefined;
+		}
 
 		const column = this.source.columns.get(key);
 
-		if(!value)
+		if(!value) {
 			value = this.get(key);
+		}
 
 		if(column.type) {
 
-			if(DataSourceColumn.formatType.has(column.type.name))
+			if(DataSourceColumn.formatType.has(column.type.name)) {
 				value = Format.customTime(value, DataSourceColumn.formatType.get(column.type.name));
+			}
 
-			if(column.type.name == 'custom')
+			if(column.type.name == 'custom') {
 				value = Format.customTime(value, column.type.format);
+			}
 
-			else if(column.type.name == 'customNumber')
+			else if(column.type.name == 'customNumber') {
 				value = Format.number(value, column.type.formatNumber);
+			}
 
-			else if(column.type.name == 'timeelapsed')
+			else if(column.type.name == 'timeelapsed') {
 				value = Format.ago(value);
+			}
 
-			else if(column.type.name == 'number')
+			else if(column.type.name == 'number') {
 				value = Format.number(value);
+			}
 		}
 
-		if(column.prefix)
+		if(column.prefix) {
 			value = column.prefix + value;
+		}
 
-		if(column.postfix)
+		if(column.postfix) {
 			value = value + column.postfix;
+		}
 
 		return value;
 	}
@@ -1769,13 +1890,15 @@ class DataSourceColumns extends Map {
 
 	update(response) {
 
-		if(!this.source.originalResponse || !this.source.originalResponse.data || !this.source.originalResponse.data.length)
+		if(!this.source.originalResponse || !this.source.originalResponse.data || !this.source.originalResponse.data.length) {
 			return;
+		}
 
 		this.clear();
 
-		for(const column in response && response.length ? response[0] : this.source.originalResponse.data[0])
+		for(const column in response && response.length ? response[0] : this.source.originalResponse.data[0]) {
 			this.set(column, new DataSourceColumn(column, this.source));
+		}
 	}
 
 	render() {
@@ -1786,18 +1909,22 @@ class DataSourceColumns extends Map {
 
 		for(const column of this.values()) {
 
-			if(!column.hidden)
+			if(!column.hidden) {
 				container.appendChild(column.container);
+			}
 		}
 
-		if(!this.size)
+		if(!this.size) {
 			container.innerHTML = '&nbsp;';
+		}
 
-		if(this.source.visualizations.selected && this.source.visualizations.selected.options && this.source.visualizations.selected.options.hideHeader)
+		if(this.source.visualizations.selected && this.source.visualizations.selected.options && this.source.visualizations.selected.options.hideHeader) {
 			this.source.container.querySelector('header').classList.add('hidden');
+		}
 
-		if(this.source.visualizations.selected && this.source.visualizations.selected.options && this.source.visualizations.selected.options.hideLegend)
+		if(this.source.visualizations.selected && this.source.visualizations.selected.options && this.source.visualizations.selected.options.hideLegend) {
 			this.source.container.querySelector('.columns').classList.add('hidden');
+		}
 
 		this.overFlow();
 	}
@@ -1808,8 +1935,9 @@ class DataSourceColumns extends Map {
 
 		for(const [key, column] of this) {
 
-			if(!column.disabled)
+			if(!column.disabled) {
 				result.set(key, column);
+			}
 		}
 
 		return result;
@@ -1856,8 +1984,9 @@ class DataSourceColumn {
 
 			const [format] = this.source.format.columns.filter(column => column.key == this.key);
 
-			for(const key in format || {})
+			for(const key in format || {}) {
 				this[key] = format[key];
+			}
 		}
 
 		this.columnFilters = new DataSourceColumnFilters(this);
@@ -1867,14 +1996,16 @@ class DataSourceColumn {
 			this.type = {
 				name: this.type,
 				format: '',
-			}
+			};
 		}
 
-		if(this.disabled)
+		if(this.disabled) {
 			this.container.classList.add('disabled');
+		}
 
-		if(!isNaN(this.sort) && this.sort != -1)
+		if(!isNaN(this.sort) && this.sort != -1) {
 			this.source.columns.sortBy = this;
+		}
 
 		this.customDateType = new DataSourceColumnCustomDateType();
 		this.customNumberType = new DataSourceColumnCustomNumberType();
@@ -1882,8 +2013,9 @@ class DataSourceColumn {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -1922,8 +2054,9 @@ class DataSourceColumn {
 
 				let found = false;
 
-				if(!this.source.format)
+				if(!this.source.format) {
 					this.source.format = {};
+				}
 
 				if (this.source.format.columns) {
 					for (const column of this.source.format.columns) {
@@ -1936,8 +2069,9 @@ class DataSourceColumn {
 				}
 
 				if (!found) {
-					if (!this.source.format.columns)
+					if (!this.source.format.columns) {
 						this.source.format.columns = [];
+					}
 
 					this.source.format.columns.push({
 						key: this.key,
@@ -1955,15 +2089,17 @@ class DataSourceColumn {
 
 			clearTimeout(timeout);
 
-			if(this.clicked == null)
+			if(this.clicked == null) {
 				this.clicked = true;
+			}
 
 			const columns = Array.from(this.source.columns.values());
 
 			for(const column of columns) {
 
-				if(column.key == this.key || (this.source.visualizations.selected.axes && column.key == this.source.visualizations.selected.axes.bottom.column))
+				if(column.key == this.key || (this.source.visualizations.selected.axes && column.key == this.source.visualizations.selected.axes.bottom.column)) {
 					continue;
+				}
 
 				column.clicked = null;
 				column.disabled = this.clicked;
@@ -1990,32 +2126,39 @@ class DataSourceColumn {
 
 		for(const key in this) {
 
-			if(!(key in this.form))
+			if(!(key in this.form)) {
 				continue;
+			}
 
-			if(this.form[key].type == 'checkbox')
+			if(this.form[key].type == 'checkbox') {
 				this.form[key].checked = this[key];
-			else
+			}
+			else {
 				this.form[key].value = this[key];
+			}
 		}
 
-		if(this.drilldown && this.drilldown.query_id)
+		if(this.drilldown && this.drilldown.query_id) {
 			this.drilldownQuery.value = this.drilldown && this.drilldown.query_id ? [this.drilldown.query_id] : [];
+		}
 
-		else
+		else {
 			this.drilldownQuery.clear();
+		}
 
 		this.form.disabled.checked = this.disabled;
 
-		if(!this.type)
+		if(!this.type) {
 			return this.dialogueBox.show();
+		}
 
 		this.form.type.value = this.type.name;
 
 		const format = DataSourceColumn.formatType.get(this.type.name) || {};
 
-		if(this.form.querySelector('.timing-type-custom'))
+		if(this.form.querySelector('.timing-type-custom')) {
 			this.form.querySelector('.timing-type-custom').remove();
+		}
 
 		this.customNumberType.container.remove();
 
@@ -2039,8 +2182,9 @@ class DataSourceColumn {
 
 	get form() {
 
-		if(this.formContainer)
+		if(this.formContainer) {
 			return this.formContainer;
+		}
 
 		const form = this.formContainer = document.createElement('form');
 
@@ -2155,8 +2299,9 @@ class DataSourceColumn {
 				typeFormat,
 				selectedFormat;
 
-			if(form.querySelector('.timing-type-custom'))
+			if(form.querySelector('.timing-type-custom')) {
 				form.querySelector('.timing-type-custom').remove();
+			}
 
 			this.customNumberType.container.remove();
 
@@ -2181,8 +2326,9 @@ class DataSourceColumn {
 				form.insertBefore(this.customNumberType.container, form.querySelector('label.color'));
 			}
 
-			if(selectedFormat && form.type.value == 'custom')
+			if(selectedFormat && form.type.value == 'custom') {
 				this.customDateType.value = selectedFormat;
+			}
 		});
 
 		form.on('submit', async e => this.apply(e));
@@ -2213,8 +2359,9 @@ class DataSourceColumn {
 
 	get dialogueBox() {
 
-		if(this.dialogueBoxObject)
+		if(this.dialogueBoxObject) {
 			return this.dialogueBoxObject;
+		}
 
 		const dialogue = this.dialogueBoxObject = new DialogBox();
 
@@ -2227,19 +2374,22 @@ class DataSourceColumn {
 				nameA = a.name.toUpperCase(),
 				nameB = b.name.toUpperCase();
 
-			if(nameA < nameB)
+			if(nameA < nameB) {
 				return -1;
+			}
 
-			if(nameA > nameB)
+			if(nameA > nameB) {
 				return 1;
+			}
 
 			return 0;
 		});
 
 		const list = [];
 
-		for(const report of sortedReports)
+		for(const report of sortedReports) {
 			list.push({name: report.name, value: report.query_id});
+		}
 
 		this.drilldownQuery = new MultiSelect({datalist: list, multiple: false, expand: true});
 
@@ -2252,8 +2402,9 @@ class DataSourceColumn {
 
 		this.drilldownQuery.on('change', () => {
 
-			if(this.drilldownQuery.value.length && parseInt(this.drilldownQuery.value[0]) != this.drilldown.query_id)
+			if(this.drilldownQuery.value.length && parseInt(this.drilldownQuery.value[0]) != this.drilldown.query_id) {
 				this.drilldownParameters.clear();
+			}
 
 			this.drilldownParameters.load()
 		});
@@ -2265,14 +2416,17 @@ class DataSourceColumn {
 
 	async apply(e) {
 
-		if(e)
+		if(e) {
 			e.preventDefault();
+		}
 
-		if(!this.source.format)
+		if(!this.source.format) {
 			this.source.format = {};
+		}
 
-		if(!this.source.format.columns)
+		if(!this.source.format.columns) {
 			this.source.format.columns = [];
+		}
 
 		const [sourceColumn] = this.source.format && this.source.format.columns ? this.source.format.columns.filter(c => c.key == this.key) : [];
 
@@ -2280,23 +2434,27 @@ class DataSourceColumn {
 
 			let customNumber;
 
-			if(this.form.type.value == 'customNumber')
+			if(this.form.type.value == 'customNumber') {
 				customNumber = this.customNumberType.value;
+			}
 
 			for(const element of this.form.elements) {
 
-				if(element.name == 'type')
+				if(element.name == 'type') {
 					continue;
+				}
 
-				if(element.type == 'checkbox')
+				if(element.type == 'checkbox') {
 					this[element.name] = element.checked;
+				}
 
 				else {
 
 					this[element.name] = element.value == '' ? null : element.value || null;
 
-					if(sourceColumn)
+					if(sourceColumn) {
 						sourceColumn[element.name] = element.value == '' ? null : element.value || null;
+					}
 				}
 			}
 
@@ -2306,11 +2464,13 @@ class DataSourceColumn {
 				name: this.form.type.value,
 			};
 
-			if(this.form.type.value == 'custom')
+			if(this.form.type.value == 'custom') {
 				this.type.format = this.customDateType.value;
+			}
 
-			else if(this.form.type.value == 'customNumber')
+			else if(this.form.type.value == 'customNumber') {
 				this.type.formatNumber = customNumber;
+			}
 		}
 
 		catch(e) {
@@ -2324,8 +2484,9 @@ class DataSourceColumn {
 			throw e;
 		}
 
-		if(this.interval)
+		if(this.interval) {
 			clearInterval(this.interval);
+		}
 
 		const response = {
 			key : this.key,
@@ -2356,14 +2517,17 @@ class DataSourceColumn {
 			}
 		}
 
-		if(!updated)
+		if(!updated) {
 			this.source.format.columns.push(response);
+		}
 
-		if(!this.form.parentElement.classList.contains('body'))
+		if(!this.form.parentElement.classList.contains('body')) {
 			this.form.parentElement.classList.add('hidden');
+		}
 
-		if((this.source.columns.sortBy == this && this.sort == -1) || (this.sort != -1))
+		if((this.source.columns.sortBy == this && this.sort == -1) || (this.sort != -1)) {
 			this.source.columns.sortBy = this.sort == -1 ? null : this;
+		}
 
 		this.source.postProcessors.update();
 		await this.source.visualizations.selected.render();
@@ -2381,11 +2545,13 @@ class DataSourceColumn {
 
 	async save() {
 
-		if(!this.source.format)
+		if(!this.source.format) {
 			this.source.format = {};
+		}
 
-		if(!this.source.format.columns)
+		if(!this.source.format.columns) {
 			this.source.format.columns = [];
+		}
 
 		let
 			response,
@@ -2395,18 +2561,23 @@ class DataSourceColumn {
 
 			let customNumber;
 
-			if(this.form.type.value == 'customNumber')
+			if(this.form.type.value == 'customNumber') {
 				customNumber = this.customNumberType.value;
+			}
 
 			for(const element of this.form.elements) {
 
-				if(element.name == 'type')
+				if(element.name == 'type') {
 					continue;
+				}
 
-				if(element.type == 'checkbox')
+				if(element.type == 'checkbox') {
 					this[element.name] = element.checked;
+				}
 
-				else this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
+				else {
+					this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
+				}
 			}
 
 			this.filters = this.columnFilters.json;
@@ -2415,11 +2586,13 @@ class DataSourceColumn {
 				name: this.form.type.value,
 			};
 
-			if(this.form.type.value == 'custom')
+			if(this.form.type.value == 'custom') {
 				this.type.format = this.customDateType.value;
+			}
 
-			else if(this.form.type.value == 'customNumber')
+			else if(this.form.type.value == 'customNumber') {
 				this.type.formatNumber = customNumber;
+			}
 		}
 
 		catch(e){
@@ -2433,8 +2606,9 @@ class DataSourceColumn {
 			throw e;
 		}
 
-		if(this.interval)
+		if(this.interval) {
 			clearInterval(this.interval);
+		}
 
 		response = {
 			key : this.key,
@@ -2463,11 +2637,13 @@ class DataSourceColumn {
 			}
 		}
 
-		if((this.source.columns.sortBy == this && this.sort == -1) || (this.sort != -1))
+		if((this.source.columns.sortBy == this && this.sort == -1) || (this.sort != -1)) {
 			this.source.columns.sortBy = this.sort == -1 ? null : this;
+		}
 
-		if(!updated)
+		if(!updated) {
 			this.source.format.columns.push(response);
+		}
 
 		const
 			parameters = {
@@ -2525,8 +2701,9 @@ class DataSourceColumn {
 
 		for(const column of this.source.columns.values()) {
 
-			if(formula.includes(column.key))
+			if(formula.includes(column.key)) {
 				formula = formula.replace(new RegExp(column.key, 'gi'), 1);
+			}
 		}
 
 		try {
@@ -2578,8 +2755,9 @@ class DataSourceColumn {
 
 			container.classList.remove('drag-enter');
 
-			if(this.source.columns.beingDragged == this)
+			if(this.source.columns.beingDragged == this) {
 				return;
+			}
 
 			this.source.columns.delete(this.source.columns.beingDragged.key);
 
@@ -2589,8 +2767,9 @@ class DataSourceColumn {
 
 			for(const column of columns) {
 
-				if(column == this)
+				if(column == this) {
 					this.source.columns.set(this.source.columns.beingDragged.key, this.source.columns.beingDragged);
+				}
 
 				this.source.columns.set(column.key, column);
 			}
@@ -2602,13 +2781,15 @@ class DataSourceColumn {
 
 	async initiateDrilldown(row) {
 
-		if(!this.drilldown || !parseInt(this.drilldown.query_id) || !this.drilldown.parameters)
+		if(!this.drilldown || !parseInt(this.drilldown.query_id) || !this.drilldown.parameters) {
 			return;
+		}
 
 		let destination = DataSource.list.get(parseInt(this.drilldown.query_id));
 
-		if(!destination)
+		if(!destination) {
 			return;
+		}
 
 		destination = new DataSource(destination);
 
@@ -2616,21 +2797,25 @@ class DataSourceColumn {
 
 		for(const parameter of this.drilldown.parameters) {
 
-			if(!destination.filters.has(parameter.placeholder))
+			if(!destination.filters.has(parameter.placeholder)) {
 				continue;
+			}
 
 			const filter = destination.filters.get(parameter.placeholder);
 
 			let value;
 
-			if(parameter.type == 'column')
+			if(parameter.type == 'column') {
 				value = row.get(parameter.value);
+			}
 
-			else if(parameter.type == 'filter')
+			else if(parameter.type == 'filter') {
 				value = this.source.filters.get(parameter.value).value;
+			}
 
-			else if(parameter.type == 'static')
+			else if(parameter.type == 'static') {
 				value = parameter.value;
+			}
 
 			filter.value = value;
 			parameter.selectedValue = value;
@@ -2656,8 +2841,9 @@ class DataSourceColumnCustomDateType {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 		container.classList.add('timing-type-custom');
@@ -2805,15 +2991,17 @@ class DataSourceColumnCustomDateType {
 
 					if(_radio.name == radio.name) {
 
-						if(_radio.value == radio.value)
+						if(_radio.value == radio.value) {
 							radio.checked = false;
+						}
 
 						this.checkedradio.splice(index, 1);
 					}
 				}
 
-				if(radio.checked)
+				if(radio.checked) {
 					this.checkedradio.push(radio);
+				}
 
 				this.render(this.value);
 			})
@@ -2824,11 +3012,13 @@ class DataSourceColumnCustomDateType {
 
 	set value(format) {
 
-		if(!this.containerElement)
+		if(!this.containerElement) {
 			return this.customValueCache = format;
+		}
 
-		for(const radio of this.container.querySelectorAll('input[type=radio]'))
+		for(const radio of this.container.querySelectorAll('input[type=radio]')) {
 			radio.checked = (format[radio.name] == radio.value);
+		}
 
 		this.render(format);
 
@@ -2836,15 +3026,17 @@ class DataSourceColumnCustomDateType {
 
 		for(const radio of this.container.querySelectorAll('input[type="radio"]')) {
 
-			if(radio.checked)
+			if(radio.checked) {
 				this.checkedradio.push(radio);
+			}
 		}
 	}
 
 	get value() {
 
-		if(!this.containerElement)
+		if(!this.containerElement) {
 			return this.customValueCache;
+		}
 
 		const
 			formats = ['weekday', 'day', 'month', 'year', 'hour', 'minute', 'second'],
@@ -2854,8 +3046,9 @@ class DataSourceColumnCustomDateType {
 
 			const input = this.container.querySelector(`input[name=${format}]:checked`);
 
-			if(input)
+			if(input) {
 				checkedradio[format] = input.value;
+			}
 		}
 
 		return checkedradio;
@@ -2865,13 +3058,15 @@ class DataSourceColumnCustomDateType {
 
 		const example = this.container.querySelector('.example');
 
-		if(!format)
+		if(!format) {
 			return example.innerHTML = '<span class="NA">No Format Selected</span>';
+		}
 
 		example.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), format);
 
-		if(this.interval)
+		if(this.interval) {
 			clearInterval(this.interval);
+		}
 
 		this.interval = setInterval(() => {
 			example.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), format);
@@ -2883,8 +3078,9 @@ class DataSourceColumnCustomNumberType {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 		container.classList.add('number-type-custom');
@@ -3001,18 +3197,21 @@ class DataSourceColumnCustomNumberType {
 
 	set value(format) {
 
-		if(!this.containerElement)
+		if(!this.containerElement) {
 			return this.customNumberValueCache = format;
+		}
 
 		const selector = this.container.querySelectorAll('input, select');
 
-		for(const element of selector)
+		for(const element of selector) {
 			element.value = null;
+		}
 
 		for(const element of selector) {
 
-			if(element.name in format)
+			if(element.name in format) {
 				element.value = format[element.name];
+			}
 		}
 
 		this.render();
@@ -3020,18 +3219,21 @@ class DataSourceColumnCustomNumberType {
 
 	get value() {
 
-		if(!this.containerElement)
+		if(!this.containerElement) {
 			return this.customNumberValueCache;
+		}
 
 		const selectedInputs = {};
 
 		for(const element of this.container.querySelectorAll('select, input')) {
 
-			if(element.name == 'useGrouping')
+			if(element.name == 'useGrouping') {
 				selectedInputs[element.name] = JSON.parse(element.value);
+			}
 
-			else if(element.value)
+			else if(element.value) {
 				selectedInputs[element.name] = element.value;
+			}
 		}
 
 		selectedInputs.locale = 'en';
@@ -3051,14 +3253,17 @@ class DataSourceColumnCustomNumberType {
 				format = this.value,
 				number = 123456.789;
 
-			if(!this.currencySymbol)
+			if(!this.currencySymbol) {
 				this.currencySymbol = this.container.querySelector('.currency-symbol');
+			}
 
-			if(!this.currencyDisplay)
+			if(!this.currencyDisplay) {
 				this.currencyDisplay = this.container.querySelector('.currency-display');
+			}
 
-			if(!this.roundPrecision)
+			if(!this.roundPrecision) {
 				this.roundPrecision = this.container.querySelector('.round-precision');
+			}
 
 			this.currencySymbol.classList.toggle('hidden', format.style != 'currency');
 			this.currencyDisplay.classList.toggle('hidden', format.style != 'currency');
@@ -3143,8 +3348,9 @@ class DataSourceColumnDrilldownParameters extends Set {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -3183,8 +3389,9 @@ class DataSourceColumnDrilldownParameters extends Set {
 		}
 		else {
 
-			for(const paramter of this.values())
+			for(const paramter of this.values()) {
 				parameterList.appendChild(paramter.container);
+			}
 		}
 
 		this.container.querySelector('.add-parameters').parentElement.classList.toggle('hidden', !report || !report.filters.length);
@@ -3236,8 +3443,9 @@ class DataSourceColumnDrilldownParameter {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -3301,27 +3509,32 @@ class DataSourceColumnDrilldownParameter {
 
 		placeholder.textContent = null;
 
-		for(const filter of report.filters)
+		for(const filter of report.filters) {
 			placeholder.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
+		}
 
-		if(placeholderValue)
+		if(placeholderValue) {
 			placeholder.value = placeholderValue;
+		}
 
-		if(!updatingType && type.getAttribute('value'))
+		if(!updatingType && type.getAttribute('value')) {
 			type.value = type.getAttribute('value');
+		}
 
 		value.textContent = null;
 
 		if(type.value == 'column') {
 
-			for(const column of this.columnDrilldown.column.source.columns.list.values())
+			for(const column of this.columnDrilldown.column.source.columns.list.values()) {
 				value.insertAdjacentHTML('beforeend', `<option value="${column.key}">${column.name}</option>`);
+			}
 		}
 
 		else if(type.value == 'filter') {
 
-			for(const filter of this.columnDrilldown.column.source.filters.values())
+			for(const filter of this.columnDrilldown.column.source.filters.values()) {
 				value.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
+			}
 		}
 		else {
 			value.classList.add('hidden');
@@ -3329,8 +3542,9 @@ class DataSourceColumnDrilldownParameter {
 			value.classList.remove('hidden');
 		}
 
-		if(value.getAttribute('value'))
+		if(value.getAttribute('value')) {
 			value.value = value.getAttribute('value');
+		}
 	}
 
 	get json() {
@@ -3352,14 +3566,16 @@ class DataSourceColumnFilters extends Set {
 		this.column = column;
 		const filters = this.column.filters && this.column.filters.length ? this.column.filters : [{name: '0', value: ''}];
 
-		for(const filter of filters)
+		for(const filter of filters) {
 			this.add(new DataSourceColumnFilter(filter, this));
+		}
 	}
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -3390,8 +3606,9 @@ class DataSourceColumnFilters extends Set {
 
 		div.textContent = null;
 
-		for(const filter of this)
+		for(const filter of this) {
 			div.appendChild(filter.container);
+		}
 
 		if(!this.size) {
 			div.innerHTML = '<div class="NA">No Filters Added</div>'
@@ -3403,8 +3620,9 @@ class DataSourceColumnFilters extends Set {
 		const json = [];
 
 		for(const filter of this) {
-			if(filter.json.value != '')
+			if(filter.json.value != '') {
 				json.push(filter.json);
+			}
 		}
 
 		return json;
@@ -3483,8 +3701,9 @@ class DataSourceColumnFilter {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('label');
 
@@ -3538,14 +3757,16 @@ class DataSourceColumnAccumulations extends Set {
 		this.column = column;
 		this.accumulations =[{name:'', value:''}];
 
-		for(const accumulation of this.accumulations)
+		for(const accumulation of this.accumulations) {
 			this.add(new DataSourceColumnAccumulation(accumulation, this));
+		}
 	}
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -3576,8 +3797,9 @@ class DataSourceColumnAccumulations extends Set {
 
 		div.textContent = null;
 
-		for(const accumulation of this)
+		for(const accumulation of this) {
 			div.appendChild(accumulation.container);
+		}
 
 		if(!this.size) {
 			div.innerHTML = '<div class="NA">No Accumulation Added</div>'
@@ -3634,8 +3856,9 @@ class DataSourceColumnAccumulation {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('label');
 
@@ -3653,13 +3876,15 @@ class DataSourceColumnAccumulation {
 
 		select.insertAdjacentHTML('beforeend', `<option value="-1">Select</option>`);
 
-		for(const [i, type] of DataSourceColumnAccumulation.accumulationTypes.entries())
+		for(const [i, type] of DataSourceColumnAccumulation.accumulationTypes.entries()) {
 			select.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
+		}
 
 		select.querySelector('option').selected = true;
 
-		if(select.value != '-1')
+		if(select.value != '-1') {
 			this.run();
+		}
 
 		select.on('change', () => this.run());
 
@@ -3678,8 +3903,9 @@ class DataSourceColumnAccumulation {
 
 		const accumulation = DataSourceColumnAccumulation.accumulationTypes[select.value];
 
-		if(accumulation)
+		if(accumulation) {
 			this.container.querySelector('input').value = accumulation.apply(await this.accumulations.column.source.response(), this.accumulations.column.key);
+		}
 
 		else this.container.querySelector('input').value = '';
 	}
@@ -3693,17 +3919,20 @@ class DataSourcePostProcessors {
 
 		this.list = new Map;
 
-		for(const [key, processor] of DataSourcePostProcessors.processors)
+		for(const [key, processor] of DataSourcePostProcessors.processors) {
 			this.list.set(key, new processor(this.source, key));
+		}
 
-		if(source.postProcessor && this.list.has(source.postProcessor.name))
+		if(source.postProcessor && this.list.has(source.postProcessor.name)) {
 			this.selected = this.list.get(source.postProcessor.name);
+		}
 	}
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const
 			container = this.containerElement = document.createDocumentFragment(),
@@ -3723,8 +3952,9 @@ class DataSourcePostProcessors {
 
 		const submenu = processors.querySelector('.submenu');
 
-		for(const processor of this.list.values())
+		for(const processor of this.list.values()) {
 			submenu.appendChild(processor.container);
+		}
 
 		container.appendChild(processors);
 
@@ -3736,8 +3966,9 @@ class DataSourcePostProcessors {
 		this.timingColumn = this.source.columns.get('timing');
 
 		for(const column of this.source.columns.values()) {
-			if(column.type && ['datetime', 'date', 'week', 'year', 'custom'].includes(column.type.name))
+			if(column.type && ['datetime', 'date', 'week', 'year', 'custom'].includes(column.type.name)) {
 				this.timingColumn = column;
+			}
 		}
 
 		if(!this.selected && this.timingColumn && this.timingColumn.collapseTo) {
@@ -3748,8 +3979,9 @@ class DataSourcePostProcessors {
 
 		const label = this.source.container.querySelector('.postprocessors');
 
-		if(!label)
+		if(!label) {
 			return;
+		}
 
 		label.parentElement.classList.toggle('hidden', this.timingColumn ? false : true);
 	}
@@ -3776,16 +4008,18 @@ class DataSourcePostProcessors {
 
 		const label = this.source.container.querySelector('.postprocessors');
 
-		if(!label)
+		if(!label) {
 			return;
+		}
 
 		for(const selected of label.parentElement.querySelectorAll('.item.selected'))
 			selected.classList.remove('selected');
 
 		container.classList.toggle('hidden', !this.selected);
 
-		if(!this.selected)
+		if(!this.selected) {
 			return this.list.get('Orignal').container.classList.add('selected');
+		}
 
 		container.innerHTML = `
 			${this.selected.name}
@@ -3794,8 +4028,9 @@ class DataSourcePostProcessors {
 			<i class="fas fa-times-circle"></i>
 		`;
 
-		for(const item of this.selected.container.querySelectorAll('.submenu .item'))
+		for(const item of this.selected.container.querySelectorAll('.submenu .item')) {
 			item.classList.toggle('selected', this.selected.value == item.dataset.value);
+		}
 
 		this.selected.container.classList.add('selected');
 	}
@@ -3810,8 +4045,9 @@ class DataSourcePostProcessor {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -3830,8 +4066,9 @@ class DataSourcePostProcessor {
 
 				for(const column of this.source.columns.values()) {
 
-					if(!column.type || !column.type.originalName)
+					if(!column.type || !column.type.originalName) {
 						continue;
+					}
 
 					column.type.name = column.type.originalName;
 					delete column.type.originalName;
@@ -3867,8 +4104,9 @@ class DataSourcePostProcessor {
 
 				for(const column of this.source.columns.values()) {
 
-					if(!column.type || !column.type.originalName)
+					if(!column.type || !column.type.originalName) {
 						continue;
+					}
 
 					column.type.name = column.type.originalName;
 				}
@@ -3904,8 +4142,9 @@ class DataSourceTransformations extends Set {
 
 		response = JSON.parse(JSON.stringify(response));
 
-		for(const transformation of this)
+		for(const transformation of this) {
 			response = await transformation.run(response);
+		}
 
 		if(this.size) {
 			this.source.columns.update(response);
@@ -3923,15 +4162,17 @@ class DataSourceTransformations extends Set {
 
 		for(const [i, transformation] of transformations.entries()) {
 
-			if(!DataSourceTransformation.types.has(transformation.type))
+			if(!DataSourceTransformation.types.has(transformation.type)) {
 				continue;
+			}
 
 			const transformationType = new (DataSourceTransformation.types.get(transformation.type))(transformation, this.source);
 
 			this.add(transformationType);
 
-			if(i > visualization.options.transformationsStopAt)
+			if(i > visualization.options.transformationsStopAt) {
 				transformationType.disabled = true;
+			}
 		}
 	}
 
@@ -3941,8 +4182,9 @@ class DataSourceTransformations extends Set {
 
 		for(const column of this.source.columns.list.values()) {
 
-			if(!column.filters || !column.filters.length)
+			if(!column.filters || !column.filters.length) {
 				continue;
+			}
 
 			for(const filter of column.filters) {
 
@@ -3954,8 +4196,9 @@ class DataSourceTransformations extends Set {
 			}
 		}
 
-		if(!filters.length)
+		if(!filters.length) {
 			return;
+		}
 
 		const type = DataSourceTransformation.types.get('filters');
 
@@ -3964,8 +4207,9 @@ class DataSourceTransformations extends Set {
 
 	loadSorting() {
 
-		if(!this.source.columns.sortBy || this.source.columns.sortBy.sort == -1)
+		if(!this.source.columns.sortBy || this.source.columns.sortBy.sort == -1) {
 			return;
+		}
 
 		const
 			type = DataSourceTransformation.types.get('sort'),
@@ -4001,16 +4245,18 @@ class DataSourceTransformation {
 
 	async run(response) {
 
-		if(!response || !response.length)
+		if(!response || !response.length) {
 			return response;
+		}
 
 		const time = performance.now();
 
 		this.incoming.rows = response.length || 0;
 		this.incoming.columns.update(response);
 
-		if(!this.disabled)
+		if(!this.disabled) {
 			response = await this.execute(response);
+		}
 
 		this.outgoing.rows = response ? response.length : 0;
 		this.outgoing.columns.update(response);
@@ -4051,8 +4297,9 @@ DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot 
 
 	async execute(response = []) {
 
-		if(!response || !response.length)
+		if(!response || !response.length) {
 			return response;
+		}
 
 		const
 			[{column: groupColumn}] = this.columns && this.columns.length ? this.columns : [{}],
@@ -4062,8 +4309,9 @@ DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot 
 		if(groupColumn) {
 
 			for(const row of response) {
-				if(!columns.has(row[groupColumn]))
+				if(!columns.has(row[groupColumn])) {
 					columns.add(row[groupColumn]);
+				}
 			}
 		}
 
@@ -4071,13 +4319,15 @@ DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot 
 
 			let key = {};
 
-			for(const row of this.rows || [])
+			for(const row of this.rows || []) {
 				key[row.column] = responseRow[row.column];
+			}
 
 			key = JSON.stringify(key);
 
-			if(!rows.get(key))
+			if(!rows.get(key)) {
 				rows.set(key, new Map);
+			}
 
 			const row = rows.get(key);
 
@@ -4085,11 +4335,13 @@ DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot 
 
 				for(const column of columns) {
 
-					if(!row.has(column))
+					if(!row.has(column)) {
 						row.set(column, []);
+					}
 
-					if(responseRow[groupColumn] != column)
+					if(responseRow[groupColumn] != column) {
 						continue;
+					}
 
 					row.get(column).push(responseRow[this.values[0].column]);
 				}
@@ -4097,11 +4349,13 @@ DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot 
 
 				for(const value of this.values || []) {
 
-					if(!(value.column in responseRow))
+					if(!(value.column in responseRow)) {
 						continue;
+					}
 
-					if(!row.has(value.name || value.column))
+					if(!row.has(value.name || value.column)) {
 						row.set(value.name || value.column, []);
+					}
 
 					row.get(value.name || value.column).push(responseRow[value.column])
 				}
@@ -4116,8 +4370,9 @@ DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot 
 				newRow = {},
 				keys = JSON.parse(key);
 
-			for(const key in keys)
+			for(const key in keys) {
 				newRow[key] = keys[key];
+			}
 
 			for(const [groupColumnValue, values] of row) {
 
@@ -4131,8 +4386,9 @@ DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot 
 				else {
 
 					for(const value of this.values) {
-						if((value.name || value.column) == groupColumnValue)
+						if((value.name || value.column) == groupColumnValue) {
 							function_ = value.function;
+						}
 					}
 				}
 
@@ -4205,16 +4461,19 @@ DataSourceTransformation.types.set('filters', class DataSourceTransformationFilt
 
 				const [filter] = DataSourceColumnFilter.types.filter(f => f.slug == _filter.function);
 
-				if(!filter)
+				if(!filter) {
 					continue;
+				}
 
-				if(!(_filter.column in row))
+				if(!(_filter.column in row)) {
 					continue;
+				}
 
 				const searchString = row[_filter.column] == null ? '' : row[_filter.column];
 
-				if(!filter.apply(_filter.value, searchString))
+				if(!filter.apply(_filter.value, searchString)) {
 					status = false;
+				}
 			}
 
 			if(status)
@@ -4250,19 +4509,22 @@ DataSourceTransformation.types.set('autofill', class DataSourceTransformationAut
 
 			for(const row of response) {
 
-				if(!start || row[this.column] < start)
+				if(!start || row[this.column] < start) {
 					start = row[this.column];
+				}
 
-				if(!end || row[this.column] > end)
+				if(!end || row[this.column] > end) {
 					end = row[this.column];
+				}
 			}
 
 			start = Date.parse(start);
 			end = Date.parse(end);
 		}
 
-		if(!start || !end)
+		if(!start || !end) {
 			return response;
+		}
 
 		const
 			newResponse = {},
@@ -4302,11 +4564,13 @@ DataSourceTransformation.types.set('autofill', class DataSourceTransformationAut
 
 			let key;
 
-			if(this.granularity == 'number')
+			if(this.granularity == 'number') {
 				key = parseFloat(row[this.column]);
+			}
 
-			else
+			else {
 				key = Date.parse(row[this.column]);
+			}
 
 			mappedResponse[key] = row;
 		}
@@ -4315,13 +4579,15 @@ DataSourceTransformation.types.set('autofill', class DataSourceTransformationAut
 
 			newResponse[start] = {};
 
-			if(start in mappedResponse)
+			if(start in mappedResponse) {
 				newResponse[start] = mappedResponse[start];
+			}
 
 			else {
 
-				for(const key in response[0])
+				for(const key in response[0]) {
 					newResponse[start][key] = this.content;
+				}
 
 				newResponse[start][this.column] = granularity[this.granularity].output(start);
 			}
@@ -4341,11 +4607,13 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 
 	async execute(response = []) {
 
-		if(!response || !response.length)
+		if(!response || !response.length) {
 			return response;
+		}
 
-		if(!this.visualization_id)
+		if(!this.visualization_id) {
 			return this.source.error('Stream visualization not selected!');
+		}
 
 		let report = null;
 
@@ -4353,15 +4621,17 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 
 			const [visualization] = _report.visualizations.filter(v => v.visualization_id == this.visualization_id);
 
-			if(!visualization)
+			if(!visualization) {
 				continue;
+			}
 
 			report = new DataSource(_report);
 			break;
 		}
 
-		if(!report)
+		if(!report) {
 			return this.source.error('Stream visualization not found!');
+		}
 
 		[report.visualizations.selected] = report.visualizations.filter(v => v.visualization_id == this.visualization_id);
 
@@ -4377,8 +4647,9 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 
 		for(const filter of report.filters.values()) {
 
-			if(this.source.filters.has(filter.placeholder))
+			if(this.source.filters.has(filter.placeholder)) {
 				filter.value = this.source.filters.get(filter.placeholder).value;
+			}
 		}
 
 		await report.fetch();
@@ -4390,8 +4661,9 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 			newColumns = Array.from(streamResponse[0].keys()),
 			filters = {};
 
-		for(const filter of DataSourceColumnFilter.types)
+		for(const filter of DataSourceColumnFilter.types) {
 			filters[filter.slug] = filter;
+		}
 
 		for(const baseRow of response) {
 
@@ -4399,8 +4671,9 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 
 			for(const column of this.columns) {
 
-				if(column.stream != 'base')
+				if(column.stream != 'base') {
 					continue;
+				}
 
 				if(!(column.column in baseRow))
 					continue;
@@ -4415,14 +4688,16 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 				// If any of the stream's join conditions don't match then skip this row
 				for(const join of this.joins) {
 
-					if(!filters[join.function].apply(baseRow[join.sourceColumn], streamRow.get(join.streamColumn)))
+					if(!filters[join.function].apply(baseRow[join.sourceColumn], streamRow.get(join.streamColumn))) {
 						continue outer;
+					}
 				}
 
 				for(const column of this.columns) {
 
-					if(column.stream != 'stream')
+					if(column.stream != 'stream') {
 						continue;
+					}
 
 					if(!streamRow.has(column.column))
 						continue;
@@ -4442,8 +4717,9 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 
 				const values = newRow[key];
 
-				if(!Array.isArray(values))
+				if(!Array.isArray(values)) {
 					continue;
+				}
 
 				let value = null;
 
@@ -4490,8 +4766,9 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 
 					for(const column of this.columns) {
 
-						if((column.name || column.column) in newRow)
+						if((column.name || column.column) in newRow) {
 							row[column.name || column.column] = newRow[column.name || column.column];
+						}
 					}
 
 					newRow = row;
@@ -4515,8 +4792,9 @@ DataSourceTransformation.types.set('sort', class DataSourceTransformationRestric
 
 	async execute(response = []) {
 
-		if(!response || !response.length || !this.columns)
+		if(!response || !response.length || !this.columns) {
 			return response;
+		}
 
 		for(const column of this.columns) {
 
@@ -4530,25 +4808,31 @@ DataSourceTransformation.types.set('sort', class DataSourceTransformationRestric
 
 			for(const column of this.columns) {
 
-				if(!(column.column in a) || !(column.column in b))
+				if(!(column.column in a) || !(column.column in b)) {
 					continue;
+				}
 
-				if(a[column.column] === null || b[column.column] === null)
+				if(a[column.column] === null || b[column.column] === null) {
 					continue;
+				}
 
 				let result = null;
 
-				if(this.implied)
+				if(this.implied) {
 					result = a[column.column] < b[column.column] ? -1 : a[column.column] > b[column.column] ? 1 : 0;
+				}
 
-				else
+				else {
 					a[column.column].toString().localeCompare(b[column.column].toString(), undefined, column.options);
+				}
 
-				if(!result)
+				if(!result) {
 					continue;
+				}
 
-				if(column.order == 'descending')
+				if(column.order == 'descending') {
 					result *= -1;
+				}
 
 				return result;
 			}
@@ -4566,8 +4850,9 @@ DataSourceTransformation.types.set('restrict-columns', class DataSourceTransform
 
 	async execute(response = []) {
 
-		if(!response || !response.length || !this.columns)
+		if(!response || !response.length || !this.columns) {
 			return response;
+		}
 
 		const newResponse = [];
 
@@ -4579,12 +4864,14 @@ DataSourceTransformation.types.set('restrict-columns', class DataSourceTransform
 
 				if(this.exclude) {
 
-					if(!this.columns.includes(key))
+					if(!this.columns.includes(key)) {
 						temp[key] = data[key];
+					}
 				}
 
-				else if(this.columns.includes(key))
+				else if(this.columns.includes(key)) {
 					temp[key] = data[key];
+				}
 			}
 
 			newResponse.push(temp);
@@ -4685,7 +4972,7 @@ DataSourceTransformation.types.set('linear-regression', class DataSourceTransfor
 
 		switch ((this.source.columns.get(this.columns.x).type || {name: 'string'}).name) {
 
-			case "date":
+			case 'date':
 			case 'string':
 
 				const timingUnitSeconds = this.isDateX ? 24 * 60 * 60 * 1000 : (response[3] - resposne[0]) / 3;
@@ -4819,8 +5106,9 @@ DataSourcePostProcessors.processors.set('Weekday', class extends DataSourcePostP
 
 		const timingColumn = this.source.postProcessors.timingColumn;
 
-		if(!timingColumn || !this.source.columns.has(timingColumn.key))
+		if(!timingColumn || !this.source.columns.has(timingColumn.key)) {
 			return response;
+		}
 
 		return response.filter(r => new Date(r.get(timingColumn.key)).getDay() == this.value)
 	}
@@ -4848,8 +5136,9 @@ DataSourcePostProcessors.processors.set('CollapseToAverage', class extends DataS
 
 		const timingColumn = this.source.postProcessors.timingColumn;
 
-		if(!timingColumn || !this.source.columns.has(timingColumn.key))
+		if(!timingColumn || !this.source.columns.has(timingColumn.key)) {
 			return response;
+		}
 
 		const result = new Map;
 
@@ -4916,8 +5205,9 @@ DataSourcePostProcessors.processors.set('CollapseToAverage', class extends DataS
 
 				let newRow = result.get(timing);
 
-				for(const key of row.keys())
+				for(const key of row.keys()) {
 					newRow.set(key, 0);
+				}
 			}
 
 			const newRow = result.get(timing);
@@ -4928,7 +5218,9 @@ DataSourcePostProcessors.processors.set('CollapseToAverage', class extends DataS
 					newRow.set(key, newRow.get(key) + parseFloat(value));
 				}
 
-				else newRow.set(key, value);
+				else {
+					newRow.set(key, value);
+				}
 			}
 
 			newRow.set(timingColumn.key, timing);
@@ -4948,23 +5240,28 @@ DataSourcePostProcessors.processors.set('CollapseToAverage', class extends DataS
 
 				for(const [key, value] of row) {
 
-					if(!isNaN(value))
+					if(!isNaN(value)) {
 						row.set(key, row.get(key) / countArray[this.value])
+					}
 				}
 			}
 		}
 
-		if(!timingColumn.type.originalName)
+		if(!timingColumn.type.originalName) {
 			timingColumn.type.originalName = timingColumn.type.name;
+		}
 
-		if(['week', 'day'].includes(this.value))
+		if(['week', 'day'].includes(this.value))  {
 			timingColumn.type.name = 'date';
+		}
 
-		else if(['month'].includes(this.value))
+		else if(['month'].includes(this.value)) {
 			timingColumn.type.name = 'month';
+		}
 
-		else if(['hour', 'minute', 'second'].includes(this.value))
+		else if(['hour', 'minute', 'second'].includes(this.value)) {
 			timingColumn.type.name = 'datetime';
+		}
 
 		return Array.from(result.values());
 	}
@@ -4992,8 +5289,9 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 
 		const timingColumn = this.source.postProcessors.timingColumn;
 
-		if(!timingColumn || !this.source.columns.has(timingColumn.key))
+		if(!timingColumn || !this.source.columns.has(timingColumn.key)) {
 			return response;
+		}
 
 		const result = new Map;
 
@@ -5042,34 +5340,42 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 
 				let newRow = result.get(timing);
 
-				for(const key of row.keys())
+				for(const key of row.keys()) {
 					newRow.set(key, 0);
+				}
 			}
 
 			const newRow = result.get(timing);
 
 			for(const [key, value] of row) {
 
-				if(!isNaN(value))
+				if(!isNaN(value)) {
 					newRow.set(key, newRow.get(key) + parseFloat(value));
+				}
 
-				else newRow.set(key, value);
+				else {
+					newRow.set(key, value);
+				}
 			}
 
 			newRow.set(timingColumn.key, timing);
 		}
 
-		if(!timingColumn.type.originalName)
+		if(!timingColumn.type.originalName) {
 			timingColumn.type.originalName = timingColumn.type.name;
+		}
 
-		if(['week', 'day'].includes(this.value))
+		if(['week', 'day'].includes(this.value)) {
 			timingColumn.type.name = 'date';
+		}
 
-		else if(['month'].includes(this.value))
+		else if(['month'].includes(this.value)) {
 			timingColumn.type.name = 'month';
+		}
 
-		else if(['hour', 'minute', 'second'].includes(this.value))
+		else if(['hour', 'minute', 'second'].includes(this.value)) {
 			timingColumn.type.name = 'datetime';
+		}
 
 		return Array.from(result.values());
 	}
@@ -5094,15 +5400,17 @@ DataSourcePostProcessors.processors.set('RollingAverage', class extends DataSour
 
 		const timingColumn = this.source.postProcessors.timingColumn;
 
-		if(!timingColumn || !this.source.columns.has(timingColumn.key))
+		if(!timingColumn || !this.source.columns.has(timingColumn.key)) {
 			return response;
+		}
 
 		const
 			result = new Map,
 			copy = new Map;
 
-		for(const row of response)
+		for(const row of response) {
 			copy.set(Date.parse(row.get(timingColumn.key)), row);
+		}
 
 		for(const [timing, row] of copy) {
 
@@ -5112,8 +5420,9 @@ DataSourcePostProcessors.processors.set('RollingAverage', class extends DataSour
 
 				let newRow = result.get(timing);
 
-				for(const key of row.keys())
+				for(const key of row.keys()) {
 					newRow.set(key, 0);
+				}
 			}
 
 			const newRow = result.get(timing);
@@ -5122,11 +5431,13 @@ DataSourcePostProcessors.processors.set('RollingAverage', class extends DataSour
 
 				const element = copy.get(timing - i * 24 * 60 * 60 * 1000);
 
-				if(!element)
+				if(!element) {
 					continue;
+				}
 
-				for(const [key, value] of newRow)
+				for(const [key, value] of newRow) {
 					newRow.set(key,  value + (element.get(key) / this.value));
+				}
 			}
 
 			newRow.set(timingColumn.key, row.get(timingColumn.key));
@@ -5155,15 +5466,17 @@ DataSourcePostProcessors.processors.set('RollingSum', class extends DataSourcePo
 
 		const timingColumn = this.source.postProcessors.timingColumn;
 
-		if(!timingColumn || !this.source.columns.has(timingColumn.key))
+		if(!timingColumn || !this.source.columns.has(timingColumn.key)) {
 			return response;
+		}
 
 		const
 			result = new Map,
 			copy = new Map;
 
-		for(const row of response)
+		for(const row of response) {
 			copy.set(Date.parse(row.get(timingColumn.key)), row);
+		}
 
 		for(const [timing, row] of copy) {
 
@@ -5173,8 +5486,9 @@ DataSourcePostProcessors.processors.set('RollingSum', class extends DataSourcePo
 
 				let newRow = result.get(timing);
 
-				for(const key of row.keys())
+				for(const key of row.keys()) {
 					newRow.set(key, 0);
+				}
 			}
 
 			const newRow = result.get(timing);
@@ -5183,11 +5497,13 @@ DataSourcePostProcessors.processors.set('RollingSum', class extends DataSourcePo
 
 				const element = copy.get(timing - i * 24 * 60 * 60 * 1000);
 
-				if(!element)
+				if(!element) {
 					continue;
+				}
 
-				for(const [key, value] of newRow)
+				for(const [key, value] of newRow) {
 					newRow.set(key,  value + parseFloat(element.get(key)));
+				}
 			}
 
 			newRow.set(timingColumn.key, row.get(timingColumn.key));
@@ -5265,14 +5581,16 @@ class DataSourcePipelineEvent {
 
 	constructor(properties) {
 
-		for(const key in properties)
+		for(const key in properties) {
 			this[key] = properties[key];
+		}
 	}
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -5312,8 +5630,9 @@ class Visualization {
 
 	constructor(visualization, source) {
 
-		for(const key in visualization)
+		for(const key in visualization) {
 			this[key] = visualization[key];
+		}
 
 		this.id = Math.floor(Math.random() * 100000);
 
@@ -5326,11 +5645,13 @@ class Visualization {
 			} catch(e) {}
 		}
 
-		if(!this.options)
+		if(!this.options) {
 			this.options = {};
+		}
 
-		for(const key in this.options)
+		for(const key in this.options) {
 			this[key] = this.options[key];
+		}
 	}
 
 	render() {
@@ -5339,8 +5660,9 @@ class Visualization {
 
 		const visualizationToggle = this.source.container.querySelector('header .change-visualization');
 
-		if(visualizationToggle)
+		if(visualizationToggle) {
 			visualizationToggle.value = this.source.visualizations.indexOf(this);
+		}
 
 		this.source.container.removeChild(this.source.container.querySelector('.visualization'));
 
@@ -5353,8 +5675,9 @@ class Visualization {
 
 		if(configure) {
 
-			if(this.visualization_id)
+			if(this.visualization_id) {
 				configure.href = `/reports/configure-visualization/${this.visualization_id}`;
+			}
 
 			configure.classList.toggle('hidden', !this.visualization_id);
 		}
@@ -5364,8 +5687,9 @@ class Visualization {
 
 	async showSubVisualizations() {
 
-		if(!this.related_visualizations || !this.related_visualizations.length)
+		if(!this.related_visualizations || !this.related_visualizations.length) {
 			return;
+		}
 
 		if(this.subReportDialogBox) {
 
@@ -5404,65 +5728,78 @@ class LinearVisualization extends Visualization {
 
 		const rows = await this.source.response();
 
-		if(!rows || !rows.length)
+		if(!rows || !rows.length) {
 			return this.source.error();
+		}
 
-		if(!this.axes)
+		if(!this.axes) {
 			return this.source.error('Axes not defined.');
+		}
 
 		for(const axis of this.axes) {
 
-			if(!axis.restcolumns)
+			if(!axis.restcolumns) {
 				continue;
+			}
 
 			axis.columns = [];
 
 			for(const key of this.source.columns.keys()) {
 
-				if(!this.axes.some(a => a.columns.some(c => c.key == key)))
+				if(!this.axes.some(a => a.columns.some(c => c.key == key))) {
 					axis.columns.push({key});
+				}
 			}
 
 			axis.column = axis.columns.length ? axis.columns[0].key : '';
 		}
 
-		if(!this.axes.bottom)
+		if(!this.axes.bottom) {
 			return this.source.error('Bottom axis not defined.');
+		}
 
-		if(!this.axes.left)
+		if(!this.axes.left) {
 			return this.source.error('Left axis not defined.');
+		}
 
-		if(!this.axes.bottom.columns.length)
+		if(!this.axes.bottom.columns.length) {
 			return this.source.error('Bottom axis requires exactly one column.');
+		}
 
-		if(!this.axes.left.columns.length)
+		if(!this.axes.left.columns.length) {
 			return this.source.error('Left axis requires atleast one column.');
+		}
 
-		if(this.axes.bottom.columns.length > 1)
+		if(this.axes.bottom.columns.length > 1) {
 			return this.source.error('Bottom axis cannot has more than one column.');
+		}
 
 		for(const column of this.axes.bottom.columns) {
-			if(!this.source.columns.get(column.key))
+			if(!this.source.columns.get(column.key)) {
 				return this.source.error(`Bottom axis column <em>${column.key}</em> not found.`);
+			}
 		}
 
 		for(const column of this.axes.left.columns) {
-			if(!this.source.columns.get(column.key))
+			if(!this.source.columns.get(column.key)) {
 				return this.source.error(`Left axis column <em>${column.key}</em> not found.`);
+			}
 		}
 
 		for(const bottom of this.axes.bottom.columns) {
 			for(const left of this.axes.left.columns) {
 
-				if(bottom.key == left.key)
+				if(bottom.key == left.key) {
 					return this.source.error(`Column <em>${bottom.key}</em> cannot be on both axis.`);
+				}
 			}
 		}
 
 		for(const [key, column] of this.source.columns) {
 
-			if(this.axes.left.columns.some(c => c.key == key) || (this.axes.right && this.axes.right.columns.some(c => c.key == key)) || this.axes.bottom.columns.some(c => c.key == key))
+			if(this.axes.left.columns.some(c => c.key == key) || (this.axes.right && this.axes.right.columns.some(c => c.key == key)) || this.axes.bottom.columns.some(c => c.key == key)) {
 				continue;
+			}
 
 			column.hidden = true;
 			column.render();
@@ -5471,31 +5808,37 @@ class LinearVisualization extends Visualization {
 		this.source.columns.overFlow();
 
 		for(const column of this.axes.bottom.columns) {
-			if(!this.source.columns.get(column.key))
+			if(!this.source.columns.get(column.key)) {
 				return this.source.error(`Bottom axis column <em>${column.key}</em> not found.`);
+			}
 		}
 
-		if(this.axes.bottom.columns.every(c => this.source.columns.get(c.key).disabled))
+		if(this.axes.bottom.columns.every(c => this.source.columns.get(c.key).disabled)) {
 			return this.source.error('Bottom axis requires atleast one column.');
+		}
 
-		if(this.axes.left.columns.every(c => this.source.columns.get(c.key).disabled))
+		if(this.axes.left.columns.every(c => this.source.columns.get(c.key).disabled)) {
 			return this.source.error('Left axis requires atleast one column.');
+		}
 
 		this.axes.bottom.height = 25;
 		this.axes.left.width = 50;
 
-		if(this.axes.bottom.label)
+		if(this.axes.bottom.label) {
 			this.axes.bottom.height += 20;
+		}
 
-		if(this.axes.left.label)
+		if(this.axes.left.label) {
 			this.axes.left.width += 20;
+		}
 
 		this.height = this.container.clientHeight - this.axes.bottom.height - 20;
 		this.width = this.container.clientWidth - this.axes.left.width - 40;
 
 		for(const row of rows) {
-			for(const [key, column] of row)
+			for(const [key, column] of row) {
 				row.set(key, row.getTypedValue(key));
+			}
 		}
 
 		this.rows = rows;
@@ -5523,11 +5866,13 @@ class LinearVisualization extends Visualization {
 
 		container.selectAll('*').remove();
 
-		if(!this.rows)
+		if(!this.rows) {
 			return;
+		}
 
-		if(!this.axes)
+		if(!this.axes) {
 			return this.source.error('Bottom axis not defined.');
+		}
 
 		this.columns = {};
 
@@ -5535,16 +5880,19 @@ class LinearVisualization extends Visualization {
 
 			for(const [key, _] of row) {
 
-				if(key == this.axes.bottom.column)
+				if(key == this.axes.bottom.column) {
 					continue;
+				}
 
-				if((!this.axes.left || !this.axes.left.columns.some(c => c.key == key)) && (!this.axes.right || !this.axes.right.columns.some(c => c.key == key)))
+				if((!this.axes.left || !this.axes.left.columns.some(c => c.key == key)) && (!this.axes.right || !this.axes.right.columns.some(c => c.key == key))) {
 					continue;
+				}
 
 				const column = this.source.columns.get(key);
 
-				if(!column || column.disabled)
+				if(!column || column.disabled) {
 					continue;
+				}
 
 				if(!this.columns[key]) {
 					this.columns[key] = [];
@@ -5568,8 +5916,9 @@ class LinearVisualization extends Visualization {
 			.append('g')
 			.attr('class', 'chart');
 
-		if(!this.rows.length)
+		if(!this.rows.length) {
 			return this.source.error();
+		}
 
 		if(this.rows.length != this.originalLength) {
 
@@ -5598,8 +5947,9 @@ class LinearVisualization extends Visualization {
 				const rows = await this.source.response();
 
 				for(const row of rows) {
-					for(const [key, column] of row)
+					for(const [key, column] of row) {
 						row.set(key, row.getTypedValue(key));
+					}
 				}
 
 				this.rows = rows;
@@ -5669,20 +6019,23 @@ class LinearVisualization extends Visualization {
 
 			const row = that.rows[parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length))];
 
-			if(!row)
+			if(!row) {
 				return;
+			}
 
 			const tooltip = [];
 
 			for(const [key, _] of row) {
 
-				if(key == that.axes.bottom.column)
+				if(key == that.axes.bottom.column) {
 					continue;
+				}
 
 				const column = row.source.columns.get(key);
 
-				if(column.hidden)
+				if(column.hidden) {
 					continue;
+				}
 
 				tooltip.push(`
 					<li class="${row.size > 2 && that.hoverColumn && that.hoverColumn.key == key ? 'hover' : ''}">
@@ -5714,8 +6067,9 @@ class LinearVisualization extends Visualization {
 
 			Tooltip.hide(that.container);
 
-			if(that.zoomRectangle)
+			if(that.zoomRectangle) {
 				return;
+			}
 
 			that.zoomRectangle = container.select('svg').append('g');
 
@@ -5736,8 +6090,9 @@ class LinearVisualization extends Visualization {
 
 		.on('mouseup', function() {
 
-			if(!that.zoomRectangle)
+			if(!that.zoomRectangle) {
 				return;
+			}
 
 			that.zoomRectangle.remove();
 
@@ -5748,17 +6103,20 @@ class LinearVisualization extends Visualization {
 
 					const item = that.x(row.get(that.axes.bottom.column)) + that.axes.left.width + 10;
 
-					if(mouse[0] < that.zoomRectangle.origin[0])
+					if(mouse[0] < that.zoomRectangle.origin[0]) {
 						return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
-					else
+					}
+					else {
 						return item <= mouse[0] && item >= that.zoomRectangle.origin[0];
+					}
 				});
 
 			that.zoomRectangle = null;
 
 			// Width check to make sure the zoom rectangle has substantial width
-			if(filteredRows.length < 2 || width <= 10)
+			if(filteredRows.length < 2 || width <= 10) {
 				return;
+			}
 
 			that.rows = filteredRows;
 
@@ -5795,8 +6153,9 @@ Visualization.list.set('table', class Table extends Visualization {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('section');
 
@@ -5813,16 +6172,19 @@ Visualization.list.set('table', class Table extends Visualization {
 
 	process() {
 
-		if(!this.options || !this.options.gradientRules)
+		if(!this.options || !this.options.gradientRules) {
 			return;
+		}
 
 		for(const gradient of this.options.gradientRules) {
 
-			if(!gradient.gradientThreshold || gradient.gradientThreshold > 100)
+			if(!gradient.gradientThreshold || gradient.gradientThreshold > 100) {
 				gradient.gradientThreshold = 100;
+			}
 
-			if(!this.rows.filter(f => f.get(gradient.column)).length || !this.rows.filter(f => f.get(gradient.relative)).length)
+			if(!this.rows.filter(f => f.get(gradient.column)).length || !this.rows.filter(f => f.get(gradient.relative)).length) {
 				continue;
+			}
 
 			for(const row of this.rows) {
 
@@ -5830,17 +6192,21 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				if(!isNaN(_row)) {
 
-					if((!gradient.maxValue && gradient.maxValue != 0))
+					if((!gradient.maxValue && gradient.maxValue != 0)) {
 						gradient.maxValue = _row;
+					}
 
-					if((!gradient.minValue && gradient.minValue != 0))
+					if((!gradient.minValue && gradient.minValue != 0)) {
 						gradient.minValue = _row;
+					}
 
-					if(gradient.maxValue < _row)
+					if(gradient.maxValue < _row) {
 						gradient.maxValue = _row;
+					}
 
-					else if(gradient.minValue > _row)
+					else if(gradient.minValue > _row) {
 						gradient.minValue = _row;
+					}
 				}
 			}
 		}
@@ -5869,8 +6235,9 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		let columns = this.source.columns.list;
 
-		if(!columns.size && this.source.transformations.size)
+		if(!columns.size && this.source.transformations.size) {
 			columns = Array.from(this.source.transformations).pop().incoming.columns;
+		}
 
 		for(const column of columns.values()) {
 
@@ -5898,8 +6265,9 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				let [format] = this.source.format.columns.filter(_column => _column.key == column.key);
 
-				if(!format)
+				if(!format) {
 					this.source.format.columns.push(format = {key: column.key});
+				}
 
 				if(parseInt(format.sort) == 1) {
 					format.sort = 0;
@@ -5923,8 +6291,9 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				for(const key in column) {
 
-					if(key in column.form)
+					if(key in column.form) {
 						column.form[key].value = column[key];
+					}
 				}
 
 				for(const node of container.parentElement.querySelectorAll('th')) {
@@ -5956,11 +6325,13 @@ Visualization.list.set('table', class Table extends Visualization {
 			headings.appendChild(container);
 		}
 
-		if(!this.hideHeadingsBar)
+		if(!this.hideHeadingsBar) {
 			thead.appendChild(headings);
+		}
 
-		if(thead.children.length)
+		if(thead.children.length) {
 			table.appendChild(thead);
+		}
 
 		const gradientRules = {};
 
@@ -5975,8 +6346,9 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		for(const [position, row] of this.rows.entries()) {
 
-			if(position >= this.rowLimit)
+			if(position >= this.rowLimit) {
 				break;
+			}
 
 			const tr = row.tr = document.createElement('tr');
 
@@ -5998,36 +6370,42 @@ Visualization.list.set('table', class Table extends Visualization {
 						colorValue = parseInt(rule.gradientThreshold / 100 * this.cellColorValue(rule)),
 						colorPercent = (rule.currentValue / rule.maxValue * 100).toFixed(2) + '%';
 
-					if(rule.content == 'empty')
+					if(rule.content == 'empty') {
 						typedValue = null;
+					}
 
-					else if(rule.content == 'percentage')
+					else if(rule.content == 'percentage') {
 						typedValue = colorPercent;
+					}
 
-					else if(rule.content == 'both')
+					else if(rule.content == 'both') {
 						typedValue =  typedValue + ' / ' + colorPercent;
+					}
 
 					let backgroundColor;
 
-					if(rule.dualColor)
+					if(rule.dualColor) {
 						backgroundColor = (rule.position ? rule.maximumColor : rule.minimumColor) + colorValue.toString(16);
-					else
+					}
+					else {
 						backgroundColor = rule.maximumColor + colorValue.toString(16);
+					}
 
 					td.style.backgroundColor = backgroundColor;
 
 					if(colorValue > 155) {
 
-						if (this.cellLuma(backgroundColor) <= 60)
+						if (this.cellLuma(backgroundColor) <= 60) {
 							td.classList.add('column-cell-white');
+						}
 
-						else
+						else {
 							td.classList.add('column-cell-dark');
+						}
 					}
 				}
 
 				if(column.type && column.type.name == 'html') {
-
 					td.innerHTML = typedValue;
 				}
 
@@ -6035,8 +6413,9 @@ Visualization.list.set('table', class Table extends Visualization {
 
 					try {
 
-						if(typeof rowJson == 'string')
+						if(typeof rowJson == 'string') {
 							rowJson = JSON.parse(rowJson);
+						}
 					}
 					catch(e) {};
 
@@ -6055,9 +6434,7 @@ Visualization.list.set('table', class Table extends Visualization {
 						tdValue.classList.add('hidden');
 
 						if(td.editorContainer) {
-
-							td.appendChild(td.editorContainer);
-							return;
+							return td.appendChild(td.editorContainer);
 						}
 
 						td.editorContainer = document.createElement('div');
@@ -6103,10 +6480,12 @@ Visualization.list.set('table', class Table extends Visualization {
 
 			tr.on('click', () => {
 
-				if(this.selectedRows.has(row))
+				if(this.selectedRows.has(row)) {
 					this.selectedRows.delete(row);
-
-				else this.selectedRows.add(row);
+				}
+				else {
+					this.selectedRows.add(row);
+				}
 
 				tr.classList.toggle('selected');
 
@@ -6184,14 +6563,16 @@ Visualization.list.set('table', class Table extends Visualization {
 		table.appendChild(tbody);
 		container.appendChild(table);
 
-		if(!this.hideRowSummary)
+		if(!this.hideRowSummary) {
 			container.appendChild(rowCount);
+		}
 	}
 
 	renderRowSummary() {
 
-		if(this.hideRowSummary)
+		if(this.hideRowSummary) {
 			return;
+		}
 
 		const container = this.container.querySelector('.row-summary .selected-rows');
 
@@ -6205,15 +6586,18 @@ Visualization.list.set('table', class Table extends Visualization {
 			range = rule.maxValue - rule.minValue,
 			value = Math.floor(17 + (238/range) * (rule.currentValue - rule.minValue));
 
-		if(!range)
+		if(!range) {
 			return 255;
+		}
 
 		if(rule.dualColor) {
 
-			if(rule.position)
+			if(rule.position) {
 				return value;
-			else
+			}
+			else {
 				return Math.floor(17 + (238/range) * (rule.maxValue - rule.currentValue));
+			}
 		}
 
 		return value;
@@ -6237,8 +6621,9 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -6274,8 +6659,9 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 
 		super.plot(options);
 
-		if(!this.rows || !this.rows.length)
+		if(!this.rows || !this.rows.length) {
 			return;
+		}
 
 		const
 			container = d3.selectAll(`#visualization-${this.id}`),
@@ -6295,11 +6681,13 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 				.innerTickSize(-this.width)
 				.orient('left');
 
-		if(['s'].includes(this.axes.bottom.format))
+		if(['s'].includes(this.axes.bottom.format)) {
 			xAxis.tickFormat(d3.format(this.axes.left.format));
+		}
 
-		if(['s'].includes(this.axes.left.format))
+		if(['s'].includes(this.axes.left.format)) {
 			yAxis.tickFormat(d3.format(this.axes.left.format));
+		}
 
 		let
 			max = null,
@@ -6309,11 +6697,13 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 
 			for(const row of column) {
 
-				if(max == null)
+				if(max == null) {
 					max = Math.ceil(row.y);
+				}
 
-				if(min == null)
+				if(min == null) {
 					min = Math.floor(row.y);
+				}
 
 				max = Math.max(max, Math.ceil(row.y) || 0);
 				min = Math.min(min, Math.floor(row.y) || 0);
@@ -6396,18 +6786,21 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 
 					let value = Format.number(cell.y);
 
-					if(['s'].includes(this.axes.left.format))
+					if(['s'].includes(this.axes.left.format)) {
 						value = d3.format('.4s')(cell.y);
+					}
 
 					return this.x(cell.x) + this.axes.left.width + (x1.rangeBand() / 2) - (value.toString().length * 4)
 				})
 				.text(cell => {
 
-					if(['s'].includes(this.axes.left.format))
+					if(['s'].includes(this.axes.left.format)) {
 						return d3.format('.4s')(cell.y);
+					}
 
-					else
+					else {
 						return Format.number(cell.y)
+					}
 				})
 				.attr('y', cell => this.y(cell.y > 0 ? cell.y : 0) - 5)
 				.attr('height', cell => Math.abs(this.y(cell.y) - this.y(0)));
@@ -6446,8 +6839,9 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 				.attr('cy', d => this.y(d.y))
 				.on('mouseover', function(cell) {
 
-					if(!that.source.columns.get(cell.key).drilldown)
+					if(!that.source.columns.get(cell.key).drilldown) {
 						return;
+					}
 
 					d3.select(this)
 						.attr('r', 6)
@@ -6459,8 +6853,9 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 				})
 				.on('mouseout', function(cell) {
 
-					if(!that.source.columns.get(cell.key).drilldown)
+					if(!that.source.columns.get(cell.key).drilldown) {
 						return;
+					}
 
 					d3.select(this)
 						.transition()
@@ -6484,8 +6879,9 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 				xpos = parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length)),
 				row = that.rows[xpos];
 
-			if(!row || that.zoomRectangle)
+			if(!row || that.zoomRectangle) {
 				return;
+			}
 
 			container.selectAll(`svg > g > circle[id='${xpos}'].clips:not(.hover)`).attr('r', 6);
 		})
@@ -6506,8 +6902,9 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -6544,11 +6941,11 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 
 		super.plot(options);
 
-		if(!this.rows || !this.rows.length)
+		if(!this.rows || !this.rows.length) {
 			return;
+		}
 
 		if(!this.bubbleColumn || !this.bubbleRadiusColumn) {
-
 			return this.source.error('Bubble Column and Bubble Radius column cannot be empty');
 		}
 
@@ -6573,8 +6970,9 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 					if(
 						(mouse[0] < that.zoomRectangle.origin[0] && item >= mouse[0] && item <= that.zoomRectangle.origin[0]) ||
 						(mouse[0] >= that.zoomRectangle.origin[0] && item <= mouse[0] && item >= that.zoomRectangle.origin[0])
-					)
+					) {
 						filteredRows.push(row);
+					}
 				}
 
 				// Assign width and height to the rectangle
@@ -6625,11 +7023,13 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 				.innerTickSize(-this.width)
 				.orient('left');
 
-		if(['s'].includes(this.axes.bottom.format))
-				xAxis.tickFormat(d3.format(this.axes.left.format));
+		if(['s'].includes(this.axes.bottom.format)) {
+			xAxis.tickFormat(d3.format(this.axes.left.format));
+		}
 
-		if(['s'].includes(this.axes.left.format))
-				yAxis.tickFormat(d3.format(this.axes.left.format));
+		if(['s'].includes(this.axes.left.format)) {
+			yAxis.tickFormat(d3.format(this.axes.left.format));
+		}
 
 		this.y.max = 0;
 		this.y.min = 0;
@@ -6702,7 +7102,6 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 		for(const column of this.columns) {
 
 			if(that.axes.right && column.key == that.axes.right.column) {
-
 				continue;
 			}
 
@@ -6803,8 +7202,9 @@ Visualization.list.set('scatter', class Scatter extends LinearVisualization {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -6840,8 +7240,9 @@ Visualization.list.set('scatter', class Scatter extends LinearVisualization {
 
 		super.plot(options);
 
-		if(!this.rows || !this.rows.length)
+		if(!this.rows || !this.rows.length) {
 			return;
+		}
 
 		const
 			container = d3.selectAll(`#visualization-${this.id}`),
@@ -6860,11 +7261,13 @@ Visualization.list.set('scatter', class Scatter extends LinearVisualization {
 				.innerTickSize(-this.width)
 				.orient('left');
 
-		if(['s'].includes(this.axes.bottom.format))
-				xAxis.tickFormat(d3.format(this.axes.left.format));
+		if(['s'].includes(this.axes.bottom.format)) {
+			xAxis.tickFormat(d3.format(this.axes.left.format));
+		}
 
-		if(['s'].includes(this.axes.left.format))
-				yAxis.tickFormat(d3.format(this.axes.left.format));
+		if(['s'].includes(this.axes.left.format)) {
+			yAxis.tickFormat(d3.format(this.axes.left.format));
+		}
 
 		let
 			max = null,
@@ -6874,11 +7277,13 @@ Visualization.list.set('scatter', class Scatter extends LinearVisualization {
 
 			for(const row of column) {
 
-				if(max == null)
+				if(max == null) {
 					max = Math.ceil(row.y);
+				}
 
-				if(min == null)
+				if(min == null) {
 					min = Math.floor(row.y);
+				}
 
 				max = Math.max(max, Math.floor(row.y) || 0);
 				min = Math.min(min, Math.ceil(row.y) || 0);
@@ -6967,8 +7372,9 @@ Visualization.list.set('scatter', class Scatter extends LinearVisualization {
 				xpos = parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length)),
 				row = that.rows[xpos];
 
-			if(!row || that.zoomRectangle)
+			if(!row || that.zoomRectangle) {
 				return;
+			}
 
 			container.selectAll(`svg > g > circle[id='${xpos}'].clips`).attr('r', 6);
 		})
@@ -6981,8 +7387,9 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -7019,8 +7426,9 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 
 		super.plot(options);
 
-		if(!this.rows || !this.rows.length)
+		if(!this.rows || !this.rows.length) {
 			return;
+		}
 
 		const that = this;
 
@@ -7038,11 +7446,13 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 				.innerTickSize(-this.width)
 				.orient('left');
 
-		if(['s'].includes(this.axes.bottom.format))
-				xAxis.tickFormat(d3.format(this.axes.left.format));
+		if(['s'].includes(this.axes.bottom.format)) {
+			xAxis.tickFormat(d3.format(this.axes.left.format));
+		}
 
-		if(['s'].includes(this.axes.left.format))
-				yAxis.tickFormat(d3.format(this.axes.left.format));
+		if(['s'].includes(this.axes.left.format)) {
+			yAxis.tickFormat(d3.format(this.axes.left.format));
+		}
 
 		let
 			max = 0,
@@ -7052,11 +7462,13 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 
 			for(const row of column) {
 
-				if(max == null)
+				if(max == null) {
 					max = Math.ceil(row.y);
+				}
 
-				if(min == null)
+				if(min == null) {
 					min = Math.floor(row.y);
+				}
 
 				max = Math.max(max, Math.floor(row.y) || 0);
 				min = Math.min(min, Math.ceil(row.y) || 0);
@@ -7152,15 +7564,17 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 
 					let value = Format.number(cell.y);
 
-					if(['s'].includes(this.axes.left.format))
+					if(['s'].includes(this.axes.left.format)) {
 						value = d3.format('.4s')(cell.y);
+					}
 
 					return this.x(cell.x) + this.axes.left.width + (x1.rangeBand() / 2) - (value.toString().length * 4)
 				})
 				.text(cell => {
 
-					if(['s'].includes(this.axes.left.format))
+					if(['s'].includes(this.axes.left.format)) {
 						return d3.format('.4s')(cell.y);
+					}
 
 					else
 						return Format.number(cell.y)
@@ -7208,8 +7622,9 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -7238,8 +7653,9 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 		super(visualization, source);
 
-		if(!this.axes)
+		if(!this.axes) {
 			this.axes = [];
+		}
 
 		this.axes = this.axes.sort((a, b) => b.depth - a.depth);
 		this.axes = this.axes.sort((a, b) => ['top', 'bottom'].includes(a.position) ? -1 : 1);
@@ -7274,8 +7690,9 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 		const rows = await this.source.response();
 
-		if(!rows || !rows.length)
+		if(!rows || !rows.length) {
 			return this.source.error();
+		}
 
 		this.rows = rows;
 
@@ -7283,15 +7700,17 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 		for(const axis of this.axes) {
 
-			if(!axis.restcolumns)
+			if(!axis.restcolumns) {
 				continue;
+			}
 
 			axis.columns = [];
 
 			for(const [key, column] of this.source.columns) {
 
-				if(!column.disabled && !column.hidden && !this.axes.some(a => a.columns.some(c => c.key == key)))
+				if(!column.disabled && !column.hidden && !this.axes.some(a => a.columns.some(c => c.key == key))) {
 					axis.columns.push({key});
+				}
 			}
 
 			axis.column = axis.columns.length ? axis.columns[0].key : '';
@@ -7301,28 +7720,32 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 		for(const [key, column] of this.source.columns) {
 
 			for(const axis of this.axes) {
-				if(axis.columns.some(c => c.key == key))
+				if(axis.columns.some(c => c.key == key)) {
 					continue outer;
+				}
 			}
 
 			column.hidden = true;
 			column.render();
 		}
 
-		for(const axis of this.axes)
+		for(const axis of this.axes) {
 			this.axes[axis.position].size = 0;
+		}
 
 		for(const axis of this.axes) {
 
 			const columns = axis.columns.filter(column => this.source.columns.has(column.key) && !this.source.columns.get(column.key).disabled);
 
-			if(!columns.length)
+			if(!columns.length) {
 				continue;
+			}
 
 			this.axes[axis.position].size += axis.position == 'left' ? 50 : axis.top == 'top' ? 20 : 30;
 
-			if(axis.label)
+			if(axis.label) {
 				this.axes[axis.position].size += 15;
+			}
 		}
 
 		this.height = this.container.clientHeight - this.axes.top.size - this.axes.bottom.size - 20;
@@ -7350,8 +7773,9 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 		container.selectAll('*').remove();
 
-		if(!this.rows || !this.rows.length)
+		if(!this.rows || !this.rows.length) {
 			return;
+		}
 
 		this.svg = container
 			.append('svg');
@@ -7391,8 +7815,9 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 			const columns = axis.columns.filter(column => this.source.columns.has(column.key) && !this.source.columns.get(column.key).disabled);
 
-			if(!columns.length)
+			if(!columns.length) {
 				continue;
+			}
 
 			axis.animate = !options.resize && !axis.dontAnimate && !this.options.dontAnimate;
 
@@ -7411,8 +7836,9 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 					column.push(value);
 
-					if(biggestTick.length < value.length)
+					if(biggestTick.length < value.length) {
 						biggestTick = value;
+					}
 				}
 
 				scale.domain(column);
@@ -7425,8 +7851,9 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 				for(let i = 0; i < column.length; i++) {
 
-					if(!(i % tickInterval))
+					if(!(i % tickInterval)) {
 						ticks.push(column[i]);
+					}
 				}
 
 				// Add the axis scale
@@ -7443,10 +7870,12 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 						.attr('class', 'scale ' + axis.position)
 						.call(d3Axis);
 
-					if(axis.position == 'bottom')
+					if(axis.position == 'bottom') {
 						g.attr('transform', `translate(${this.axes.left.size}, ${this.height})`);
-					else
+					}
+					else {
 						g.attr('transform', `translate(${this.axes.left.size}, ${axis.label ? 45 : 20})`);
+					}
 				}
 
 				if(axis.label) {
@@ -7457,10 +7886,12 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 						.style('text-anchor', 'middle')
 						.text(axis.label);
 
-					if(axis.position == 'bottom')
+					if(axis.position == 'bottom') {
 						text.attr('transform', `translate(${(this.width / 2)}, ${this.height + 35})`)
-					else
+					}
+					else {
 						text.attr('transform', `translate(${(this.width / 2)}, 10)`)
+					}
 				}
 
 				this.x = scale;
@@ -7471,8 +7902,9 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 				continue;
 			}
 
-			if(!this.x)
+			if(!this.x) {
 				continue;
+			}
 
 			const scale = d3.scale.linear().range([this.height, 20]);
 
@@ -7495,8 +7927,9 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 				columnsData.push(column);
 			}
 
-			if(axis.stacked)
+			if(axis.stacked) {
 				columnsData = d3.layout.stack()(columnsData);
+			}
 
 			// Needed to show multiple columns
 			columns.scale = d3.scale.ordinal();
@@ -7518,8 +7951,9 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					min = Math.min(min, Math.floor(row.get(column.key)) || 0);
 				}
 
-				if(axis.stacked)
+				if(axis.stacked) {
 					max = Math.max(max, Math.ceil(total) || 0);
+				}
 			}
 
 			scale.domain(this.x.position == 'bottom' ? [min, max] : [max, min]).nice();
@@ -7658,8 +8092,9 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					.innerTickSize(this.width * (axis.position == 'right' ? 1 : -1))
 					.orient(axis.position == 'right' ? 'right' : 'left');
 
-				if(['s'].includes(axis.format))
+				if(['s'].includes(axis.format)) {
 					d3Axis.tickFormat(d3.format(axis.format));
+				}
 
 				this.svg
 					.append('g')
@@ -7677,10 +8112,12 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					.style('text-anchor', 'middle')
 					.text(axis.label);
 
-				if(axis.position == 'right')
+				if(axis.position == 'right') {
 					text.attr('transform', `rotate(90) translate(${(this.height / 2)}, ${(this.axes.left.size + this.width + 50) * -1})`);
-				else
+				}
+				else {
 					text.attr('transform', `rotate(-90) translate(${(this.height / 2 * -1)}, 12)`);
+				}
 			}
 
 			// For each line appending the circle at each point
@@ -7736,18 +8173,21 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					.attr('fill', 'var(--color-surface-text)')
 					.text(([row, column]) => {
 
-						if(['s'].includes(axis.format))
+						if(['s'].includes(axis.format)) {
 							return d3.format('.4s')(row.getTypedValue(column.key));
+						}
 
-						else
+						else {
 							return row.getTypedValue(column.key);
+						}
 					})
 					.attr('x', ([row, column]) => {
 
 						let value = row.getTypedValue(column.key);
 
-						if(['s'].includes(axis.format))
+						if(['s'].includes(axis.format)) {
 							value = d3.format('.4s')(value);
+						}
 
 						return this.x(row.getTypedValue(this.x.column)) + this.axes.left.size + (columns.scale.rangeBand() / 2) - (value.toString().length * 4)
 					})
@@ -7770,8 +8210,9 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 		for(const g of this.svg.selectAll('svg > g')[0] || [])  {
 
-			if(g.classList.contains('scale'))
+			if(g.classList.contains('scale')) {
 				g.parentElement.insertBefore(g, g.parentElement.firstChild);
+			}
 		}
 
 		container
@@ -7787,10 +8228,12 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 						const item = that.x(row.getTypedValue(that.x.column)) + 100;
 
-						if(mouse[0] < that.zoomRectangle.origin[0])
+						if(mouse[0] < that.zoomRectangle.origin[0]) {
 							return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
-						else
+						}
+						else {
 							return item <= mouse[0] && item >= that.zoomRectangle.origin[0];
+						}
 					}),
 					width = Math.abs(mouse[0] - that.zoomRectangle.origin[0]);
 
@@ -7829,20 +8272,23 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 			const row = that.rows[parseInt((mouse[0] - that.axes.left.size - 10) / (that.width / that.rows.length))];
 
-			if(!row || !that.x)
+			if(!row || !that.x) {
 				return;
+			}
 
 			const tooltip = [];
 
 			for(const [key, _] of row) {
 
-				if(key == that.x.column)
+				if(key == that.x.column) {
 					continue;
+				}
 
 				const column = row.source.columns.get(key);
 
-				if(column.disabled || column.hidden)
+				if(column.disabled || column.hidden) {
 					continue;
+				}
 
 				tooltip.push(`
 					<li class="${row.size > 2 && that.hoverColumn && that.hoverColumn.key == key ? 'hover' : ''}">
@@ -7874,8 +8320,9 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 			Tooltip.hide(that.container);
 
-			if(that.zoomRectangle)
+			if(that.zoomRectangle) {
 				return;
+			}
 
 			that.zoomRectangle = container.select('svg').append('g');
 
@@ -7893,8 +8340,9 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 		.on('mouseup', function() {
 
-			if(!that.zoomRectangle)
+			if(!that.zoomRectangle) {
 				return;
+			}
 
 			that.zoomRectangle.remove();
 
@@ -7904,19 +8352,23 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 					const item = that.x(row.getTypedValue(that.x.column)) + 100;
 
-					if(mouse[0] < that.zoomRectangle.origin[0])
+					if(mouse[0] < that.zoomRectangle.origin[0]) {
 						return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
-					else
+					}
+					else {
 						return item <= mouse[0] && item >= that.zoomRectangle.origin[0];
+					}
 				});
 
 			that.zoomRectangle = null;
 
-			if(!filteredRows.length)
+			if(!filteredRows.length) {
 				return;
+			}
 
-			if(!that.zoomedIn)
+			if(!that.zoomedIn) {
 				that.rowsMaster = that.rows;
+			}
 
 			that.rows = filteredRows;
 			that.zoomedIn = true;
@@ -7930,8 +8382,9 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -7970,76 +8423,94 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 		const rows = await this.source.response();
 
-		if(!rows || !rows.length)
+		if(!rows || !rows.length) {
 			return this.source.error();
+		}
 
-		if(!this.axes)
+		if(!this.axes) {
 			return this.source.error('Axes not defined.');
+		}
 
-		if(!this.axes.bottom)
+		if(!this.axes.bottom) {
 			return this.source.error('Bottom axis not defined.');
+		}
 
-		if(!this.axes.left)
+		if(!this.axes.left) {
 			return this.source.error('Left axis not defined.');
+		}
 
-		if(!this.axes.right)
+		if(!this.axes.right) {
 			return this.source.error('Right axis not defined.');
+		}
 
-		if(!this.axes.bottom.columns.length)
+		if(!this.axes.bottom.columns.length) {
 			return this.source.error('Bottom axis requires exactly one column.');
+		}
 
-		if(!this.axes.left.columns.length)
+		if(!this.axes.left.columns.length) {
 			return this.source.error('Left axis requires atleast one column.');
+		}
 
-		if(!this.axes.right.columns.length)
+		if(!this.axes.right.columns.length) {
 			return this.source.error('Right axis requires atleast one column.');
+		}
 
-		if(this.axes.bottom.columns.length > 1)
+		if(this.axes.bottom.columns.length > 1) {
 			return this.source.error('Bottom axis cannot has more than one column.');
+		}
 
 		for(const column of this.axes.bottom.columns) {
-			if(!this.source.columns.get(column.key))
+			if(!this.source.columns.get(column.key)) {
 				return this.source.error(`Bottom axis column <em>${column.key}</em> not found.)`);
+			}
 		}
 
 		for(const column of this.axes.left.columns) {
-			if(!this.source.columns.get(column.key))
+			if(!this.source.columns.get(column.key)) {
 				return this.source.error(`Left axis column <em>${column.key}</em> not found.`);
+			}
 		}
 
 		for(const column of this.axes.right.columns) {
-			if(!this.source.columns.get(column.key))
+			if(!this.source.columns.get(column.key)) {
 				return this.source.error(`Right axis column <em>${column.key}</em> not found.`);
+			}
 		}
 
 		for(const bottom of this.axes.bottom.columns) {
 
 			for(const left of this.axes.left.columns) {
 
-				if(bottom.key == left.key)
+				if(bottom.key == left.key) {
 					return this.source.error(`Column <em>${bottom.key}</em> cannot be on two axis.`);
+				}
 			}
 
 			for(const right of this.axes.right.columns) {
 
-				if(bottom.key == right.key)
+				if(bottom.key == right.key) {
 					return this.source.error(`Column <em>${bottom.key}</em> cannot be on two axis.`);
+				}
 			}
 		}
 
-		if(this.axes.bottom.columns.every(c => this.source.columns.get(c.key).disabled))
+		if(this.axes.bottom.columns.every(c => this.source.columns.get(c.key).disabled)) {
 			return this.source.error('Bottom axis requires atleast one column.');
+		}
 
-		if(this.axes.left.columns.every(c => this.source.columns.get(c.key).disabled))
+		if(this.axes.left.columns.every(c => this.source.columns.get(c.key).disabled)) {
 			return this.source.error('Left axis requires atleast one column.');
+		}
 
-		if(this.axes.right.columns.every(c => this.source.columns.get(c.key).disabled))
+		if(this.axes.right.columns.every(c => this.source.columns.get(c.key).disabled)) {
 			return this.source.error('Right axis requires atleast one column.');
+		}
 
 		for(const [key, column] of this.source.columns) {
 
-			if(this.axes.left.columns.some(c => c.key == key) || this.axes.right.columns.some(c => c.key == key) || this.axes.bottom.columns.some(c => c.key == key))
+			if(this.axes.left.columns.some(c => c.key == key) || this.axes.right.columns.some(c => c.key == key) || this.axes.bottom.columns.some(c => c.key == key)) {
 				continue;
+			}
 
 			column.hidden = true;
 			column.disabled = true;
@@ -8052,14 +8523,17 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		this.axes.left.width = 40;
 		this.axes.right.width = 25;
 
-		if(this.axes.bottom.label)
+		if(this.axes.bottom.label) {
 			this.axes.bottom.height += 20;
+		}
 
-		if(this.axes.left.label)
+		if(this.axes.left.label) {
 			this.axes.left.width += 20;
+		}
 
-		if(this.axes.right.label)
+		if(this.axes.right.label) {
 			this.axes.right.width += 10;
+		}
 
 		this.height = this.container.clientHeight - this.axes.bottom.height - 20;
 		this.width = this.container.clientWidth - this.axes.left.width - this.axes.right.width - 40;
@@ -8092,8 +8566,9 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 		container.selectAll('*').remove();
 
-		if(!this.rows || !this.rows.length)
+		if(!this.rows || !this.rows.length) {
 			return;
+		}
 
 		this.columns = {
 			left: {},
@@ -8104,24 +8579,29 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 			for(const [key, value] of row) {
 
-				if(key == this.axes.bottom.column)
+				if(key == this.axes.bottom.column) {
 					continue;
+				}
 
 				const column = this.source.columns.get(key);
 
-				if(!column || column.disabled)
+				if(!column || column.disabled) {
 					continue;
+				}
 
 				let direction = null;
 
-				if(this.axes.left.columns.some(c => c.key == key))
+				if(this.axes.left.columns.some(c => c.key == key)) {
 					direction = 'left';
+				}
 
-				if(this.axes.right.columns.some(c => c.key == key))
+				if(this.axes.right.columns.some(c => c.key == key)) {
 					direction = 'right';
+				}
 
-				if(!direction)
+				if(!direction) {
 					continue;
+				}
 
 				if(!this.columns[direction][key]) {
 					this.columns[direction][key] = [];
@@ -8144,8 +8624,9 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 			.append('g')
 			.attr('class', 'chart');
 
-		if(!this.rows.length)
+		if(!this.rows.length) {
 			return this.source.error();
+		}
 
 		if(this.rows.length != (await this.source.response()).length) {
 
@@ -8175,8 +8656,9 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 			});
 		}
 
-		if(!this.rows.length)
+		if(!this.rows.length) {
 			return;
+		}
 
 		const that = this;
 
@@ -8209,11 +8691,13 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 			for(const [key, value] of row) {
 
-				if(this.axes.left.columns.some(c => c.key == key))
+				if(this.axes.left.columns.some(c => c.key == key)) {
 					this.left.max = Math.max(this.left.max, Math.ceil(value) || 0);
+				}
 
-				if(this.axes.right.columns.some(c => c.key == key))
+				if(this.axes.right.columns.some(c => c.key == key)) {
 					this.right.max = Math.max(this.right.max, Math.ceil(value) || 0);
+				}
 			}
 		}
 
@@ -8390,10 +8874,12 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 						const item = that.bottom(row.get(that.axes.bottom.column)) + 100;
 
-						if(mouse[0] < that.zoomRectangle.origin[0])
+						if(mouse[0] < that.zoomRectangle.origin[0]) {
 							return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
-						else
+						}
+						else {
 							return item <= mouse[0] && item >= that.zoomRectangle.origin[0];
+						}
 					}),
 					width = Math.abs(mouse[0] - that.zoomRectangle.origin[0]);
 
@@ -8431,15 +8917,17 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 			const row = that.rows[parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length))];
 
-			if(!row)
+			if(!row) {
 				return;
+			}
 
 			const tooltip = [];
 
 			for(const [key, value] of row) {
 
-				if(key == that.axes.bottom.column)
+				if(key == that.axes.bottom.column) {
 					continue;
+				}
 
 				tooltip.push(`
 					<li class="${row.size > 2 && that.hoverColumn && that.hoverColumn.key == key ? 'hover' : ''}">
@@ -8468,8 +8956,9 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 			Tooltip.hide(that.container);
 
-			if(that.zoomRectangle)
+			if(that.zoomRectangle) {
 				return;
+			}
 
 			that.zoomRectangle = container.select('svg').append('g');
 
@@ -8487,8 +8976,9 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 		.on('mouseup', function() {
 
-			if(!that.zoomRectangle)
+			if(!that.zoomRectangle) {
 				return;
+			}
 
 			that.zoomRectangle.remove();
 
@@ -8498,16 +8988,19 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 					const item = that.bottom(row.get(that.axes.bottom.column)) + 100;
 
-					if(mouse[0] < that.zoomRectangle.origin[0])
+					if(mouse[0] < that.zoomRectangle.origin[0]) {
 						return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
-					else
+					}
+					else {
 						return item <= mouse[0] && item >= that.zoomRectangle.origin[0];
+					}
 				});
 
 			that.zoomRectangle = null;
 
-			if(!filteredRows.length)
+			if(!filteredRows.length) {
 				return;
+			}
 
 			that.rows = filteredRows;
 
@@ -8520,8 +9013,9 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -8556,8 +9050,9 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 		super.plot(options);
 
-		if(!this.rows || !this.rows.length)
+		if(!this.rows || !this.rows.length) {
 			return;
+		}
 
 		const that = this;
 
@@ -8575,11 +9070,13 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 				.innerTickSize(-this.width)
 				.orient('left');
 
-		if(['s'].includes(this.axes.bottom.format))
-				xAxis.tickFormat(d3.format(this.axes.left.format));
+		if(['s'].includes(this.axes.bottom.format)) {
+			xAxis.tickFormat(d3.format(this.axes.left.format));
+		}
 
-		if(['s'].includes(this.axes.left.format))
-				yAxis.tickFormat(d3.format(this.axes.left.format));
+		if(['s'].includes(this.axes.left.format)) {
+			yAxis.tickFormat(d3.format(this.axes.left.format));
+		}
 
 		let max = 0;
 
@@ -8588,8 +9085,9 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 			let total = 0;
 
 			for(const [name, value] of row) {
-				if(this.axes.left.columns.some(c => c.key == name))
+				if(this.axes.left.columns.some(c => c.key == name)) {
 					total += parseFloat(value) || 0;
+				}
 			}
 
 			max = Math.max(max, Math.ceil(total) || 0);
@@ -8684,17 +9182,20 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 					let value = Format.number(cell.y);
 
-					if(['s'].includes(this.axes.left.format))
+					if(['s'].includes(this.axes.left.format)) {
 						value = d3.format('.4s')(cell.y);
+					}
 
 					return this.x(cell.x) + this.axes.left.width + (this.x.rangeBand() / 2) - (value.toString().length * 4);
 				})
 				.text(cell => {
 
-					if(['s'].includes(this.axes.left.format))
+					if(['s'].includes(this.axes.left.format)) {
 						return d3.format('.4s')(cell.y);
-					else
+					}
+					else {
 						return Format.number(cell.y)
+					}
 				});
 		}
 
@@ -8739,8 +9240,9 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -8775,8 +9277,9 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 
 		super.plot(options);
 
-		if(!this.rows || !this.rows.length)
+		if(!this.rows || !this.rows.length) {
 			return;
+		}
 
 		const
 			container = d3.selectAll(`#visualization-${this.id}`),
@@ -8796,11 +9299,13 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 				.innerTickSize(-this.width)
 				.orient('left');
 
-		if(['s'].includes(this.axes.bottom.format))
-				xAxis.tickFormat(d3.format(this.axes.left.format));
+		if(['s'].includes(this.axes.bottom.format)) {
+			xAxis.tickFormat(d3.format(this.axes.left.format));
+		}
 
-		if(['s'].includes(this.axes.left.format))
-				yAxis.tickFormat(d3.format(this.axes.left.format));
+		if(['s'].includes(this.axes.left.format)) {
+			yAxis.tickFormat(d3.format(this.axes.left.format));
+		}
 
 		let
 			max = 0,
@@ -8812,14 +9317,17 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 
 			for(const [name, value] of row) {
 
-				if(name == this.axes.bottom.column)
+				if(name == this.axes.bottom.column) {
 					continue;
+				}
 
-				if(this.source.columns.get(name).disabled)
+				if(this.source.columns.get(name).disabled) {
 					continue;
+				}
 
-				if(this.source.columns.get(name).hidden)
+				if(this.source.columns.get(name).hidden) {
 					continue;
+				}
 
 				total += parseFloat(value) || 0;
 				min = Math.min(min, Math.floor(value) || 0);
@@ -8911,18 +9419,21 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 
 					let value = Format.number(cell.y);
 
-					if(['s'].includes(this.axes.left.format))
+					if(['s'].includes(this.axes.left.format)) {
 						value = d3.format('.4s')(cell.y);
+					}
 
 					return this.x(cell.x) + this.axes.left.width + (x1.rangeBand() / 2) - (value.toString().length * 4)
 				})
 				.text(cell => {
 
-					if(['s'].includes(this.axes.left.format))
+					if(['s'].includes(this.axes.left.format)) {
 						return d3.format('.4s')(cell.y);
+					}
 
-					else
+					else {
 						return Format.number(cell.y)
+					}
 				})
 				.attr('y', cell => this.y(cell.y > 0 ? cell.y : 0) - 5);
 		}
@@ -8955,8 +9466,9 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 				.attr('cy', cell => this.y(cell.y + cell.y0))
 				.on('mouseover', function(cell) {
 
-					if(!that.source.columns.get(cell.key).drilldown)
+					if(!that.source.columns.get(cell.key).drilldown) {
 						return;
+					}
 
 					d3.select(this)
 						.attr('r', 6)
@@ -8968,8 +9480,9 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 				})
 				.on('mouseout', function(cell) {
 
-					if(!that.source.columns.get(cell.key).drilldown)
+					if(!that.source.columns.get(cell.key).drilldown) {
 						return;
+					}
 
 					d3.select(this)
 						.transition()
@@ -8993,8 +9506,9 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 				xpos = parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length)),
 				row = that.rows[xpos];
 
-			if(!row || that.zoomRectangle)
+			if(!row || that.zoomRectangle) {
 				return;
+			}
 
 			container.selectAll(`svg > g > circle[id='${xpos}'].clips`).attr('r', 6);
 		})
@@ -9007,8 +9521,9 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -9054,8 +9569,9 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 			for(const column of this.source.columns.values()) {
 
-				if(column.disabled)
+				if(column.disabled) {
 					continue;
+				}
 
 				series.push([{
 					date: 0,
@@ -9208,8 +9724,9 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 				var cord = d3.mouse(this);
 
-				if (cord[1] < 2 * margin.top || cord[1] > (height + 2 * margin.top) || cord[0] < margin.left || cord[0] > (width + margin.left) || series.length == 0 || series[0].data.length == 0)
+				if (cord[1] < 2 * margin.top || cord[1] > (height + 2 * margin.top) || cord[0] < margin.left || cord[0] > (width + margin.left) || series.length == 0 || series[0].data.length == 0) {
 					return
+				}
 
 				const content = `
 					<header>${d.label}</header>
@@ -9241,8 +9758,9 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 					endingPintY = y1;
 
-					if (endingPintY - previousLabelHeight <= 10)
+					if (endingPintY - previousLabelHeight <= 10) {
 						endingPintY = previousLabelHeight + 5;
+					}
 
 					curveData = [
 						{x: x1, y: (height) - y1 - 5},
@@ -9300,8 +9818,9 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 						.attr('text-anchor', 'left')
 						.style('font-size', '15px');
 
-					if (window.innerWidth < 768)
+					if (window.innerWidth < 768) {
 						text.style('font-size', '10px');
+					}
 
 					text.append('tspan')
 						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
@@ -9351,8 +9870,9 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -9385,15 +9905,17 @@ Visualization.list.set('pie', class Pie extends Visualization {
 			response = this.source.originalResponse,
 			newResponse = {};
 
-		if(!response || !response.data || !response.data.length)
+		if(!response || !response.data || !response.data.length) {
 			return;
+		}
 
 		for(const row of this.source.originalResponse.data) {
 
 			const value = parseFloat(row.value);
 
-			if(!value)
+			if(!value) {
 				continue;
+			}
 
 			newResponse[row.name] = value;
 		}
@@ -9406,8 +9928,9 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 		const visualizationToggle = this.source.container.querySelector('header .change-visualization');
 
-		if(visualizationToggle)
+		if(visualizationToggle) {
 			visualizationToggle.value = this.source.visualizations.indexOf(this);
+		}
 	}
 
 	async render(options = {}) {
@@ -9423,8 +9946,9 @@ Visualization.list.set('pie', class Pie extends Visualization {
 				height = this.container.clientHeight - 20,
 				width = this.container.clientWidth - 20;
 
-			if(this.width != width || this.height != height)
+			if(this.width != width || this.height != height) {
 				this.render({resize: true});
+			}
 		});
 
 		const
@@ -9434,16 +9958,18 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 		container.selectAll('*').remove();
 
-		if(!this.rows || !this.rows.length || !this.rows[0].size)
+		if(!this.rows || !this.rows.length || !this.rows[0].size) {
 			return this.source.error();
+		}
 
 		const
 			[row] = this.rows,
 			data = [],
 			sum = Array.from(row.values()).reduce((sum, value) => sum + value, 0);
 
-		for(const [name, value] of this.rows[0])
+		for(const [name, value] of this.rows[0]) {
 			data.push({name, value, percentage: Math.floor((value / sum) * 10000) / 100});
+		}
 
 		const
 
@@ -9549,13 +10075,15 @@ Visualization.list.set('pie', class Pie extends Visualization {
 			slice.attr('d', row => arc(row));
 		}
 
-		if(!this.options)
+		if(!this.options) {
 			return;
+		}
 
 		// Add the text
 
-		if(!this.options.showName && !this.options.showValue && !this.options.showPercentage)
+		if(!this.options.showName && !this.options.showValue && !this.options.showPercentage) {
 			return;
+		}
 
 		if(this.options.labelPosition == 'outside') {
 
@@ -9576,17 +10104,21 @@ Visualization.list.set('pie', class Pie extends Visualization {
 				.attr('dy', '.35em')
 				.text(d => {
 
-					if(this.options.showName)
+					if(this.options.showName) {
 						return d.data.name;
+					}
 
-					else if(this.options.showValue && this.options.showPercentage)
+					else if(this.options.showValue && this.options.showPercentage) {
 						return `${Format.number(d.data.value)} (${Format.number(d.data.percentage)}%)`;
+					}
 
-					else if(this.options.showValue)
+					else if(this.options.showValue) {
 						return Format.number(d.data.value);
+					}
 
-					else if(this.options.showPercentage)
+					else if(this.options.showPercentage) {
 						return `${Format.number(d.data.percentage)}%`;
+					}
 				});
 
 			text.transition()
@@ -9636,14 +10168,17 @@ Visualization.list.set('pie', class Pie extends Visualization {
 					.attr('dy', '.35em')
 					.text(d => {
 
-						if(this.options.showValue && this.options.showPercentage)
+						if(this.options.showValue && this.options.showPercentage) {
 							return `${Format.number(d.data.value)} (${Format.number(d.data.percentage)}%)`;
+						}
 
-						else if(this.options.showValue)
+						else if(this.options.showValue) {
 							return Format.number(d.data.value);
+						}
 
-						else if(this.options.showPercentage)
+						else if(this.options.showPercentage) {
 							return `${Format.number(d.data.percentage)}%`;
+						}
 					});
 
 				subText.transition()
@@ -9759,17 +10294,21 @@ Visualization.list.set('pie', class Pie extends Visualization {
 				.attr('text-anchor', 'middle')
 				.text(d => {
 
-					if(this.options.showName)
+					if(this.options.showName) {
 						return d.data.name;
+					}
 
-					else if(this.options.showValue && this.options.showPercentage)
+					else if(this.options.showValue && this.options.showPercentage) {
 						return `${Format.number(d.data.value)} (${Format.number(d.data.percentage)}%)`;
+					}
 
-					else if(this.options.showValue)
+					else if(this.options.showValue) {
 						return Format.number(d.data.value);
+					}
 
-					else if(this.options.showPercentage)
+					else if(this.options.showPercentage) {
 						return `${Format.number(d.data.percentage)}%`;
+					}
 				});
 
 
@@ -9787,14 +10326,17 @@ Visualization.list.set('pie', class Pie extends Visualization {
 					.attr('text-anchor', 'middle')
 					.text(d => {
 
-						if(this.options.showValue && this.options.showPercentage)
+						if(this.options.showValue && this.options.showPercentage) {
 							return `${Format.number(d.data.value)} (${Format.number(d.data.percentage)}%)`;
+						}
 
-						else if(this.options.showValue)
+						else if(this.options.showValue) {
 							return Format.number(d.data.value);
+						}
 
-						else if(this.options.showPercentage)
+						else if(this.options.showPercentage) {
 							return `${Format.number(d.data.percentage)}%`;
+						}
 					})
 					.attr('class', 'sub-text');
 			}
@@ -9819,8 +10361,9 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -9848,18 +10391,19 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 
 	async render() {
 
-		if(!this.options)
+		if(!this.options) {
 			return this.source.error('Map layers not defined');
+		}
 
-		if(!this.options.layers || !this.options.layers.length)
+		if(!this.options.layers || !this.options.layers.length) {
 			return this.source.error('Map layers not defined.');
+		}
 
 		const zoom = this.options.zoom || 12;
 
 		this.rows = await this.source.response();
 
 		if(!this.map) {
-
 			this.map = new google.maps.Map(this.containerElement.querySelector('.container'), {zoom});
 		}
 
@@ -9878,8 +10422,9 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('section');
 
@@ -9938,8 +10483,9 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 
 		for(const row of response) {
 
-			for(const column of row.get('data') || [])
+			for(const column of row.get('data') || []) {
 				this.max = Math.max(this.max, column.count);
+			}
 		}
 	}
 
@@ -9974,8 +10520,9 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 
 				let contents = Format.number(cell.percentage) + '%';
 
-				if(cell.href)
+				if(cell.href) {
 					contents = `<a href="${cell.href}" target="_blank">${contents}</a>`;
+				}
 
 				cells.push(`
 					<td style="${this.getColor(cell.count)}" class="${cell.href ? 'href' : ''}" title="${cell.description}">
@@ -10017,8 +10564,9 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 
 	get container() {
 
-		if (this.containerElement)
+		if (this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('section');
 
@@ -10072,14 +10620,17 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 
 		const response = await this.source.response();
 
-		if(!this.options || !this.options.column)
+		if(!this.options || !this.options.column) {
 			return this.source.error('Value column not selected.');
+		}
 
-		if(!response || !response.length)
+		if(!response || !response.length) {
 			return this.source.error('Invalid Response.');
+		}
 
-		if(!response[0].has(this.options.column))
+		if(!response[0].has(this.options.column)) {
 			return this.source.error(`<em>${this.options.column}</em> column not found.`);
+		}
 	}
 
 	async render(options = {}) {
@@ -10089,8 +10640,9 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 
 		const response = await this.source.response();
 
-		if(!response || !response.length)
+		if(!response || !response.length) {
 			return this.source.error();
+		}
 
 		const value = response[0].getTypedValue(this.options.column);
 
@@ -10106,8 +10658,9 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 	get container() {
 
-		if (this.containerElement)
+		if (this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('section');
 
@@ -10164,27 +10717,33 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 	async process() {
 
-		if(!this.options)
+		if(!this.options) {
 			return this.source.error('Visualization configuration not set.');
+		}
 
-		if(!this.options.timingColumn)
+		if(!this.options.timingColumn) {
 			return this.source.error('Timing column not selected.');
+		}
 
-		if(!this.options.valueColumn)
+		if(!this.options.valueColumn) {
 			return this.source.error('Value column not selected.');
+		}
 
 		this.dates = new Map;
 
 		for(const row of await this.source.response()) {
 
-			if(!row.has(this.options.timingColumn))
+			if(!row.has(this.options.timingColumn)) {
 				return this.source.error(`Timing column '${this.options.timingColumn}' not found.`);
+			}
 
-			if(!row.has(this.options.valueColumn))
+			if(!row.has(this.options.valueColumn)) {
 				return this.source.error(`Value column '${this.options.valueColumn}' not found.`);
+			}
 
-			if(!Date.parse(row.get(this.options.timingColumn)))
+			if(!Date.parse(row.get(this.options.timingColumn))) {
 				return this.source.error(`Timing column value '${row.get(this.options.timingColumn)}' is not a valid date.`);
+			}
 
 			this.dates.set(Date.parse(new Date(row.get(this.options.timingColumn)).toISOString().substring(0, 10)), row);
 		}
@@ -10198,8 +10757,9 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			date: Date.parse(new Date(new Date(today - ((this.options.centerOffset || 0) * 24 * 60 * 60 * 1000))).toISOString().substring(0, 10)),
 		};
 
-		if(this.dates.has(this.center.date))
+		if(this.dates.has(this.center.date)) {
 			this.center.value = this.dates.get(this.center.date).get(this.options.valueColumn);
+		}
 
 		if(this.options.rightOffset != '') {
 
@@ -10236,8 +10796,9 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 	render(options = {}) {
 
-		if(!this.center)
+		if(!this.center) {
 			return this.source.error(`Center column not defined.`);
+		}
 
 		const container = this.container.querySelector('.container');
 
@@ -10282,11 +10843,13 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			this.right.container = this.container.querySelector('.value-right');
 		}
 
-		if(!options.resize)
+		if(!options.resize) {
 			this.animate(options);
+		}
 
-		if(this.options.showGraph)
+		if(this.options.showGraph) {
 			this.plotGraph(options);
+		}
 	}
 
 	animate(options) {
@@ -10308,8 +10871,9 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 			for(const position of ['center', 'left', 'right']) {
 
-				if(!this[position] || !this.dates.has(this[position].date))
+				if(!this[position] || !this.dates.has(this[position].date)) {
 					continue;
+				}
 
 				values[position] = (this[position].value / jumps) * jump;
 
@@ -10416,13 +10980,15 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 	getColor(percentage) {
 
-		if(!percentage)
+		if(!percentage) {
 			return '';
+		}
 
 		let color = percentage > 0;
 
-		if(this.invertValues)
+		if(this.invertValues) {
 			color = !color;
+		}
 
 		return color ? 'green' : 'red';
 	}
@@ -10432,8 +10998,9 @@ Visualization.list.set('json', class JSONVisualization extends Visualization {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -10474,8 +11041,9 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const
 			container = this.containerElement = document.createElement('div'),
@@ -10485,11 +11053,13 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 
 		container.innerHTML = `<div id="visualization-${this.id}" class="container">${body}</div>`;
 
-		if(this.options && this.options.hideHeader)
+		if(this.options && this.options.hideHeader) {
 			this.source.container.querySelector('header').classList.add('hidden');
+		}
 
-		if(this.options && this.options.hideLegend)
+		if(this.options && this.options.hideLegend) {
 			this.source.container.querySelector('.columns').classList.add('hidden');
+		}
 
 		this.source.container.classList.toggle('flush', this.options && this.options.flushBackground);
 
@@ -10498,8 +11068,9 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 
 	async load(options = {}) {
 
-		if(this.source.definition && this.source.definition.query && this.options.body && this.options.body.includes('{{'))
+		if(this.source.definition && this.source.definition.query && this.options.body && this.options.body.includes('{{')) {
 			await this.source.fetch();
+		}
 
 		super.render(options);
 		await this.render(options);
@@ -10507,18 +11078,21 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 
 	async render(options = {}) {
 
-		if(this.options && this.options.hideLegend)
+		if(this.options && this.options.hideLegend) {
 			this.source.container.querySelector('.columns').classList.add('hidden');
+		}
 
 		const [response] = await this.source.response();
 
 		let body = this.options ? this.options.body : '';
 
-		if(!body)
+		if(!body) {
 			body = '';
+		}
 
-		for(const [key, value] of response || [])
+		for(const [key, value] of response || []) {
 			body = body.replace(`{{${key}}}`, response.getTypedValue(key));
+		}
 
 		this.container.innerHTML = `<div id="visualization-${this.id}" class="container">${body}</div>`;
 	}
@@ -10528,8 +11102,9 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 		container.classList.add('visualization', 'sankey');
@@ -10560,44 +11135,54 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 		await this.draw();
 
-		if(!this.options)
+		if(!this.options) {
 			return;
+		}
 
-		if(!this.options.sourceColumn || !this.options.targetColumn || !this.options.valueColumn)
+		if(!this.options.sourceColumn || !this.options.targetColumn || !this.options.valueColumn) {
 			return;
+		}
 
 		await this.plot(options);
 	}
 
 	async draw() {
 
-		if(!this.options)
+		if(!this.options) {
 			return this.source.error('Visualization configuration not set.');
+		}
 
-		if(!this.options.sourceColumn)
+		if(!this.options.sourceColumn) {
 			return this.source.error('Source column not selected.');
+		}
 
-		if(!this.options.targetColumn)
+		if(!this.options.targetColumn) {
 			return this.source.error('Target column not selected.');
+		}
 
-		if(!this.options.valueColumn)
+		if(!this.options.valueColumn) {
 			return this.source.error('Value column not selected.');
+		}
 
-		if(this.options.sourceColumn == this.options.targetColumn)
+		if(this.options.sourceColumn == this.options.targetColumn) {
 			return this.source.error('Source and Target columns are same');
+		}
 
 		const response = await this.response;
 
 		if(response && response.length) {
 
-			if(!response[0].has(this.options.sourceColumn))
+			if(!response[0].has(this.options.sourceColumn)) {
 				return this.source.error(`Timing column '${this.options.sourceColumn}' not found.`);
+			}
 
-			if(!response[0].has(this.options.targetColumn))
+			if(!response[0].has(this.options.targetColumn)) {
 				return this.source.error(`Timing column '${this.options.targetColumn}' not found.`);
+			}
 
-			if(!response[0].has(this.options.valueColumn))
+			if(!response[0].has(this.options.valueColumn)) {
 				return this.source.error(`Value column '${this.options.valueColumn}' not found.`);
+			}
 		}
 
 		window.addEventListener('resize', () => {
@@ -10606,8 +11191,9 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 				height = this.container.clientHeight - 20,
 				width = this.container.clientWidth - 20;
 
-			if(this.width != width || this.height != height)
+			if(this.width != width || this.height != height) {
 				this.render({resize: true});
+			}
 		});
 	}
 
@@ -10619,8 +11205,9 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 		for(const data of response) {
 
-			if(!sourceTargetMap.has(data.get(this.options.sourceColumn)))
+			if(!sourceTargetMap.has(data.get(this.options.sourceColumn))) {
 				sourceTargetMap.set(data.get(this.options.sourceColumn), new Set);
+			}
 
 			sourceTargetMap.get(data.get(this.options.sourceColumn)).add(data.get(this.options.targetColumn))
 		}
@@ -10633,19 +11220,20 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 			cyclePresent = cycle(key, value, key)
 
-			if(cyclePresent)
+			if(cyclePresent) {
 				break;
+			}
 		}
 
 		function cycle(key, value, source) {
 
-			if(!value)
+			if(!value) {
 				return false;
+			}
 
 			const valueArray = Array.from(value);
 
 			if(valueArray.includes(source)) {
-
 				throw that.source.error('Circular data present.');
 			}
 
@@ -10667,18 +11255,21 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 		this.sankey();
 
-		if(isNaN(this.response[0].get(this.options.valueColumn)))
+		if(isNaN(this.response[0].get(this.options.valueColumn))) {
 			return this.source.error('Value is not a number');
+		}
 
 		const nodeMap = {};
 
 		for(const data of this.response) {
 
-			if(!(data.get(this.options.sourceColumn) in nodeMap))
+			if(!(data.get(this.options.sourceColumn) in nodeMap)) {
 				nodeMap[data.get(this.options.sourceColumn)] = {name: data.get(this.options.sourceColumn)};
+			}
 
-			if(!(data.get(this.options.targetColumn) in nodeMap))
+			if(!(data.get(this.options.targetColumn) in nodeMap)) {
 				nodeMap[data.get(this.options.targetColumn)] = {name: data.get(this.options.targetColumn)};
+			}
 		}
 
 		let links = [];
@@ -10803,8 +11394,9 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 	sankey() {
 
-		if(d3.sankey)
+		if(d3.sankey) {
 			return;
+		}
 
 		d3.sankey = function() {
 			let
@@ -10817,8 +11409,9 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 			sankey.nodeWidth = function(_) {
 
-				if(!arguments.length)
+				if(!arguments.length) {
 					return nodeWidth;
+				}
 
 				nodeWidth = +_;
 
@@ -10827,8 +11420,9 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 			sankey.nodePadding = function(_) {
 
-				if(!arguments.length)
+				if(!arguments.length) {
 					return nodePadding;
+				}
 
 				nodePadding = +_;
 				return sankey;
@@ -10836,8 +11430,9 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 			sankey.nodes = function(_) {
 
-				if(!arguments.length)
+				if(!arguments.length) {
 					return nodes;
+				}
 
 				nodes = _;
 
@@ -10846,8 +11441,9 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 			sankey.links = function(_) {
 
-				if(!arguments.length)
+				if(!arguments.length) {
 					return links;
+				}
 
 				links = _;
 
@@ -10856,8 +11452,9 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 			sankey.size = function(_) {
 
-				if(!arguments.length)
+				if(!arguments.length) {
 					return size;
+				}
 
 				size = _;
 				return sankey;
@@ -10902,8 +11499,9 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 				link.curvature = function(_) {
 
-					if(!arguments.length)
+					if(!arguments.length) {
 						return curvature;
+					}
 
 					curvature = +_;
 					return link;
@@ -10928,11 +11526,13 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 						source = link.source,
 						target = link.target;
 
-					if(typeof source === 'number')
+					if(typeof source === 'number') {
 						source = link.source = nodes[link.source];
+					}
 
-					if(typeof target === 'number')
+					if(typeof target === 'number') {
 						target = link.target = nodes[link.target];
+					}
 
 					source.sourceLinks.push(link);
 					target.targetLinks.push(link);
@@ -10974,7 +11574,7 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 						for(const link of node.sourceLinks) {
 							nextNodes.push(link.target);
-						};
+						}
 					}
 
 					remainingNodes = nextNodes;
@@ -10990,7 +11590,6 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 				for(const node of nodes) {
 
 					if(!node.targetLinks.length) {
-
 						node.x = d3.min(node.sourceLinks, d => d.target.x) - 1;
 					}
 				};
@@ -11148,14 +11747,14 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 						link.sy = sy;
 						sy += link.dy;
-					};
+					}
 
 					for(const link of node.targetLinks) {
 
 						link.ty = ty;
 						ty += link.dy;
-					};
-				};
+					}
+				}
 
 				function ascendingSourceDepth(a, b) {
 					return a.source.y - b.source.y;
@@ -11196,8 +11795,9 @@ class SpatialMapLayers extends Set {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -11229,17 +11829,21 @@ class SpatialMapLayers extends Set {
 
 		for(const layer of this.values()) {
 
-			if(!layer.latitudeColumn)
+			if(!layer.latitudeColumn) {
 				return this.visualization.source.error('Latitude Column not defined.');
+			}
 
-			if(!this.visualization.source.columns.has(layer.latitudeColumn))
+			if(!this.visualization.source.columns.has(layer.latitudeColumn)) {
 				return this.visualization.source.error(`Latitude Column '${layer.latitudeColumn}' not found.`);
+			}
 
-			if(!layer.longitudeColumn)
+			if(!layer.longitudeColumn) {
 				return this.visualization.source.error('Longitude Column not defined.');
+			}
 
-			if(!this.visualization.source.columns.has(layer.longitudeColumn))
+			if(!this.visualization.source.columns.has(layer.longitudeColumn)) {
 				return this.visualization.source.error(`Longitude Column '${layer.longitudeColumn}' not found.`);
+			}
 
 			this.visible.has(layer) ? layer.plot() : layer.clear();
 		}
@@ -11257,17 +11861,18 @@ class SpatialMapLayer {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('label');
 
 		container.classList.add('column');
 
 		container.innerHTML = `
-				<span class="name">${this.layer_name} <span class="type">${this.type}</span></span>
-				<input type="checkbox" name="visible_layers" checked>
-			`;
+			<span class="name">${this.layer_name} <span class="type">${this.type}</span></span>
+			<input type="checkbox" name="visible_layers" checked>
+		`;
 
 		container.on('click', e => e.stopPropagation());
 
@@ -11277,10 +11882,12 @@ class SpatialMapLayer {
 
 			container.classList.toggle('disabled');
 
-			if(visibleCheck.checked)
+			if(visibleCheck.checked) {
 				this.layers.visible.add(this);
-			else
+			}
+			else {
 				this.layers.visible.delete(this);
+			}
 
 			this.layers.render();
 		});
@@ -11394,15 +12001,15 @@ SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer
 
 		for(const marker of this.markers) {
 
-			if(!map)
+			if(!map) {
 				marker.setMap(this.layers.visualization.map);
+			}
 		}
 	}
 
 	clear() {
 
 		for(const marker of this.markers) {
-
 			marker.setMap(null);
 		}
 	}
@@ -11477,15 +12084,15 @@ SpatialMapLayer.types.set('bubblemap', class BubbleMap extends SpatialMapLayer {
 
 		for(const marker of this.markers) {
 
-			if(!map)
+			if(!map) {
 				marker.setMap(this.layers.visualization.map);
+			}
 		}
 	}
 
 	clear() {
 
 		for(const marker of this.markers) {
-
 			marker.setMap(null);
 		}
 	}
@@ -11518,8 +12125,9 @@ SpatialMapLayer.types.set('bubblemap', class BubbleMap extends SpatialMapLayer {
 
 			const markerRadius = parseFloat(row.get(this.radiusColumn));
 
-			if(!markerRadius && markerRadius != 0)
+			if(!markerRadius && markerRadius != 0) {
 				return this.layers.visualization.source.error('Radius column must contain numerical values');
+			}
 
 			const color = DataSourceColumn.colors[uniqueFields.indexOf(row.get(this.colorColumn)) % DataSourceColumn.colors.length] || DataSourceColumn.colors[0];
 
@@ -11572,7 +12180,6 @@ Visualization.list.set('calendar', class CalendarVisualization extends Visualiza
 		await this.source.fetch(options);
 
 		if (!this.unset) {
-
 			await this.render(options);
 		}
 	}
@@ -11580,7 +12187,6 @@ Visualization.list.set('calendar', class CalendarVisualization extends Visualiza
 	async process(options = {}) {
 
 		if(!this.options) {
-
 			this.options = options;
 		}
 
@@ -12347,8 +12953,9 @@ class SpatialMapTheme {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.conatinerElement;
+		}
 
 		const container = this.containerElement = document.createElement('span');
 
@@ -12358,8 +12965,9 @@ class SpatialMapTheme {
 			<div class="name">${this.name}</div>
 		`;
 
-		if(this.themes.selected == this.name)
+		if(this.themes.selected == this.name) {
 			container.classList.add('selected');
+		}
 
 		container.insertBefore(this.image, container.querySelector('.name'));
 
@@ -12429,8 +13037,9 @@ class ReportLogs extends Set {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -12509,8 +13118,9 @@ class ReportLogs extends Set {
 
 		for(const log of this.values()) {
 
-			if(logList.contains(log.container))
+			if(logList.contains(log.container)) {
 				continue;
+			}
 
 			logList.appendChild(log.container);
 		}
@@ -12573,8 +13183,9 @@ class Tooltip {
 
 	static show(div, position, content) {
 
-		if(!div.querySelector('.tooltip'))
+		if(!div.querySelector('.tooltip')) {
 			div.insertAdjacentHTML('beforeend', `<div class="tooltip"></div>`)
+		}
 
 		const
 			container = div.querySelector('.tooltip'),
@@ -12582,17 +13193,20 @@ class Tooltip {
 
 		container.innerHTML = content;
 
-		if(container.classList.contains('hidden'))
+		if(container.classList.contains('hidden')) {
 			container.classList.remove('hidden');
+		}
 
 		let left = Math.max(position[0] + distanceFromMouse, 5),
 			top = position[1] + distanceFromMouse;
 
-		if(left + container.clientWidth > div.clientWidth)
+		if(left + container.clientWidth > div.clientWidth) {
 			left = div.clientWidth - container.clientWidth - 5;
+		}
 
-		if(top + container.clientHeight > div.clientHeight)
+		if(top + container.clientHeight > div.clientHeight) {
 			top = position[1] - container.clientHeight - distanceFromMouse;
+		}
 
 		container.setAttribute('style', `left: ${left}px; top: ${top}px;`);
 	}
@@ -12601,8 +13215,9 @@ class Tooltip {
 
 		const container = div.querySelector('.tooltip');
 
-		if(!container)
+		if(!container) {
 			return;
+		}
 
 		container.classList.add('hidden');
 	}
@@ -12629,7 +13244,6 @@ class VisualizationsCanvas {
 	get container() {
 
 		if(this.containerElement) {
-
 			return this.containerElement;
 		}
 
@@ -12668,8 +13282,9 @@ class VisualizationsCanvas {
 
 				let datasetFilter = this.page.list && this.page.list.get(this.page.currentDashboard) && this.page.list.get(this.page.currentDashboard).globalFilters ? this.page.list.get(this.page.currentDashboard).globalFilters.get(filter.placeholder) :  null;
 
-				if (!datasetFilter)
+				if (!datasetFilter) {
 					continue;
+				}
 
 				filter.value = datasetFilter.value;
 			}
@@ -12924,8 +13539,9 @@ class VisualizationsCanvas {
 					}
 				}
 
-				if (!next)
+				if (!next) {
 					return;
+				}
 
 				current.format.position = Math.min(this.visualizations.length, current.format.position + 1);
 				next.format.position = Math.max(1, next.format.position - 1);
@@ -13000,8 +13616,9 @@ class VisualizationsCanvas {
 
 			const report = this.loadedVisualizations.beingResized;
 
-			if (!report)
+			if (!report) {
 				return;
+			}
 
 			const
 				visualizationFormat = report.selectedVisualizationProperties.format,
@@ -13010,11 +13627,13 @@ class VisualizationsCanvas {
 				rowStart = this.getRow(report.container.offsetTop),
 				newRow = this.getRow(e.pageY - this.list.getBoundingClientRect().top) + 1;
 
-			if (newRow > rowStart)
+			if (newRow > rowStart) {
 				visualizationFormat.height = newRow - rowStart;
+			}
 
-			if (newColumn > columnStart && newColumn <= VisualizationsCanvas.grid.columns)
+			if (newColumn > columnStart && newColumn <= VisualizationsCanvas.grid.columns) {
 				visualizationFormat.width = newColumn - columnStart;
+			}
 
 			if (
 				visualizationFormat.width != report.container.style.gridColumnEnd.split(' ')[1] ||
@@ -13033,13 +13652,15 @@ class VisualizationsCanvas {
 					grid-row: auto / span ${dimentions.height.value || Dashboard.grid.rows};
 				`);
 
-				if (this.dragTimeout)
+				if (this.dragTimeout) {
 					clearTimeout(this.dragTimeout);
+				}
 
 				this.dragTimeout = setTimeout(() => report.visualizations.selected.render({resize: true}), 100);
 
-				if (this.saveTimeout)
+				if (this.saveTimeout) {
 					clearTimeout(this.saveTimeout);
+				}
 
 				this.saveTimeout = setTimeout(() => this.save(report), 1000);
 			}
