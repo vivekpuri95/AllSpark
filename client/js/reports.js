@@ -7431,7 +7431,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 					column.push({
 						x: index,
-						y: row.get(column.key),
+						y: parseFloat(row.get(column.key)),
 					});
 				}
 
