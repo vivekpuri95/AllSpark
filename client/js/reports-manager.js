@@ -299,11 +299,14 @@ class TabsManager extends Array {
 
 			for(const tab of this) {
 
-				if(tab.header.querySelector('.unsaved'))
-					tab.header.querySelector('.unsaved').remove();
+				if(tab.header.querySelector('.unsaved-tab')) {
+					tab.header.querySelector('.unsaved-tab').remove();
+					tab.header.title = '';
+				}
 
-				if(tab != this.selected) {
-					tab.header.querySelector('span').insertAdjacentHTML('afterend','<span class="unsaved"> * </span>');
+				if(tab == this.selected) {
+					tab.header.querySelector('span').insertAdjacentHTML('afterend','<span class="unsaved-tab"> * </span>');
+					tab.header.title = 'Last updated';
 				}
 			}
 		}
