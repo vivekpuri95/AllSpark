@@ -228,12 +228,14 @@ class PreviewTabsManager extends Array {
 		container.innerHTML = `
 			<div class="tabs-header">
 				<div class="headers"></div>
+				<div class="icons">
 					<button type="button" class="add-tab">
-						<i class="fa fa-plus"></i>
+						<i class="fa fa-plus icon"></i>
 					</button>
 					<button type="button" class="close-all-tabs" title="Close All">
-						<i class="fas fa-times-circle"></i>
+						<i class="fas fa-times-circle icon"></i>
 					</button>
+				</div>
 			</div>
 			<div class="tabs-body"></div>
 		`;
@@ -368,6 +370,8 @@ class PreviewTabsManager extends Array {
 		this.selected.header.querySelector('.tab-header .close').classList.remove('hidden');
 
 		this.push(this.selected);
+
+		this.selected.header.scrollIntoView();
 
 		this.render();
 	}

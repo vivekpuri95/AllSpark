@@ -1138,15 +1138,22 @@ main .tabs .tabs-header {
 	main .tabs .tabs-header .headers::-webkit-scrollbar {
 		height: 4px;
 	}
-	main .tabs .tabs-header .add-tab,
-	main .tabs .tabs-header .close-all-tabs {
-		background: transparent;
-		border: none;
+	main .tabs .tabs-header .icons {
+		padding: 0 12px;
+		white-space: nowrap;
 	}
-	main .tabs .tabs-header .add-tab:hover,
-	main .tabs .tabs-header .close-all-tabs:hover {
-		color: var(--color-secondary);
-	}
+		main .tabs .tabs-header .icons .add-tab,
+		main .tabs .tabs-header .icons .close-all-tabs {
+			background: transparent;
+			border: none;
+		}
+		main .tabs .tabs-header .icons .add-tab:hover,
+		main .tabs .tabs-header .icons .close-all-tabs:hover {
+			color: var(--color-secondary);
+		}
+		main .tabs .tabs-header .icons .icon {
+			margin: 0;
+		}
 	main .tabs .tabs-header .tab-header {
 		border: 1px solid transparent;
 		background: var(--color-surface);
