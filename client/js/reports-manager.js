@@ -228,16 +228,23 @@ class PreviewTabsManager extends Array {
 		container.innerHTML = `
 			<div class="tabs-header">
 				<div class="headers"></div>
-				<span class="add">
 					<button type="button" class="add-tab">
-						<i class="fa fa-plus add-icon"></i>
+						<i class="fa fa-plus"></i>
 					</button>
-				</span>
+					<button type="button" class="close-all-tabs" title="Close All">
+						<i class="fas fa-times-circle"></i>
+					</button>
 			</div>
 			<div class="tabs-body"></div>
 		`;
 
 		container.querySelector('.add-tab').on('click', () => this.addTab());
+
+		container.querySelector('.close-all-tabs').on('click', () => {
+
+			this.length = 0;
+			this.render();
+		});
 
 		this.loadTab();
 

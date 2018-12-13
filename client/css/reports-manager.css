@@ -1128,10 +1128,6 @@ main.preview-left .tabs {
 	grid-row: 2;
 }
 
-main .tabs .add-tab .add-icon {
-	margin: 0;
-	color: var(--color-surface-text);
-}
 main .tabs .tabs-header {
 	display: flex;
 }
@@ -1142,9 +1138,14 @@ main .tabs .tabs-header {
 	main .tabs .tabs-header .headers::-webkit-scrollbar {
 		height: 4px;
 	}
-	main .tabs .tabs-header .add-tab {
+	main .tabs .tabs-header .add-tab,
+	main .tabs .tabs-header .close-all-tabs {
 		background: transparent;
 		border: none;
+	}
+	main .tabs .tabs-header .add-tab:hover,
+	main .tabs .tabs-header .close-all-tabs:hover {
+		color: var(--color-secondary);
 	}
 	main .tabs .tabs-header .tab-header {
 		border: 1px solid transparent;
