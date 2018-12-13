@@ -4363,7 +4363,17 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 		if(!report)
 			return this.source.error('Stream visualization not found!');
 
-		[report.visualizations.selected] = report.visualizations.filter(v => v.visualization_id == this.visualization_id)
+		[report.visualizations.selected] = report.visualizations.filter(v => v.visualization_id == this.visualization_id);
+
+		const filterFetches = [];
+
+		for(const filter of report.filters.values()) {
+
+			if(this.source.filters.has(filter.placeholder))
+				filterFetches.push(filter.fetch());
+		}
+
+		await Promise.all(filterFetches);
 
 		for(const filter of report.filters.values()) {
 
@@ -13135,7 +13145,7 @@ class Canvas extends VisualizationsCanvas {
 
 	async fetchDataSource() {
 
-		for(const visualization of this.visualizations) {
+		for(const [index, visualization] of this.visualizations.entries()) {
 
 			try {
 
@@ -13148,6 +13158,7 @@ class Canvas extends VisualizationsCanvas {
 
 			if (!DataSource.list.has(visualization.query_id)) {
 
+				this.visualizations.splice(index, 1);
 				continue;
 			}
 

@@ -1146,6 +1146,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 				subtitle: `${this.report.name} #${this.report.query_id}`,
 			});
 
+			this.container.querySelector('#stage-define-report > .toolbar button[type=submit]').classList.remove('not-saved');
+
 			if(await Storage.get('newUser'))
 				await UserOnboard.setup(true);
 
