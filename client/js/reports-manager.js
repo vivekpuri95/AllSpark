@@ -1579,7 +1579,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 						columns.classList.toggle('hidden')
 					});
 
-					li.querySelector('.name small a').on('click', async(e) => {
+					li.querySelector('.name small a').on('click', e => {
 
 						e.stopPropagation();
 
@@ -1597,10 +1597,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 							name: name,
 						}
 
-						if (e.metaKey || e.ctrlKey)
-							options['tab'] = 'new';
-						else
-							options['tab'] = 'current';
+						options.tab = e.metaKey || e.ctrlKey ? 'new' : 'current';
 
 						this.page.preview.loadTab(options);
 					});
