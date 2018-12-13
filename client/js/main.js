@@ -3073,7 +3073,7 @@ class ObjectRoles {
 
 		if (this.targets[this.selectedType.value].ignore_categories) {
 
-			insertParams.append('category_id', null);
+			insertParams.append('category_id', 0);
 		}
 
 		else {
@@ -3112,7 +3112,6 @@ class ObjectRoles {
 			throw e;
 		}
 
-		this.form.reset();
 		this.multiSelect.clear();
 	}
 
