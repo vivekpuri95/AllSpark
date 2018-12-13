@@ -1136,7 +1136,7 @@ main .tabs .tabs-header {
 		overflow: auto;
 	}
 	main .tabs .tabs-header .headers::-webkit-scrollbar {
-		height: 4px;
+		height: 0;
 	}
 	main .tabs .tabs-header .icons {
 		padding: 0 12px;
