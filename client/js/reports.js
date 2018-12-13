@@ -4370,7 +4370,7 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 		for(const filter of report.filters.values()) {
 
 			if(this.source.filters.has(filter.placeholder))
-				filterFetches(filter.fetch());
+				filterFetches.push(filter.fetch());
 		}
 
 		await Promise.all(filterFetches);
