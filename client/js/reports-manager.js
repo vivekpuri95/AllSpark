@@ -371,9 +371,9 @@ class PreviewTabsManager extends Array {
 
 		this.push(this.selected);
 
-		this.selected.header.scrollIntoView();
-
 		this.render();
+
+		this.selected.header.scrollIntoView();
 	}
 
 	render() {
@@ -392,7 +392,7 @@ class PreviewTabsManager extends Array {
 
 			tab.body.classList.toggle('hidden', this.selected != tab);
 			tab.header.classList.toggle('fade-header', this.selected != tab);
-			tab.header.classList.toggle('remove-border', this[index+1] == this.selected);
+			tab.header.classList.toggle('remove-border', this[index + 1] == this.selected);
 
 		}
 
@@ -424,7 +424,7 @@ class PreviewTab {
 		container.innerHTML = `
 			<span>${this.title || `Preview ${this.previewCount}`}</span>
 			<span class="close">
-				<i class="fa fa-times close-icon" aria-hidden="true"></i>
+				<i class="fa fa-times close-icon"></i>
 			</span>
 		`;
 
@@ -534,13 +534,13 @@ class ReportsMangerStage {
 		this.page.stages.selected = this;
 
 		const
-			title = this.page.stages.get('pick-report').switcher.querySelector('small'),
+			reportName = this.page.stages.get('pick-report').switcher.querySelector('small'),
 			visualizationsName = this.page.stages.get('pick-visualization').switcher.querySelector('small'),
 			report = this.selectedReport;
 
 		if(report) {
 
-			title.textContent = report ? `${report.name} #${report.query_id}` : 'Add New Report';
+			reportName.textContent = report ? `${report.name} #${report.query_id}` : 'Add New Report';
 
 			let visualization,
 				id = parseInt(location.pathname.split('/').pop())
