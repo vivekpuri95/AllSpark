@@ -4660,7 +4660,7 @@ DataSourceTransformation.types.set('linear-regression', class DataSourceTransfor
 			case "date":
 			case 'string':
 
-				const timingUnitSeconds = this.isDateX ? 24 * 60 * 60 * 1000 : (response[3] - resposne[0]) / 3;
+				const timingUnitSeconds = this.isDateX ? 24 * 60 * 60 * 1000 : (response[3] - response[0]) / 3;
 
 				for (let y = 1; y <= units; y++) {
 
