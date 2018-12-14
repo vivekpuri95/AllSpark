@@ -208,7 +208,7 @@ class Filters extends API {
 
 		const objRole = new getRole();
 
-		const possiblePrivileges = ["report.edit", constants.privilege.administrator, "superadmin"];
+		const possiblePrivileges = ["report.update", constants.privilege.administrator, "superadmin"];
 
 		const categories = (await objRole.get(this.account.account_id, 'query', 'role', reportObj.query_id)).map(x => x.category_id);
 
