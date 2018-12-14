@@ -38,21 +38,21 @@ class DashboardManager extends Page {
 		const what = state ? state.what : location.pathname.split('/').pop();
 
 		if(what == 'add') {
-
 			return DashboardsDashboard.add();
 		}
 
-		if(this.list.has(parseInt(what)))
+		if(this.list.has(parseInt(what))) {
 			return this.list.get(parseInt(what)).edit();
-
+		}
 
 		await Sections.show('list');
 	}
 
 	async back() {
 
-		if(history.state)
+		if(history.state) {
 			return history.back();
+		}
 
 		await Sections.show('list');
 
@@ -106,7 +106,6 @@ class DashboardManager extends Page {
 		this.list.clear();
 
 		for(const dashboard of this.response) {
-
 			this.list.set(dashboard.id, new DashboardsDashboard(dashboard, this.response, this));
 		}
 	}
@@ -119,13 +118,15 @@ class DashboardManager extends Page {
 		const container = this.container.querySelector('.dashboards');
 		container.textContent = null;
 
-		for(const data of filterData)
+		for(const data of filterData) {
 			this.filter[data.id] = data;
+		}
 
 		for(const dashboard of this.list.values()) {
 
-			if(dashboard.visible && !dashboard.parent)
+			if(dashboard.visible && !dashboard.parent) {
 				container.appendChild(dashboard.container);
+			}
 		}
 
 		if(!this.list.size || !filterData.length)
@@ -172,8 +173,9 @@ class DashboardsDashboard {
 
 		DashboardsDashboard.multiselect = new MultiSelect({datalist, multiple: false});
 
-		if(DashboardsDashboard.container.querySelector('.parent-dashboard .multi-select'))
+		if(DashboardsDashboard.container.querySelector('.parent-dashboard .multi-select')) {
 			DashboardsDashboard.container.querySelector('.parent-dashboard .multi-select').remove();
+		}
 
 		DashboardsDashboard.container.querySelector('.parent-dashboard').appendChild(DashboardsDashboard.multiselect.container);
 
@@ -183,8 +185,9 @@ class DashboardsDashboard {
 
 		DashboardsDashboard.container.querySelector('#share-dashboards').innerHTML = `<div class="NA">You can share the dashboard once you create one.<div>`;
 
-		if(DashboardsDashboard.form_listener)
+		if(DashboardsDashboard.form_listener) {
 			DashboardsDashboard.form.removeEventListener('submit', DashboardsDashboard.form_listener);
+		}
 
 		DashboardsDashboard.form.on('submit', DashboardsDashboard.form_listener = e => DashboardsDashboard.insert(e));
 
@@ -218,8 +221,9 @@ class DashboardsDashboard {
 
 			history.pushState({what: response.insertId}, '', `/dashboards-manager/${response.insertId}`);
 
-			if(await Storage.get('newUser'))
+			if(await Storage.get('newUser')) {
 				UserOnboard.setup(true);
+			}
 
 			new SnackBar({
 				message: 'Dashboard Added',
@@ -243,8 +247,9 @@ class DashboardsDashboard {
 
 	constructor(data, dashboards, page) {
 
-		for(const key in data)
+		for(const key in data) {
 			this[key] = data[key];
+		}
 
 		this.page = page;
 
@@ -253,7 +258,6 @@ class DashboardsDashboard {
 		for(const dashboard of dashboards) {
 
 			if(this.page.list.has(dashboard.id) ) {
-
 				continue;
 			}
 
@@ -282,8 +286,10 @@ class DashboardsDashboard {
 		DashboardsDashboard.form.reset();
 
 		for(const element of DashboardsDashboard.form.elements) {
-			if(this[element.name])
+
+			if(this[element.name]) {
 				element.value = this[element.name];
+			}
 		}
 
 		this.page.parentDashboardMultiselect.clear();
@@ -291,8 +297,9 @@ class DashboardsDashboard {
 
 		DashboardsDashboard.editor.value = JSON.stringify(this.format || {}, 0, 4) || '';
 
-		if(DashboardsDashboard.form_listener)
+		if(DashboardsDashboard.form_listener) {
 			DashboardsDashboard.form.removeEventListener('submit', DashboardsDashboard.form_listener);
+		}
 
 		DashboardsDashboard.form.on('submit', DashboardsDashboard.form_listener = async e => this.update(e));
 
@@ -368,8 +375,9 @@ class DashboardsDashboard {
 
 			await this.page.load();
 
-			if(await Storage.get('newUser'))
+			if(await Storage.get('newUser')) {
 				UserOnboard.setup(true);
+			}
 
 			new SnackBar({
 				message: 'Dashboard Deleted',
@@ -460,8 +468,9 @@ class DashboardsDashboard {
 
 			for(const child of this.children.values()) {
 
-				if(child.visible)
+				if(child.visible) {
 					container.querySelector('div.sub-dashboards').appendChild(child.container);
+				}
 			}
 		}
 
@@ -470,23 +479,27 @@ class DashboardsDashboard {
 
 	get visible() {
 
-		if(this.parent && !this.page.list.has(this.parent))
+		if(this.parent && !this.page.list.has(this.parent)) {
 			return false;
+		}
 
-		if(this.id in this.page.filter)
+		if(this.id in this.page.filter) {
 			return true;
+		}
 
 		for(const child of this.children.values()) {
 
-			if(child.visible)
+			if(child.visible) {
 				return true;
+			}
 		}
 	}
 
 	get parents() {
 
-		if(this.parentsList)
+		if(this.parentsList) {
 			return this.parentsList;
+		}
 
 		this.parentsList = [];
 
@@ -496,8 +509,9 @@ class DashboardsDashboard {
 
 		while(parent) {
 
-			if(!this.page.list.has(parent) || seen.includes(parent))
+			if(!this.page.list.has(parent) || seen.includes(parent)) {
 				break;
+			}
 
 			const parentDashboard = this.page.list.get(parent);
 

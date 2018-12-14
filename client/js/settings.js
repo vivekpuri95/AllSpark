@@ -10,14 +10,17 @@ class Settings extends Page {
 
 			for (const [key, settings] of Settings.list) {
 
-				if(['executingReports', 'accounts', 'cachedReports'].includes(key) && !this.user.privileges.has('superadmin'))
+				if(['executingReports', 'accounts', 'cachedReports'].includes(key) && !this.user.privileges.has('superadmin')) {
 					continue;
+				}
 
-				if(key == 'categories' && !user.privileges.has('category.insert') && !user.privileges.has('category.update') && !user.privileges.has('category.delete'))
+				if(key == 'categories' && !user.privileges.has('category.insert') && !user.privileges.has('category.update') && !user.privileges.has('category.delete')) {
 					continue;
+				}
 
-				if(key != 'categories' && !user.privileges.has('administrator'))
+				if(key != 'categories' && !user.privileges.has('administrator')) {
 					continue;
+				}
 
 				const setting = new settings(this.container);
 
@@ -30,11 +33,13 @@ class Settings extends Page {
 					await Storage.set('settingsCurrentTab', setting.name);
 					clearInterval(Settings.autoRefreshInterval);
 
-					for (const a of nav.querySelectorAll('a.selected'))
+					for (const a of nav.querySelectorAll('a.selected')) {
 						a.classList.remove('selected');
+					}
 
-					for (const a of this.container.querySelectorAll('.setting-page'))
+					for (const a of this.container.querySelectorAll('.setting-page')) {
 						a.classList.add('hidden');
+					}
 
 					a.classList.add('selected');
 
@@ -62,15 +67,19 @@ class Settings extends Page {
 			const tab = await Storage.get('settingsCurrentTab');
 
 			for(const a of this.container.querySelectorAll('nav a')) {
-				if(a.textContent == tab)
+
+				if(a.textContent == tab) {
 					byDefault = a;
+				}
 			}
 		}
-		else
+		else {
 			byDefault = this.container.querySelector('nav a');
+		}
 
-		if(byDefault)
+		if(byDefault) {
 			byDefault.classList.add('selected');
+		}
 
 		for (const [key, settings] of Settings.list) {
 
@@ -119,8 +128,9 @@ Settings.list.set('accounts', class Accounts extends SettingPage {
 
 		this.list = new Map;
 
-		for(const account of list)
+		for(const account of list) {
 			this.list.set(account.account_id, new SettingsAccount(account, this));
+		}
 
 		await this.render();
 	}
@@ -131,11 +141,13 @@ Settings.list.set('accounts', class Accounts extends SettingPage {
 
 		container.textContent = null;
 
-		if(!this.list.size)
+		if(!this.list.size) {
 			container.innerHTML = '<tr><td class="NA" colspan="5">No Accounts Found</td></tr>';
+		}
 
-		for(const account of this.list.values())
+		for(const account of this.list.values()) {
 			container.appendChild(account.row);
+		}
 
 		await Sections.show('accounts-list');
 	}
@@ -169,8 +181,9 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 
 		this.datasetsMultiselect =  new MultiSelect({datalist, dropDownPosition: 'top', multiple: false});
 
-		if(this.form.querySelector('.datasets .multi-select'))
+		if(this.form.querySelector('.datasets .multi-select')) {
 			this.form.querySelector('.datasets .multi-select').remove();
+		}
 
 		this.form.querySelector('.datasets').appendChild(this.datasetsMultiselect.container);
 
@@ -178,8 +191,9 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 
 		select.textContent = null;
 
-		for(const type of MetaData.filterTypes.values())
+		for(const type of MetaData.filterTypes.values()) {
 			select.insertAdjacentHTML('beforeend', `<option value="${type.name.toLowerCase()}">${type.name}</option>`);
+		}
 	}
 
 	async load() {
@@ -188,8 +202,9 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 
 		this.list = new Map;
 
-		for (const data of response)
+		for (const data of response) {
 			this.list.set(data.id, new GlobalFilter(data, this));
+		}
 
 		await this.render();
 	}
@@ -200,11 +215,13 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 
 		container.textContent = null;
 
-		if(!this.list.size)
+		if(!this.list.size) {
 			container.innerHTML = '<tr><td colspan="5" class="NA">No Global Filters Found</td></tr>'
+		}
 
-		for(const globalFilter of this.list.values())
+		for(const globalFilter of this.list.values()) {
 			container.appendChild(globalFilter.row);
+		}
 
 		await Sections.show('global-filters-list');
 	}
@@ -231,8 +248,9 @@ Settings.list.set('privileges', class Privileges extends SettingPage {
 
 		this.list = new Map;
 
-		for(const data of Privileges.response)
+		for(const data of Privileges.response) {
 			this.list.set(data.privilege_id, new SettingsPrivilege(data, this));
+		}
 
 		await this.render();
 	}
@@ -243,11 +261,13 @@ Settings.list.set('privileges', class Privileges extends SettingPage {
 
 		container.textContent = null;
 
-		if(!this.list.size)
+		if(!this.list.size) {
 			container.innerHTML = '<tr><td class="NA" colspan="5">No Privileges Found</td></tr>';
+		}
 
-		for(const dataset of this.list.values())
+		for(const dataset of this.list.values()) {
 			container.appendChild(dataset.row);
+		}
 
 		await Sections.show('privileges-list');
 	}
@@ -274,8 +294,9 @@ Settings.list.set('roles', class Roles extends SettingPage {
 
 		this.list = new Map();
 
-		for(const role of roles_list)
+		for(const role of roles_list) {
 			this.list.set(role.role_id, new SettingsRole(role, this));
+		}
 
 		await this.render();
 	}
@@ -286,11 +307,13 @@ Settings.list.set('roles', class Roles extends SettingPage {
 
 		container.textContent = null;
 
-		if(!this.list.size)
+		if(!this.list.size) {
 			container.innerHTML = '<tr><td class="NA" colspan="5">No Roles Found</td></tr>';
+		}
 
-		for(const role of this.list.values())
+		for(const role of this.list.values()) {
 			container.appendChild(role.row);
+		}
 
 		await Sections.show('roles-list');
 	}
@@ -307,10 +330,11 @@ Settings.list.set('categories', class Categories extends SettingPage {
 		this.container = this.page.querySelector('.category-page');
 		this.form = this.page.querySelector('#category-edit');
 
-		if(user.privileges.has('category.insert'))
+		if(user.privileges.has('category.insert')) {
 			this.container.querySelector('#category-list #add-category').on('click', () => SettingsCategory.add(this));
-		else
+		} else {
 			this.container.querySelector('#category-list #add-category').disabled = true;
+		}
 
 		this.container.querySelector('#category-edit #back').on('click', () => Sections.show('category-list'));
 	}
@@ -321,8 +345,9 @@ Settings.list.set('categories', class Categories extends SettingPage {
 
 		this.list = new Map();
 
-		for(const category of categoryList)
+		for(const category of categoryList) {
 			this.list.set(category.category_id, new SettingsCategory(category, this));
+		}
 
 		await this.render();
 	}
@@ -333,11 +358,13 @@ Settings.list.set('categories', class Categories extends SettingPage {
 
 		container.textContent = null;
 
-		if(!this.list.size)
+		if(!this.list.size) {
 			container.innerHTML = '<tr><td class="NA" colspan="5">No Categories Found</td></tr>';
+		}
 
-		for(const category of this.list.values())
+		for(const category of this.list.values()) {
 			container.appendChild(category.row);
+		}
 
 		await Sections.show('category-list');
 	}
@@ -353,7 +380,6 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 	setup() {
 
 		if(this.page.querySelector('.executing-reports')) {
-
 			this.page.querySelector('.executing-reports').remove();
 		}
 
@@ -367,7 +393,6 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 		this.executingReports = new Set();
 
 		for(const report of reports) {
-
 			this.executingReports.add(new ExecutingReport(report, this));
 		}
 
@@ -377,8 +402,9 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 		container.classList.add('setting-page', 'executing-reports', 'hidden');
@@ -417,9 +443,7 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 			if(autoRefresh.checked) {
 
 				await Storage.set('auto-refresh', true);
-				Settings.autoRefreshInterval =  setInterval(async () => {
-					await this.load();
-				}, 5000);
+				Settings.autoRefreshInterval =  setInterval(async () => await this.load(), 5000);
 			}
 			else {
 
@@ -434,9 +458,8 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 	async render() {
 
 		if(!(await Storage.has('auto-refresh'))) {
-
 			await Storage.set('auto-refresh', true);
-		};
+		}
 
 		const getAutoRefresh = await Storage.get('auto-refresh');
 
@@ -444,9 +467,7 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 
 			clearInterval(Settings.autoRefreshInterval);
 
-			Settings.autoRefreshInterval =  setInterval(async () => {
-				await this.load();
-			}, 5000);
+			Settings.autoRefreshInterval =  setInterval(async () => await this.load(), 5000);
 		}
 
 		this.container.querySelector('input[name=auto-refresh]').checked = getAutoRefresh ? true : false;
@@ -455,11 +476,13 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 
 		tbody.textContent = null;
 
-		if(!this.executingReports.size)
+		if(!this.executingReports.size) {
 			tbody.innerHTML = '<tr><td class="NA" colspan="4">No executing reports at this time.</td></tr>';
+		}
 
-		for(const report of this.executingReports.values())
+		for(const report of this.executingReports.values()) {
 			tbody.appendChild(report.row);
+		}
 
 		await Sections.show('executing-reports');
 	}
@@ -479,8 +502,9 @@ Settings.list.set('cachedReports', class CachedReports extends SettingPage {
 
 	async setup() {
 
-		if(this.page.querySelector('.cached-reports'))
+		if(this.page.querySelector('.cached-reports')) {
 			this.page.querySelector('.cached-reports').remove();
+		}
 
 		this.page.appendChild(this.container);
 	}
@@ -510,8 +534,9 @@ Settings.list.set('cachedReports', class CachedReports extends SettingPage {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 		container.classList.add('setting-page', 'cached-reports', 'hidden');
@@ -542,11 +567,13 @@ Settings.list.set('cachedReports', class CachedReports extends SettingPage {
 
 		tbody.textContent = null;
 
-		if(!this.reports.size)
+		if(!this.reports.size) {
 			tbody.innerHTML = '<tr><td class="NA" colspan="4">No redis reports at this time.</td></tr>';
+		}
 
-		for(const report of this.reports.values())
+		for(const report of this.reports.values()) {
 			tbody.appendChild(report.row);
+		}
 
 		Sections.show('cached-reports');
 	}
@@ -590,8 +617,9 @@ Settings.list.set('about', class About extends SettingPage {
 
 	get clearCacheContainer() {
 
-		if(this.cacheContainerElement)
+		if(this.cacheContainerElement) {
 			return this.cacheContainerElement;
+		}
 
 		const button = this.cacheContainerElement = document.createElement('button');
 		button.classList.add('clear-cache');
@@ -604,8 +632,9 @@ Settings.list.set('about', class About extends SettingPage {
 
 	get infoContainer() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -616,8 +645,9 @@ Settings.list.set('about', class About extends SettingPage {
 			<span class="NA">${Format.dateTime(this.serviceWorkerLoadTime)}</span>
 		`;
 
-		if(!page.serviceWorker.status)
+		if(!page.serviceWorker.status) {
 			serviceWorkerLoadTime = `<span>Service Worker Not Active</span>`;
+		}
 
 		container.innerHTML = `
 			<span class="key">Account Id</span>
@@ -664,8 +694,9 @@ Settings.list.set('about', class About extends SettingPage {
 
 		const refreshToken = await Storage.get('refresh_token');
 
-		if(!refreshToken)
+		if(!refreshToken) {
 			return;
+		}
 
 		const
 			refreshTokenInfo = JSON.parse(atob(refreshToken.split('.')[1])),
@@ -715,11 +746,13 @@ Settings.list.set('about', class About extends SettingPage {
 
 		values = values.filter(value => {
 
-			if(value.value > 1)
+			if(value.value > 1) {
 				value.unit += 's';
+			}
 
-			if(!value.value && zeroSinceBegining)
+			if(!value.value && zeroSinceBegining) {
 				return false;
+			}
 
 			zeroSinceBegining = false;
 
@@ -758,11 +791,13 @@ class SettingsAccount {
 		SettingsAccount.form.icon.src = '';
 		SettingsAccount.form.querySelector('#icon').classList.add('hidden');
 
-		if(SettingsAccount.form.parentElement.querySelector('.feature-form'))
+		if(SettingsAccount.form.parentElement.querySelector('.feature-form')) {
 			SettingsAccount.form.parentElement.querySelector('.feature-form').remove();
+		}
 
-		if(SettingsAccount.form.parentElement.querySelector('.settings-manager'))
+		if(SettingsAccount.form.parentElement.querySelector('.settings-manager')) {
 			SettingsAccount.form.parentElement.querySelector('.settings-manager').remove();
+		}
 
 		await Sections.show('accounts-form');
 
@@ -776,8 +811,9 @@ class SettingsAccount {
 
 	static async insert(e, page) {
 
-		if(e && e.preventDefault)
+		if(e && e.preventDefault) {
 			e.preventDefault();
+		}
 
 		const options = {
 			method: 'POST',
@@ -821,14 +857,17 @@ class SettingsAccount {
 		this.form.querySelector('#logo').src = this.logo;
 
 		for(const input of this.form.elements) {
-			if(input.name in this)
+
+			if(input.name in this) {
 				input.value = this[input.name];
+			}
 		}
 
 		const features = new AccountsFeatures(this);
 
-		if(this.form.parentElement.querySelector('.feature-form'))
+		if(this.form.parentElement.querySelector('.feature-form')) {
 			this.form.parentElement.querySelector('.feature-form').remove();
+		}
 
 		const settings_json = [
 			{
@@ -929,8 +968,9 @@ class SettingsAccount {
 
 		await settingsContainer.load();
 
-		if(this.form.parentElement.querySelector('.settings-manager'))
+		if(this.form.parentElement.querySelector('.settings-manager')) {
 			this.form.parentElement.querySelector('.settings-manager').remove();
+		}
 
 		this.form.parentElement.appendChild(settingsContainer.container);
 
@@ -1024,8 +1064,9 @@ class SettingsAccount {
 			tr = document.createElement('tr'),
 			urls = [];
 
-		for(const url of this.url.split(','))
+		for(const url of this.url.split(',')) {
 			urls.push(`<a href="//${url}" target="_blank">${url}</a>`);
+		}
 
 		tr.innerHTML = `
 			<td>${this.account_id}</td>
@@ -1060,8 +1101,9 @@ class AccountsFeatures {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -1101,8 +1143,9 @@ class AccountsFeatures {
 
 		let list = new Set;
 
-		for(const value of MetaData.features.values())
+		for(const value of MetaData.features.values()) {
 			list.add(value.type);
+		}
 
 		list = Array.from(list).map(x => {return {name: x, value: x}});
 
@@ -1130,17 +1173,20 @@ class AccountsFeatures {
 
 		for(const feature of this.totalFeatures.values()) {
 
-			if(selectedTypes.length && !selectedTypes.includes(feature.type))
+			if(selectedTypes.length && !selectedTypes.includes(feature.type)) {
 				continue;
+			}
 
-			if(searchQuery && !feature.name.toLowerCase().includes(searchQuery) && !(feature.status ? 'enabled' : 'disabled').includes(searchQuery))
+			if(searchQuery && !feature.name.toLowerCase().includes(searchQuery) && !(feature.status ? 'enabled' : 'disabled').includes(searchQuery)) {
 				continue;
+			}
 
 			tbody.appendChild(feature.row);
 		}
 
-		if(!tbody.children.length)
+		if(!tbody.children.length) {
 			tbody.innerHTML = '<tr><td colspan=4 class="NA">No Feature found</td></tr>';
+		}
 	}
 }
 
@@ -1268,25 +1314,30 @@ class GlobalFilter {
 
 		const types = ['hidden', 'column', 'literal'];
 
-		if(globalFilters.form.type.value == 'datetime')
+		if(globalFilters.form.type.value == 'datetime') {
 			globalFilters.form.default_value.type = 'datetime-local';
+		}
 
-		else if(types.includes(globalFilters.form.type.value))
+		else if(types.includes(globalFilters.form.type.value)) {
 			globalFilters.form.default_value.type = 'text';
+		}
 
-		else
+		else {
 			globalFilters.form.default_value.type = globalFilters.form.type.value;
+		}
 	}
 
 	static async insert(e, globalFilters) {
 
 		e.preventDefault();
 
-		if(globalFilters.form.default_type.value != 'offset')
+		if(globalFilters.form.default_type.value != 'offset') {
 			globalFilters.form.offset.value = '';
+		}
 
-		if(globalFilters.form.default_type.value != 'default_value')
+		if(globalFilters.form.default_type.value != 'default_value') {
 			globalFilters.form.default_value.value = '';
+		}
 
 		const options = {
 			method: 'POST',
@@ -1319,8 +1370,9 @@ class GlobalFilter {
 
 	get row() {
 
-		if (this.container)
+		if (this.container) {
 			return this.container;
+		}
 
 		let dataset = '';
 
@@ -1353,8 +1405,10 @@ class GlobalFilter {
 		this.globalFilters.form.reset();
 
 		for(const element of this.globalFilters.form.elements) {
-			if(this[element.name])
+
+			if(this[element.name]) {
 				element.value = this[element.name];
+			}
 		}
 
 		this.globalFilters.form.offset.value = isNaN(parseInt(this.offset)) ? '' : this.offset;
@@ -1371,14 +1425,17 @@ class GlobalFilter {
 			default_value = this.globalFilters.form.default_value.value,
 			default_value_offset = this.globalFilters.form.offset.value;
 
-		if(this.globalFilters.form.default_value.value)
+		if(this.globalFilters.form.default_value.value) {
 			this.globalFilters.form.default_type.value = 'default_value';
+		}
 
-		else if(this.globalFilters.form.offset.value)
+		else if(this.globalFilters.form.offset.value) {
 			this.globalFilters.form.default_type.value = 'offset';
+		}
 
-		else
+		else {
 			this.globalFilters.form.default_type.value = 'none';
+		}
 
 		GlobalFilter.changeFilterType(this.globalFilters);
 
@@ -1403,11 +1460,13 @@ class GlobalFilter {
 
 		e.preventDefault();
 
-		if(this.globalFilters.form.default_type.value != 'offset')
+		if(this.globalFilters.form.default_type.value != 'offset') {
 			this.globalFilters.form.offset.value = '';
+		}
 
-		if(this.globalFilters.form.default_type.value != 'default_value')
+		if(this.globalFilters.form.default_type.value != 'default_value') {
 			this.globalFilters.form.default_value.value = '';
+		}
 
 		const
 			parameter = {
@@ -1445,8 +1504,9 @@ class GlobalFilter {
 
 	async delete() {
 
-		if (!confirm('Are you sure?'))
+		if (!confirm('Are you sure?')) {
 			return;
+		}
 
 		const
 			options = {
@@ -1485,8 +1545,9 @@ class SettingsPrivilege {
 
 	constructor(privilege, privileges) {
 
-		for (const key in privilege)
+		for (const key in privilege) {
 			this[key] = privilege[key];
+		}
 
 		this.privileges = privileges;
 	}
@@ -1496,8 +1557,9 @@ class SettingsPrivilege {
 		privileges.container.querySelector('#privileges-form h1').textContent = 'Add new Privileges';
 		privileges.form.reset();
 
-		if(privileges.form.parentElement.querySelector('.privilege-component'))
+		if(privileges.form.parentElement.querySelector('.privilege-component')) {
 			privileges.form.parentElement.querySelector('.privilege-component').remove();
+		}
 
 		privileges.form.removeEventListener('submit', SettingsPrivilege.submitListener);
 		privileges.form.on('submit', SettingsPrivilege.submitListener = e => SettingsPrivilege.insert(e, privileges));
@@ -1541,8 +1603,9 @@ class SettingsPrivilege {
 
 	get row() {
 
-		if (this.rowElement)
+		if (this.rowElement) {
 			return this.rowElement;
+		}
 
 		const row = this.rowElement = document.createElement('tr');
 
@@ -1554,11 +1617,13 @@ class SettingsPrivilege {
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
 
-		if(!row.querySelector('.green.NA'))
+		if(!row.querySelector('.green.NA')) {
 			row.querySelector('.green').on('click', () => this.edit());
+		}
 
-		if(!row.querySelector('.red.NA'))
+		if(!row.querySelector('.red.NA')) {
 			row.querySelector('.red').on('click', () => this.delete());
+		}
 
 		return row;
 	}
@@ -1625,8 +1690,9 @@ class SettingsPrivilege {
 
 	async delete() {
 
-		if (!confirm('Are you sure?'))
+		if (!confirm('Are you sure?')) {
 			return;
+		}
 
 		const
 			parameter = {
@@ -1685,11 +1751,11 @@ class PrivilegeComponents extends Set {
 
 		const
 			 options = {
-				"method": "POST",
+				'method': 'POST',
 			},
 			parameter = {
 				id: this.privilege_id,
-			}
+			};
 
 		this.response = await API.call('privileges_manager/list', parameter, options);
 	}
@@ -1698,8 +1764,9 @@ class PrivilegeComponents extends Set {
 
 		this.list = new Map;
 
-		for(const data of this.response || [])
+		for(const data of this.response || []) {
 			this.list.set(data.id, new PrivilegeComponent(data, this));
+		}
 	}
 
 	render() {
@@ -1712,14 +1779,16 @@ class PrivilegeComponents extends Set {
 			formContainer.querySelector('.component-list').appendChild(component.row);
 		}
 
-		if(!this.list.size)
+		if(!this.list.size) {
 			formContainer.querySelector('.component-list').innerHTML = `<div class='NA'>No Components found.</div>`;
+		}
 	}
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -1749,8 +1818,9 @@ class PrivilegeComponents extends Set {
 
 		for(const privilege of this.privileges.list.values()) {
 
-			if(privilege.privilege_id != this.privilege_id)
+			if(privilege.privilege_id != this.privilege_id) {
 				list.push({name: privilege.name, value: privilege.privilege_id});
+			}
 		}
 
 		this.multiSelect = new MultiSelect({datalist: list, multiple: false, expand: false});
@@ -1802,16 +1872,18 @@ class PrivilegeComponent {
 
 	constructor(component, privilegeComponents) {
 
-		for(const key in component)
+		for(const key in component) {
 			this[key] = component[key];
+		}
 
 		this.privilegeComponents = privilegeComponents;
 	}
 
 	get row() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createDocumentFragment();
 
@@ -1835,8 +1907,9 @@ class PrivilegeComponent {
 
 	async delete() {
 
-		if(!confirm('Are you sure?'))
+		if(!confirm('Are you sure?')) {
 			return;
+		}
 
 		try {
 
@@ -1875,8 +1948,9 @@ class SettingsRole {
 
 	constructor(role, roles) {
 
-		for(const key in role)
+		for(const key in role) {
 			this[key] = role[key];
+		}
 
 		this.roles = roles;
 	}
@@ -1979,8 +2053,9 @@ class SettingsRole {
 
 	async delete() {
 
-		if(!confirm('Are you sure?'))
+		if(!confirm('Are you sure?')) {
 			return;
+		}
 
 		const
 			parameter = {
@@ -2016,8 +2091,9 @@ class SettingsRole {
 
 	get row() {
 
-		if(this.container)
+		if(this.container) {
 			return this.container;
+		}
 
 		this.container = document.createElement('tr');
 
@@ -2104,8 +2180,9 @@ class SettingsCategory {
 
 		const formElements = ['name', 'slug', 'parent', 'is_admin'];
 
-		for(const element of formElements)
+		for(const element of formElements) {
 			this.form[element].value = this[element];
+		}
 
 		await Sections.show('category-edit');
 		this.form.name.focus();
@@ -2113,8 +2190,9 @@ class SettingsCategory {
 
 	async update(e) {
 
-		if (e.preventDefault)
+		if (e.preventDefault) {
 			e.preventDefault();
+		}
 
 		const
 			parameters = {
@@ -2151,8 +2229,9 @@ class SettingsCategory {
 
 	async delete() {
 
-		if(!confirm('Are you sure?'))
+		if(!confirm('Are you sure?')) {
 			return;
+		}
 
 		const
 			parameter = {
@@ -2188,8 +2267,9 @@ class SettingsCategory {
 
 	get row() {
 
-		if(this.container)
+		if(this.container) {
 			return this.container;
+		}
 
 		this.container = document.createElement('tr');
 
@@ -2219,7 +2299,9 @@ class SettingsCategory {
 			delete_.classList.add('red');
 		}
 
-		else delete_.classList.add('grey');
+		else {
+			delete_.classList.add('grey');
+		}
 
 		return this.container;
 	}
@@ -2263,8 +2345,9 @@ class ExecutingReport {
 
 		tr.on('click', () => {
 
-			if(!ExecutingReport.queryDialog)
+			if(!ExecutingReport.queryDialog) {
 				ExecutingReport.queryDialog = new DialogBox();
+			}
 
 			ExecutingReport.queryDialog.heading = this.query.name;
 
@@ -2298,8 +2381,9 @@ class CachedReport {
 
 	get row() {
 
-		if(this.rowElement)
+		if(this.rowElement) {
 			return this.rowElement;
+		}
 
 		this.rowElement = document.createElement('tr');
 		this.rowElement.innerHTML = `

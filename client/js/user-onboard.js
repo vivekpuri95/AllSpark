@@ -96,16 +96,19 @@ class UserOnboard {
 
 	async loadWelcomeDialogBox() {
 
-		if(this.stages.some(stage => stage.completed))
+		if(this.stages.some(stage => stage.completed)) {
 			return;
+		}
 
-		if(window.location.pathname == '/connections-manager/add/mysql')
+		if(window.location.pathname == '/connections-manager/add/mysql') {
 			return;
+		}
 
 		const newUser = await Storage.get('newUser');
 
-		if(newUser.skipWelcomeDialogBox)
+		if(newUser.skipWelcomeDialogBox) {
 			return;
+		}
 
 		if(!this.dialogBox) {
 
@@ -138,8 +141,9 @@ class UserOnboard {
 			window.location = '/connections-manager/add/mysql';
 		});
 
-		if(window.loadWelcomeDialogBoxListener)
+		if(window.loadWelcomeDialogBoxListener) {
 			window.loadWelcomeDialogBoxListener(this);
+		}
 
 		await Storage.set('newUser', {skipWelcomeDialogBox: true});
 
@@ -247,7 +251,6 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 		const [response] = await API.call('credentials/list');
 
 		if(!response) {
-
 			return;
 		}
 
@@ -260,7 +263,6 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 	autoFillForm() {
 
 		if(!this.currentStage || this.completed) {
-
 			return;
 		}
 
@@ -288,8 +290,9 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 
 		for(const key in this.stagesObj.onboardData.connection) {
 
-			if(connectionsForm.elements[key])
+			if(connectionsForm.elements[key]) {
 				connectionsForm.elements[key].value = this.stagesObj.onboardData.connection[key];
+			}
 		}
 
 		new SnackBar({
@@ -329,14 +332,12 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 		await DataSource.load(true);
 
 		if(!DataSource.list.size) {
-
 			return;
 		}
 
 		this.report = DataSource.list.values().next().value;
 
 		if(!this.report.query) {
-
 			return;
 		}
 
@@ -347,14 +348,12 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 	autoFillForm() {
 
 		if(!this.currentStage) {
-
 			return;
 		}
 
 		for(const stage of this.page.container.querySelectorAll('#stage-switcher .stage')) {
 
 			if(stage.disabled) {
-
 				return;
 			}
 
@@ -362,12 +361,10 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 		}
 
 		if(this.page.stages.selected instanceof ReportsManger.stages.get('configure-report')) {
-
 			this.loadConfigureReportForm();
 		}
 
 		if(this.page.stages.selected instanceof ReportsManger.stages.get('define-report')) {
-
 			this.loadDefineReportForm();
 		}
 	}
@@ -375,7 +372,6 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 	loadConfigureReportForm() {
 
 		if(this.report) {
-
 			return;
 		}
 
@@ -415,7 +411,6 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 	loadDefineReportForm() {
 
 		if(this.report && this.report.query) {
-
 			return;
 		}
 
@@ -486,7 +481,6 @@ UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
 		const [response] = await API.call('dashboards/list');
 
 		if(!response) {
-
 			return;
 		}
 
@@ -499,7 +493,6 @@ UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
 	autoFillForm() {
 
 		if(!this.currentStage || this.completed) {
-
 			return;
 		}
 
@@ -556,7 +549,6 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 		try {
 
 			if((this.page.stages.selected instanceof ReportsManger.stages.get('pick-visualization')) || (this.page.stages.selected instanceof ReportsManger.stages.get('configure-visualization'))) {
-
 				this.currentStage = true;
 			}
 		}
