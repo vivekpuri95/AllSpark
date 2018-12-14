@@ -4630,6 +4630,12 @@ class LinearAxis {
 
 					<label class="advanced hidden">
 						<span>
+							<input type="checkbox" name="contribution"> Contribution
+						</span>
+					</label>
+
+					<label class="advanced hidden">
+						<span>
 							<input type="checkbox" name="axisShowValues"> Show Values
 						</span>
 					</label>
@@ -4752,6 +4758,7 @@ class LinearAxis {
 		container.querySelector('input[name=axisDepth]').value = this.depth;
 		container.querySelector('input[name=axisLineThickness]').value = this.lineThickness;
 		container.querySelector('input[name=axisStacked]').checked = this.stacked;
+		container.querySelector('input[name=contribution]').checked = this.contribution;
 		container.querySelector('input[name=axisShowValues]').checked = this.showValues;
 		container.querySelector('input[name=axisShowPoints]').checked = this.showPoints;
 		container.querySelector('input[name=axisHideScale]').checked = this.hideScale;
@@ -4779,6 +4786,7 @@ class LinearAxis {
 			depth: this.container.querySelector('input[name=axisDepth]').value,
 			lineThickness: this.container.querySelector('input[name=axisLineThickness]').value,
 			stacked: this.container.querySelector('input[name=axisStacked]').checked,
+			contribution: this.container.querySelector('input[name=contribution]').checked,
 			showValues: this.container.querySelector('input[name=axisShowValues]').checked,
 			showPoints: this.container.querySelector('input[name=axisShowPoints]').checked,
 			hideScale: this.container.querySelector('input[name=axisHideScale]').checked,
