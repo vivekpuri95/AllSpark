@@ -8,11 +8,13 @@ self.onmessage = async function(e) {
 		reference: e.data.reference,
 	};
 
-	if(e.data.action == 'loadDataStream')
+	if(e.data.action == 'loadDataStream') {
 		message.response = await dataStreamWorker.load(e.data.request);
+	}
 
-	else
+	else {
 		throw 'Invalid Web Worker action!';
+	}
 
 	self.postMessage(message);
 }

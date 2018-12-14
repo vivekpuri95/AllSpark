@@ -18,11 +18,13 @@ Page.class = class Login extends Page {
 
 		super();
 
-		if(!this.account)
+		if(!this.account) {
 			return this.message('Account not found!', 'warning');
+		}
 
-		if(this.urlSearchParameters.has('passwordReset') && this.urlSearchParameters.get('passwordReset') == 'true')
+		if(this.urlSearchParameters.has('passwordReset') && this.urlSearchParameters.get('passwordReset') == 'true') {
 			this.message('Password reset successful', 'notice');
+		}
 
 		if(this.urlSearchParameters.get('email')) {
 
@@ -62,8 +64,9 @@ Page.class = class Login extends Page {
 			parameters = JSON.parse(Cookies.get('bypassLogin'));
 		} catch(e) {}
 
-		if(!parameters && (!this.account.auth_api || !(await Storage.get('external_parameters'))))
+		if(!parameters && (!this.account.auth_api || !(await Storage.get('external_parameters')))) {
 			return this.acceptEmail();
+		}
 
 		Sections.show('loading');
 
@@ -127,8 +130,9 @@ Page.class = class Login extends Page {
 			return;
 		}
 
-		if(!Array.isArray(accounts))
+		if(!Array.isArray(accounts)) {
 			throw new Page.exception('Invalid account list!');
+		}
 
 		const container = this.container.querySelector('#accept-account');
 
@@ -146,13 +150,17 @@ Page.class = class Login extends Page {
 			container.appendChild(item);
 		}
 
-		if(!accounts.length)
+		if(!accounts.length) {
 			container.innerHTML = `<div class="NA">Email not associated with any account!</div>`;
+		}
 
-		if(accounts.length == 1)
+		if(accounts.length == 1) {
 			container.querySelector('.account').click();
+		}
 
-		else Sections.show('accept-account');
+		else {
+			Sections.show('accept-account');
+		}
 	}
 
 	/**
@@ -240,8 +248,9 @@ Page.class = class Login extends Page {
 
 				for(const key of this.account.settings.get('external_parameters')) {
 
-					if(key in external_parameters)
+					if(key in external_parameters) {
 						parameters['ext_' + key] = external_parameters[key];
+					}
 				}
 			}
 
@@ -249,8 +258,9 @@ Page.class = class Login extends Page {
 
 			Cookies.set('bypassLogin', JSON.stringify(parameters))
 
-			if(!response.jwt && response.length)
+			if(!response.jwt && response.length) {
 				return this.message('Ambigious email!', 'warning');
+			}
 
 			await Storage.set('refresh_token', response.jwt);
 
@@ -264,8 +274,9 @@ Page.class = class Login extends Page {
 				for(const key in response.external_parameters) {
 
 					// Only save the value from login response if it's key was given in account settings
-					if(settingsList.includes(key))
+					if(settingsList.includes(key)) {
 						storageList[key] = response.external_parameters[key];
+					}
 				}
 
 				await Storage.set('external_parameters', storageList);
@@ -288,11 +299,13 @@ Page.class = class Login extends Page {
 
 			this.container.querySelector('#loading').classList.add('hidden');
 
-			if(Cookies.get('bypassLogin'))
+			if(Cookies.get('bypassLogin')) {
 				await Sections.show('accept-email');
+			}
 
-			else
+			else {
 				this.message(error.message || error, 'warning');
+			}
 
 			Cookies.set('bypassLogin', '');
 		}
@@ -312,8 +325,9 @@ Page.class = class Login extends Page {
 		container.innerHTML = body;
 		container.classList.remove('warning', 'notice', 'hidden');
 
-		if(type)
+		if(type) {
 			container.classList.add(type);
+		}
 
 		container.classList.toggle('hidden', !body);
 	}

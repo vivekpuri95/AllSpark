@@ -16,13 +16,15 @@ Page.class = class Tests extends Page {
 
 	async load() {
 
-		if(!this.user.privileges.has('superadmin'))
+		if(!this.user.privileges.has('superadmin')) {
 			throw new Page.exception('Only superadmins can run tests.');
+		}
 
 		const environment = await API.call('environment/about');
 
-		if(['production', 'staging'].includes(environment.name))
+		if(['production', 'staging'].includes(environment.name)) {
 			throw new Page.exception('Tests cannot be run on production or staging.');
+		}
 
 		await this.process();
 
@@ -42,8 +44,9 @@ Page.class = class Tests extends Page {
 			},
 		];
 
-		for(const key in tests)
+		for(const key in tests) {
 			this.sections.set(key, new TestSection(key, tests[key], this));
+		}
 	}
 
 	render() {
@@ -52,8 +55,9 @@ Page.class = class Tests extends Page {
 
 		container.textContent = null;
 
-		for(const section of this.sections.values())
+		for(const section of this.sections.values()) {
 			container.appendChild(section.container);
+		}
 
 		this.progress();
 	}
@@ -63,11 +67,13 @@ Page.class = class Tests extends Page {
 		this.group_id = Math.floor(Math.random() * 10000000);
 		this.scope = 'complete';
 
-		for(const section of this.sections.values())
+		for(const section of this.sections.values()) {
 			section.reset();
+		}
 
-		for(const section of this.sections.values())
+		for(const section of this.sections.values()) {
 			await section.run();
+		}
 	}
 
 	progress() {
@@ -100,14 +106,16 @@ class TestSection extends Map {
 		this.name = name;
 		this.tests = tests;
 
-		for(const key in section)
+		for(const key in section) {
 			this.set(key, new section[key](key, this));
+		}
 	}
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('section');
 
@@ -136,28 +144,33 @@ class TestSection extends Map {
 			this.run();
 		});
 
-		for(const user of this.tests.users)
+		for(const user of this.tests.users) {
 			thead.insertAdjacentHTML('beforeend', `<th>${user.name}</th>`);
+		}
 
-		for(const test of this.values())
+		for(const test of this.values()) {
 			tbody.appendChild(test.row);
+		}
 
-		if(!this.size)
+		if(!this.size) {
 			tbody.innerHTML = '<tr class="NA"><td>No Tests Found</td></tr>';
+		}
 
 		return container;
 	}
 
 	reset() {
 
-		for(const test of this.values())
+		for(const test of this.values()) {
 			test.reset();
+		}
 	}
 
 	async run() {
 
-		for(const test of this.values())
+		for(const test of this.values()) {
 			await test.run();
+		}
 	}
 }
 
@@ -173,14 +186,16 @@ class Test {
 
 	assert(condition) {
 
-		if(!condition)
+		if(!condition) {
 			throw new Test.exception();
+		}
 	}
 
 	get row() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('tr');
 
@@ -228,22 +243,25 @@ class Test {
 			dialogBox.show();
 		});
 
-		for(const testUser of this.users)
+		for(const testUser of this.users) {
 			container.appendChild(testUser.cell);
+		}
 
 		return container;
 	}
 
 	reset() {
 
-		for(const element of this.row.querySelectorAll('.test'))
+		for(const element of this.row.querySelectorAll('.test')) {
 			element.classList.remove('passed', 'failed', 'executing');
+		}
 	}
 
 	async run() {
 
-		for(const user of this.users)
+		for(const user of this.users) {
 			await user.run();
+		}
 	}
 }
 
@@ -260,8 +278,9 @@ class TestUser {
 
 	get cell() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('td');
 
@@ -281,8 +300,9 @@ class TestUser {
 
 	async run() {
 
-		if(this.test.section.tests.container.run.disabled)
+		if(this.test.section.tests.container.run.disabled) {
 			return;
+		}
 
 		this.test.section.tests.container.run.disabled = true;
 
@@ -300,14 +320,17 @@ class TestUser {
 
 		for(const test of this.test.disabledModules || []) {
 
-			if(test == 'DialogBox')
+			if(test == 'DialogBox') {
 				DialogBox.container = document.createElement('div');
+			}
 
-			else if(test == 'SnackBar')
+			else if(test == 'SnackBar') {
 				SnackBar.container['bottom-left'] = document.createElement('div');
+			}
 
-			else if(test == 'NotificationBar')
+			else if(test == 'NotificationBar') {
 				NotificationBar.container =  document.createElement('div');
+			}
 		}
 
 		try {
@@ -352,14 +375,17 @@ class TestUser {
 
 		for(const test of this.test.disabledModules || []) {
 
-			if(test == 'DialogBox')
+			if(test == 'DialogBox') {
 				DialogBox.container = dialogBox;
+			}
 
-			else if(test == 'SnackBar')
+			else if(test == 'SnackBar') {
 				SnackBar.container['bottom-left'] = snackBar;
+			}
 
-			else if(test == 'NotificationBar')
+			else if(test == 'NotificationBar') {
 				NotificationBar.container =  notificationBar;
+			}
 		}
 
 		this.test.section.tests.container.run.disabled = false;
@@ -367,14 +393,17 @@ class TestUser {
 
 	show() {
 
-		if(!this.response)
+		if(!this.response) {
 			return;
+		}
 
-		if(!this.dialogBox)
+		if(!this.dialogBox) {
 			this.dialogBox = new DialogBox();
+		}
 
-		if(!this.codeEditor)
+		if(!this.codeEditor) {
 			this.codeEditor = new CodeEditor({mode: 'json'});
+		}
 
 		this.dialogBox.heading = `
 			${this.test.section.name} &nbsp;
