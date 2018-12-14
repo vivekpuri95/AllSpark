@@ -7495,6 +7495,27 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 				columnsData.push(column);
 			}
 
+			if(axis.contribution) {
+
+				const rowsTotals = [];
+
+				for(const [index, row] of columnsData[0].entries()) {
+
+					rowsTotals[index] = 0;
+
+					for(const column of columnsData) {
+						rowsTotals[index] += column[index].y;
+					}
+				}
+
+				for(const column of columnsData.values()) {
+
+					for(const [index, row] of column.entries()) {
+						row.y = row.y / rowsTotals[index] * 100;
+					}
+				}
+			}
+
 			if(axis.stacked)
 				columnsData = d3.layout.stack()(columnsData);
 
@@ -7522,7 +7543,17 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					max = Math.max(max, Math.ceil(total) || 0);
 			}
 
-			scale.domain(this.x.position == 'bottom' ? [min, max] : [max, min]).nice();
+			let maxMin = [min, max];
+
+			if(axis.contribution) {
+				maxMin = [0, 100];
+			}
+
+			if(this.x.position == 'top') {
+				maxMin = [maxMin[1], maxMin[0]];
+			}
+
+			scale.domain(maxMin).nice();
 
 			if(axis.type == 'line') {
 
@@ -7766,6 +7797,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 				points.attr('opacity', 1);
 			}
+
 		}
 
 		for(const g of this.svg.selectAll('svg > g')[0] || [])  {
