@@ -8037,7 +8037,10 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 						.attr("d", line)
 						.style('stroke', column => this.source.columns.get(column.key).color);
 
-					this.dashedLine(p, 10, 40, true);
+					const sd1 = this.dashedLine(p, 10, 80, true);
+					const sd2 = this.dashedLine(p, 120, 180, true);
+
+					p.attr("stroke-dasharray", sd1[0]+', ' +sd2[0] + ', '+(parseInt(sd1[1]) + parseInt(sd2[1])));
 				}
 			}
 
@@ -8491,6 +8494,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 			let scaled_d = this.x(d) + this.axes.left.size + (this.x.rangeBand() / 2);
 
+			//mad binary search, yo
 			while (true) {
 
 				target = Math.floor((beginning + end) / 2);
@@ -8533,15 +8537,10 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 		if (count % 2 == 0) {
 
-			sd += ", 4, " + (totalLen - dashBetweenL[1]);
+			sd += ", 4";
 		}
 
-		else {
-
-			sd += ", " + (totalLen - dashBetweenL[1]);
-		}
-
-		p.attr("stroke-dasharray", sd);
+		return [sd, totalLen - dashBetweenL[1]];
 	}
 });
 
