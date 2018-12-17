@@ -40,9 +40,9 @@ async function verifyBcryptHash(pass, hash) {
 	return await bcrypt.compare(pass, hash)
 }
 
-function makeJWT(obj, expiresIn =  Math.floor(Date.now() / 1000) + (30 * 86400)) {
+function makeJWT(obj, expiresIn = Math.floor(Date.now() / 1000) + (30 * 86400)) {
 
-	if(expiresIn) {
+	if (expiresIn) {
 		obj.exp = expiresIn;
 	}
 
@@ -341,6 +341,14 @@ function promiseTimeout(promise, seconds, rejectPromise = () => Promise.resolve(
 	});
 }
 
+function hashCode(s) {
+
+	return s.split("").reduce((a, b) => {
+		a = ((a << 5) - a) + b.charCodeAt(0);
+		return a & a
+	}, 0);
+}
+
 exports.UserAgent = UserAgent;
 exports.isJson = isJson;
 exports.makeBcryptHash = makeBcryptHash;
@@ -355,3 +363,4 @@ exports.promiseParallelLimit = promiseParallelLimit;
 exports.getIndicesOf = getIndicesOf;
 exports.flattenObject = flattenObject;
 exports.promiseTimeout = promiseTimeout;
+exports.hashCode = hashCode;

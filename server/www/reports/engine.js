@@ -23,6 +23,7 @@ const PromiseManager = require("../../utils/promisesManager").promiseManager;
 const promiseManager = new PromiseManager("executingReports");
 const pgsql = require("../../utils/pgsql").Postgres;
 const child_process = require('child_process');
+const {performance} = require('perf_hooks');
 
 // prepare the raw data
 class report extends API {
@@ -116,6 +117,17 @@ class report extends API {
 
 		reportDetails = await Promise.all(reportDetails);
 		this.assert(reportDetails[0].length, "Report Id: " + this.reportId + " not found");
+
+		if (this.request.body.visualization_id) {
+			this.visualization = (await this.mysql.query(
+				"select options from tb_query_visualizations where visualization_id = ? and query_id = ? and is_enabled = 1 and is_deleted = 0",
+				[this.request.body.visualization_id, this.reportId]
+			))[0]
+		}
+
+		if (this.visualization && commonFun.isJson(this.visualization.options)) {
+			this.visualization.options = JSON.parse(this.visualization.options);
+		}
 
 		this.reportObj = reportDetails[0][0];
 		this.filters = reportDetails[1] || [];
@@ -506,7 +518,11 @@ class report extends API {
 
 		//Priority: Redis > (Saved Result)
 
-		if (!forcedRun && this.reportObj.is_redis && redisData && !this.has_today) {
+		this.redis = (!forcedRun && this.reportObj.is_redis && redisData && !this.has_today);
+
+		let cacheInfo;
+
+		if (this.redis) {
 
 			try {
 
@@ -519,10 +535,12 @@ class report extends API {
 					this.user.user_id, 1, JSON.stringify({filters: this.filters}), this.user.session_id
 				);
 
-				result.cached = {
+				cacheInfo = {
 					status: true,
-					age: Date.now() - result.cached.store_time
-				};
+					age: Date.now() - result.cached && result.cached.store_time
+				}
+
+				redis.cacheInfo = cacheInfo;
 				return result;
 			}
 			catch (e) {
@@ -530,62 +548,107 @@ class report extends API {
 			}
 		}
 
-		if (promiseManager.has(engine.hash)) {
+		else {
 
-			return await promiseManager.fetchAndExecute(engine.hash);
-		}
+			cacheInfo = {status: false};
 
-		const engineExecution = engine.execute();
+			if (promiseManager.has(engine.hash)) {
 
-		const queryDetails = new Map;
-
-		queryDetails.set("query", {id: this.reportObj.query_id, name: this.reportObj.name});
-		queryDetails.set("account", {id: this.account.account_id, name: this.account.name});
-		queryDetails.set("user", {id: this.user.user_id, name: this.user.name});
-		queryDetails.set("execution_timestamp", new Date());
-		queryDetails.set("params", engine.parameters);
-
-		promiseManager.store(engineExecution, queryDetails, engine.hash);
-
-		try {
-
-			result = await engineExecution;
-			await this.storeQueryResult(result);
-
-		}
-		catch (e) {
-
-			console.error(e.stack);
-
-			if (e.message.includes("<!DOCTYPE")) {
-
-				e.message = e.message.slice(0, e.message.indexOf("<!DOCTYPE")).trim();
+				return await promiseManager.fetchAndExecute(engine.hash);
 			}
 
-			throw new API.Exception(400, e.message);
+			const engineExecution = engine.execute();
+
+			const queryDetails = new Map;
+
+			queryDetails.set("query", {id: this.reportObj.query_id, name: this.reportObj.name});
+			queryDetails.set("account", {id: this.account.account_id, name: this.account.name});
+			queryDetails.set("user", {id: this.user.user_id, name: this.user.name});
+			queryDetails.set("execution_timestamp", new Date());
+			queryDetails.set("params", engine.parameters);
+
+			promiseManager.store(engineExecution, queryDetails, engine.hash);
+
+
+			try {
+
+				result = await engineExecution;
+				await this.storeQueryResult(result);
+
+			}
+			catch (e) {
+
+				console.error(e.stack);
+
+				if (e.message.includes("<!DOCTYPE")) {
+
+					e.message = e.message.slice(0, e.message.indexOf("<!DOCTYPE")).trim();
+				}
+
+				throw new API.Exception(400, e.message);
+			}
+
+			finally {
+
+				promiseManager.remove(engine.hash);
+			}
+
+
+			await engine.log(this.reportObj.query_id, result.query, result.runtime,
+				this.reportObj.type, this.user.user_id, 0, JSON.stringify({filters: this.filters}), this.user.session_id
+			);
+
+			const EOD = new Date();
+			EOD.setHours(23, 59, 59, 999);
 		}
 
-		finally {
+		const transformationData = [];
 
-			promiseManager.remove(engine.hash);
+		let columnInfo = JSON.parse(this.reportObj.format);
+
+		columnInfo = columnInfo.columns ? columnInfo.columns : [];
+
+		if (!Array.isArray(columnInfo)) {
+
+			columnInfo = [columnInfo];
 		}
 
-		await engine.log(this.reportObj.query_id, result.query, result.runtime,
-			this.reportObj.type, this.user.user_id, 0, JSON.stringify({filters: this.filters}), this.user.session_id
-		);
+		for (const transformation of !this.visualization ? [] : this.visualization.options.transformations) {
 
-		const EOD = new Date();
-		EOD.setHours(23, 59, 59, 999);
+			if (transformation.backend_transformation && transformations.has(transformation.type)) {
 
-		result.cached = {store_time: Date.now()};
+				const st = performance.now();
 
-		if (redis && this.reportObj.is_redis) {
+
+				const transformationObj = new (transformations.get(transformation.type))(
+					transformation.columns, result.data, columnInfo
+				);
+				const response = (await transformationObj.execute()).body;
+
+				this.assert(response.status, response.response);
+
+				result.data = Transformation.merge(result.data, response.response.rows, response.response.connecting_column);
+
+				transformationData.push({
+					name: transformation.type,
+					time_taken: performance.now() - st
+				});
+			}
+		}
+
+		result.metadata = {
+			transformations: transformationData,
+		};
+
+		cacheInfo.store_time = Date.now();
+
+		if (redis && this.reportObj.is_redis && !this.redis) {
 
 			await redis.set(hash, JSON.stringify(result));
 			await redis.expire(hash, this.reportObj.is_redis);
 		}
 
-		result.cached = {status: false};
+		result.cached = cacheInfo;
 
 		return result;
 	}
@@ -999,7 +1062,7 @@ class BigqueryLegacy {
 
 			if (Array.isArray(filter.value)) {
 
-				if(filter.type == 'number') {
+				if (filter.type == 'number') {
 
 					this.reportObj.query = this.reportObj.query.replace((new RegExp(`{{${filter.placeholder}}}`, "g")), filter.value.map(x => parseInt(x)).join(', '));
 				}
@@ -1438,7 +1501,7 @@ class CachedReports extends API {
 			keyInfo = [],
 			keyValues = [];
 
-		for(const key of allKeys) {
+		for (const key of allKeys) {
 
 			keyInfo.push(redis.keyInfo(key));
 			keyValues.push(redis.get(key).catch(x => console.log(x)));
@@ -1448,7 +1511,7 @@ class CachedReports extends API {
 			sizeArray = await commonFun.promiseParallelLimit(5, keyInfo),
 			keyArray = await commonFun.promiseParallelLimit(5, keyValues);
 
-		for(const [index, value] of allKeys.entries()) {
+		for (const [index, value] of allKeys.entries()) {
 
 			const keyDetail = {
 				report_id: parseFloat(value.slice(value.indexOf('report_id') + 10)),
@@ -1460,7 +1523,8 @@ class CachedReports extends API {
 				keyDetail.created_at = new Date(JSON.parse(keyArray[index]).cached.store_time);
 			}
 
-			catch(e) {}
+			catch (e) {
+			}
 
 			keyDetails.push(keyDetail);
 		}
@@ -1470,6 +1534,91 @@ class CachedReports extends API {
 		return await commonFun.promiseParallelLimit(5, keyDetails);
 	}
 }
+
+class Transformation {
+
+	constructor(options, data, columnInfo) {
+		this.options = options;
+		this.data = data;
+		this.columnInfo = columnInfo;
+	}
+
+	//originalData = result.data from query engine
+	//metadata = result from transformations
+
+	static merge(originalData, metadata, connectingColumn='timing') {
+
+		const originalColumns = Object.keys(originalData[0]);
+		const newColumns = new Map;
+
+		for(const column in metadata[0]) {
+
+			if(column == connectingColumn) {
+
+				continue;
+			}
+
+			for (const newColumn in metadata[0][column]) {
+
+				newColumns.set(
+					`${column}_${newColumn}`,
+					`${column}_${newColumn}_${commonFun.hashCode(column + newColumn)}`)
+			};
+		}
+
+		const originalDataMapping = {};
+
+		for(const row of originalData) {
+
+			originalDataMapping[row[connectingColumn]] = row;
+		}
+
+		for(const row of metadata) {
+
+			if(!originalDataMapping.hasOwnProperty(row[connectingColumn])) {
+
+				originalDataMapping[row[connectingColumn]] = {};
+			}
+
+			for(const originalColumn in row) {
+
+				if(originalColumn == connectingColumn) {
+
+					originalDataMapping[row[connectingColumn]][originalColumn] = row[connectingColumn];
+					continue;
+				}
+
+				for (const newColumn in row[originalColumn]) {
+
+					originalDataMapping[row[connectingColumn]][newColumns.get(`${originalColumn}_${newColumn}`)] = row[originalColumn][newColumn];
+				}
+			}
+		}
+
+		return Object.values(originalDataMapping);
+	}
+}
+
+const transformations = new Map;
+
+transformations.set('forecast', class Forecast extends Transformation {
+
+	constructor(options, data, columnsInfo) {
+
+		super(options, data, columnsInfo);
+	}
+
+	async execute() {
+
+		const obj = {
+			options: this.options,
+			data: this.data,
+			column_info: this.columnInfo
+		};
+
+		return await download.jsonRequest(obj, config.get("allspark_python_base_api") + "forecast/get");
+	}
+});
 
 exports.query = query;
 exports.report = report;

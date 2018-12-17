@@ -7686,6 +7686,132 @@ ReportTransformation.types.set('custom-column', class ReportTransformationMultip
 	}
 });
 
+ReportTransformation.types.set('forecast', class ReportTransformationRestrictColumns extends ReportTransformation {
+
+	constructor(...parameters) {
+
+		super(...parameters);
+
+		this.multiSelectTiming = new MultiSelect({multiple: false, expand: true});
+		this.multiSelectOtherColumns = new MultiSelect({multiple: true, expand: true});
+
+		if (!this.columns) {
+
+			this.columns = {};
+		}
+	}
+
+	get key() {
+
+		return 'forecast'
+	}
+
+	get container() {
+
+		if (this.containerElement) {
+
+			return this.containerElement;
+		}
+
+		const
+			container = super.container.querySelector('.transformation'),
+			columns = document.createElement('div'),
+			label = document.createElement('label');
+
+		columns.classList.add('columns', 'form');
+
+		const spanTiming = document.createElement('span');
+		spanTiming.textContent = 'Timing Column';
+
+		const spanForecastColumns = document.createElement('span');
+		spanForecastColumns.textContent = 'Forecast Columns';
+
+		label.classList.add('forecast');
+
+		columns.appendChild(spanTiming);
+		columns.appendChild(this.multiSelectTiming.container);
+		columns.appendChild(spanForecastColumns);
+		columns.appendChild(this.multiSelectOtherColumns.container);
+
+		this.extrapolateUnits = document.createElement('input');
+		this.extrapolateUnits.type = 'number';
+		this.extrapolateUnits.step = 1;
+		this.extrapolateUnits.min = 0;
+		this.extrapolateUnits.value = this.columns.extrapolate || 0;
+
+		this.timingOffset = document.createElement('input');
+		this.timingOffset.type = 'number';
+		this.timingOffset.step = 1;
+		this.timingOffset.max = 0;
+		this.timingOffset.value = this.columns.offset || 0;
+
+		columns.appendChild(this.extrapolateUnits);
+		columns.appendChild(this.timingOffset);
+
+		label.appendChild(columns);
+		container.appendChild(label);
+
+		this.render();
+
+		return super.container;
+	}
+
+	render() {
+
+		const datalist = [];
+
+		for (const column of this.incoming.columns.values()) {
+
+			datalist.push({
+				name: column.name,
+				value: column.key,
+			});
+		}
+
+		this.multiSelectTiming.datalist = datalist;
+
+		this.multiSelectTiming.render();
+
+		if (this.columns.timing && this.multiSelectTiming.datalist.filter(x => x.value == this.columns.timing)) {
+
+			this.multiSelectTiming.value = this.columns.timing;
+		}
+
+		this.multiSelectOtherColumns.datalist = JSON.parse(JSON.stringify(datalist)).filter(x => x.value != this.columns.timing);
+
+		this.multiSelectOtherColumns.render();
+
+		if (this.columns && this.columns.data && this.columns.data.length && this.multiSelectOtherColumns.datalist.filter(x => this.columns.data.includes(x.value))) {
+
+			this.multiSelectOtherColumns.value = this.columns.data;
+		}
+
+		const that = this;
+
+		this.multiSelectTiming.on('change', () => {
+			if (that.multiSelectTiming.value && that.multiSelectTiming.value.length) {
+				that.multiSelectOtherColumns.datalist = that.multiSelectTiming.datalist.filter(x => x.value != that.multiSelectTiming.value[0]);
+				that.multiSelectOtherColumns.render();
+				that.multiSelectOtherColumns.value = that.multiSelectOtherColumns.value.length ? that.multiSelectOtherColumns.value : that.columns.data;
+			}
+		});
+	}
+
+	get json() {
+
+		return {
+			type: this.key,
+			columns: {
+				timing: this.multiSelectTiming.value[0],
+				data: this.multiSelectOtherColumns.value,
+				extrapolate: (this.extrapolateUnits || {value: 0}).value,
+				offset: (this.timingOffset || {value: 0}).value
+			},
+			backend_transformation: true
+		};
+	};
+});
+
 class ReportVisualizationDashboards extends Set {
 
 	constructor(stage) {
@@ -7955,6 +8081,15 @@ class ReportVisualizationDashboard {
 
 		const form = this.formContainer = document.createElement('form');
 
+		if(!this.visualization.format) {
+
+			this.visualization.format = {
+				width :'',
+				height:'',
+				position: ''
+			}
+		}
+
 		form.classList.add('subform', 'form');
 
 		form.innerHTML = `
@@ -7964,7 +8099,7 @@ class ReportVisualizationDashboard {
 
 			<label>
 				<span>Position</span>
-				<input type="number" name="position" value="${this.visualization.format.position || ''}">
+				<input type="number" name="position" value="${(!this.visualization.format ? '' : this.visualization.format.position)}">
 			</label>
 
 			<label>

@@ -2,10 +2,12 @@ import config
 from server.utils.Application import *
 from server.www.xlsx import xlsx
 from server.www.oauth.googleAdwords import ga
+from server.www.prophet import forecast
 
 BLUEPRINTS = {
     xlsx: "/xlsx",
     ga: "/adwords",
+    forecast: "/forecast"
 }
 
 app = Application(BLUEPRINTS)

@@ -67,7 +67,14 @@ class DataSource {
 		parameters.set('query_id', this.query_id);
 
 		if(this.definitionOverride) {
-			parameters.set('query', this.definition.query);
+
+			try {
+				parameters.set('visualization_id', this.visualizations.selected.visualization_id);
+				parameters.set('timing_test', Date.now());
+				parameters.set('query', this.definition.query);
+			}
+			catch(e) {}
+
 		}
 
 		for(const filter of this.filters.values()) {
@@ -5067,6 +5074,17 @@ DataSourceTransformation.types.set('custom-column', class DataSourceTransformati
 	}
 });
 
+DataSourceTransformation.types.set('forecast', class DataSourceTransformationRestrictColumns extends DataSourceTransformation {
+	get name() {
+		return 'forecast';
+	}
+	async execute(response = []) {
+		return response;
+	}
+	async render() {
+	}
+});
+
 DataSourcePostProcessors.processors = new Map;
 
 DataSourcePostProcessors.processors.set('Orignal', class extends DataSourcePostProcessor {
@@ -7773,14 +7791,16 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 		container.selectAll('*').remove();
 
-		if(!this.rows || !this.rows.length) {
+
+		if (!this.rows || !this.rows.length) {
+
 			return;
 		}
 
 		this.svg = container
 			.append('svg');
 
-		if(this.zoomedIn) {
+		if (this.zoomedIn) {
 
 			// Reset Zoom Button
 			const resetZoom = this.svg.append('g')
@@ -7811,17 +7831,18 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 		const that = this;
 
-		for(const [axisIndex, axis] of this.axes.entries()) {
+		for (const [axisIndex, axis] of this.axes.entries()) {
 
 			const columns = axis.columns.filter(column => this.source.columns.has(column.key) && !this.source.columns.get(column.key).disabled);
 
-			if(!columns.length) {
+			if (!columns.length) {
+
 				continue;
 			}
 
 			axis.animate = !options.resize && !axis.dontAnimate && !this.options.dontAnimate;
 
-			if(['top', 'bottom'].includes(axis.position)) {
+			if (['top', 'bottom'].includes(axis.position)) {
 
 				const
 					scale = d3.scale.ordinal(),
@@ -7830,13 +7851,14 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 				let biggestTick = '';
 
-				for(const row of this.rows) {
+				for (const row of this.rows) {
 
 					const value = row.getTypedValue(columns[0].key);
 
 					column.push(value);
 
-					if(biggestTick.length < value.length) {
+					if (biggestTick.length < value.length) {
+
 						biggestTick = value;
 					}
 				}
@@ -7849,15 +7871,16 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
 					tickInterval = parseInt(this.rows.length / tickNumber);
 
-				for(let i = 0; i < column.length; i++) {
+				for (let i = 0; i < column.length; i++) {
 
-					if(!(i % tickInterval)) {
+					if (!(i % tickInterval)) {
+
 						ticks.push(column[i]);
 					}
 				}
 
 				// Add the axis scale
-				if(!this.options.hideScales && !axis.hideScale) {
+				if (!this.options.hideScales && !axis.hideScale) {
 
 					const d3Axis = d3.svg.axis()
 						.scale(scale)
@@ -7870,15 +7893,18 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 						.attr('class', 'scale ' + axis.position)
 						.call(d3Axis);
 
-					if(axis.position == 'bottom') {
+					if (axis.position == 'bottom') {
+
 						g.attr('transform', `translate(${this.axes.left.size}, ${this.height})`);
 					}
+
 					else {
+
 						g.attr('transform', `translate(${this.axes.left.size}, ${axis.label ? 45 : 20})`);
 					}
 				}
 
-				if(axis.label) {
+				if (axis.label) {
 
 					const text = this.svg
 						.append('text')
@@ -7886,11 +7912,14 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 						.style('text-anchor', 'middle')
 						.text(axis.label);
 
-					if(axis.position == 'bottom') {
-						text.attr('transform', `translate(${(this.width / 2)}, ${this.height + 35})`)
+					if (axis.position == 'bottom') {
+
+						text.attr('transform', `translate(${(this.width / 2)}, ${this.height + 35})`);
 					}
+
 					else {
-						text.attr('transform', `translate(${(this.width / 2)}, 10)`)
+
+						text.attr('transform', `translate(${(this.width / 2)}, 10)`);
 					}
 				}
 
@@ -7902,7 +7931,8 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 				continue;
 			}
 
-			if(!this.x) {
+			if (!this.x) {
+
 				continue;
 			}
 
@@ -7910,13 +7940,13 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 			let columnsData = [];
 
-			for(const _column of columns) {
+			for (const _column of columns) {
 
 				const column = [];
 
 				Object.assign(column, _column);
 
-				for(const [index, row] of this.rows.entries()) {
+				for (const [index, row] of this.rows.entries()) {
 
 					column.push({
 						x: index,
@@ -7948,7 +7978,9 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 				}
 			}
       
-			if(axis.stacked) {
+
+			if (axis.stacked) {
+
 				columnsData = d3.layout.stack()(columnsData);
 			}
 
@@ -7961,18 +7993,19 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 				max = 0,
 				min = 0;
 
-			for(const row of this.rows) {
+			for (const row of this.rows) {
 
 				let total = 0;
 
-				for(const column of columns) {
+				for (const column of columns) {
 
 					total += parseFloat(row.get(column.key)) || 0;
 					max = Math.max(max, Math.ceil(row.get(column.key)) || 0);
 					min = Math.min(min, Math.floor(row.get(column.key)) || 0);
 				}
 
-				if(axis.stacked) {
+				if (axis.stacked) {
+
 					max = Math.max(max, Math.ceil(total) || 0);
 				}
 			}
@@ -7989,39 +8022,22 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 			scale.domain(maxMin).nice();
 
-			if(axis.type == 'line') {
+			if (axis.type == 'line') {
 
-				const
-					line = d3.svg.line()
-						.interpolate(axis.curve || 'linear')
-						.x((_, i) => this.x(this.rows[i].getTypedValue(this.x.column)) + this.axes.left.size + (this.x.rangeBand() / 2))
-						.y(d => scale(d.y + (d.y0 || 0)));
+				const line = d3.svg.line()
+					.x(d => this.x(this.rows[d.x].get(this.x.column)) + this.axes.left.size + (this.x.rangeBand() / 2))
+					.y(d => scale(d.y))
+					.interpolate(axis.curve || 'linear');
 
-				// Appending line in chart
-				this.svg.selectAll('.line-' + axisIndex)
-					.data(columnsData)
-					.enter()
-					.append('g')
-					.attr('class', `${axis.type} ${axis.position} line-${axisIndex}`)
-					.append('path')
-					.attr('class', 'line')
-					.attr('d', column => line(column))
-					.style('stroke', column => this.source.columns.get(column.key).color)
-					.style('stroke-width', axis.lineThickness || 2);
+				for (let i = 0; i < columnsData.length; i++) {
 
-				if(axis.animate) {
+					const p = this.svg.append("path")
+						.datum(columnsData[i])
+						.attr("class", "line")
+						.attr("d", line)
+						.style('stroke', column => this.source.columns.get(column.key).color);
 
-					for(const path of this.svg.selectAll('path')[0]) {
-
-						const length = path.getTotalLength();
-
-						path.style.strokeDasharray = `${length} ${length}`;
-						path.style.strokeDashoffset = length;
-						path.getBoundingClientRect();
-
-						path.style.transition  = `stroke-dashoffset ${Page.animationDuration}ms ease-out`;
-						path.style.strokeDashoffset = '0';
-					}
+					this.dashedLine(p, 10, 40, true);
 				}
 			}
 
@@ -8406,7 +8422,126 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 			that.zoomedIn = true;
 
 			that.plot();
-		}, true);;
+		}, true);
+	}
+
+	dashedLine(p, xStart, xEnd, index=false) {
+
+		const xMapping = new Map;
+
+		if(!xStart && !xEnd) {
+
+			return;
+		}
+
+		if (this.rows.length <= 3) {
+
+			return;
+		}
+
+		if(index) {
+
+			try {
+
+				xStart = this.rows[xStart].get(this.x.column);
+			}
+
+			catch(e) {
+
+				xStart = this.rows[0].get(this.x.column);
+			}
+
+			try {
+
+				xEnd = this.rows[xEnd].get(this.x.column);
+			}
+
+			catch(e) {
+
+				xEnd = this.rows[this.rows.length - 1].get(this.x.column);
+			}
+		}
+
+		this.rows.forEach((x, i) => xMapping.set(this.rows[i].get(this.x.column), x));
+
+		if (!xMapping.has(xStart) && !xMapping.has(xEnd)) {
+
+			return;
+		}
+
+		if (xMapping.has(xStart) && !xMapping.has(xEnd)) {
+
+			xEnd = this.rows[this.rows.length - 1].get(this.x.column);
+		}
+
+		if (!xMapping.has(xStart) && !xMapping.has(xEnd)) {
+
+			xStart = this.rows[0].get(this.x.column);
+		}
+
+		const dashBetweenX = [xStart, xEnd].map(t => xMapping.get(t).get(this.x.column)),
+			path = p.node(),
+			totalLen = path.getTotalLength();
+
+		const dashBetweenL = dashBetweenX.map((d, i) => {
+
+			let beginning = 0,
+				end = totalLen,
+				target = null;
+
+			let scaled_d = this.x(d) + this.axes.left.size + (this.x.rangeBand() / 2);
+
+			while (true) {
+
+				target = Math.floor((beginning + end) / 2);
+				let pos = path.getPointAtLength(target);
+
+				if ((target === end || target === beginning) && pos.x !== scaled_d) {
+
+					break;
+				}
+
+				if (pos.x > scaled_d) {
+
+					end = target;
+				}
+
+				else if (pos.x < scaled_d) {
+
+					beginning = target;
+				}
+
+				else {
+
+					break;
+				}
+			}
+
+			return target;
+		});
+
+		let sd = dashBetweenL[0],
+			dp = dashBetweenL[0],
+			count = 0;
+
+		while (dp < dashBetweenL[1]) {
+
+			dp += 2;
+			sd += ", 2";
+			count++;
+		}
+
+		if (count % 2 == 0) {
+
+			sd += ", 4, " + (totalLen - dashBetweenL[1]);
+		}
+
+		else {
+
+			sd += ", " + (totalLen - dashBetweenL[1]);
+		}
+
+		p.attr("stroke-dasharray", sd);
 	}
 });
 
