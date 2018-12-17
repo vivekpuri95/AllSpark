@@ -1122,6 +1122,7 @@ main.preview-right .tabs {
 }
 main.preview-right.compact .tabs {
 	grid-column: 3 / 4;
+	overflow: auto;
 }
 main.preview-left .tabs {
 	grid-column: 1 / 3;
