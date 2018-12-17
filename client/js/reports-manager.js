@@ -2340,7 +2340,7 @@ class ReportsManagerFilters extends Map {
 
 		if(!this.stage.selectedReport.editable) {
 			container.querySelector('button.add-filter-button').title = 'Not enough privileges';
-			container.querySelector('button.add-filter-button').disabled = true;
+			container.querySelector('button.add-filter-button').classList.add('grey');
 		}
 
 		const tbody = container.querySelector('table tbody');
@@ -2351,7 +2351,8 @@ class ReportsManagerFilters extends Map {
 		if(!this.size)
 			tbody.innerHTML = `<tr class="NA"><td colspan="8">No filters added yet!</td></tr>`;
 
-		container.querySelector('.add-filter-button').on('click', () => this.add());
+		if(this.stage.selectedReport.editable)
+			container.querySelector('.add-filter-button').on('click', () => this.add());
 
 		{
 			this.datasetMultiSelect = new MultiSelect({dropDownPosition: 'top', multiple: false});
