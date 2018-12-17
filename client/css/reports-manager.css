@@ -448,6 +448,9 @@ main.preview-left #stages {
 			#stage-define-report .upload-file .notice {
 				color: var(--color-green);
 			}
+			#stage-define-report #save-container button[disabled] {
+				color: #999;
+			}
 
 		#stage-define-report #filters {
 			order: 3;
