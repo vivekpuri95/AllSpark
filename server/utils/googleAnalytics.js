@@ -160,7 +160,8 @@ class FetchGA extends Task {
 								'viewId': this.task.config.viewId,
 								'dateRanges': [{'startDate': startDate, 'endDate': endDate}],
 								'metrics': gaMetrics,
-								"dimensions": gaDimensions
+								"dimensions": gaDimensions,
+								"orderBys": this.task.config.orderBys || []
 							}
 						]
 					}),
