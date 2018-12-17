@@ -4202,7 +4202,11 @@ class DataSourceTransformations extends Set {
 
 		const type = DataSourceTransformation.types.get('filters');
 
-		this.add(new type({type: 'filters', filters, implied: true}, this.source));
+		const options = {
+			filters,
+		}
+
+		this.add(new type({type: 'filters', options, implied: true}, this.source));
 	}
 
 	loadSorting() {
@@ -4220,7 +4224,11 @@ class DataSourceTransformations extends Set {
 				}
 			];
 
-		this.add(new type({type: 'sort', columns, implied: true}, this.source));
+			const options = {
+				columns,
+			}
+
+		this.add(new type({type: 'sort', options, implied: true}, this.source));
 	}
 }
 

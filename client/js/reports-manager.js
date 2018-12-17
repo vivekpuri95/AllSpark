@@ -7644,6 +7644,8 @@ ReportTransformation.types.set('linear-regression', class ReportTransformationRe
 				extrapolate: this.extrapolateUnits.value
 			},
 		};
+
+		return response;
 	}
 });
 
