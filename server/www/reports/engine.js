@@ -514,7 +514,7 @@ class report extends API {
 
 				// await this.storeQueryResult(result);
 
-				await engine.log(this.reportObj.query_id, result.query,
+				engine.log(this.reportObj.query_id, result.query,
 					Date.now() - this.reportObjStartTime, this.reportObj.type,
 					this.user.user_id, 1, JSON.stringify({filters: this.filters}), this.user.session_id
 				);
@@ -570,7 +570,7 @@ class report extends API {
 			promiseManager.remove(engine.hash);
 		}
 
-		await engine.log(this.reportObj.query_id, result.query, result.runtime,
+		engine.log(this.reportObj.query_id, result.query, result.runtime,
 			this.reportObj.type, this.user.user_id, 0, JSON.stringify({filters: this.filters}), this.user.session_id
 		);
 
