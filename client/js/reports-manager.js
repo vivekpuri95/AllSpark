@@ -2195,6 +2195,8 @@ class ReportsManagerFilters extends Map {
 
 		for(const filter of this.stage.report.filters)
 			this.set(filter.placeholder, new ReportsManagerFilter(filter, stage));
+
+		this.addForm = new DataSourceFilterForm({}, this.page);
 	}
 
 	get container() {
@@ -2279,7 +2281,7 @@ class ReportsManagerFilters extends Map {
 				</div>
 			</div>
 
-			<form class="hidden add-filter">
+			<div class="hidden add-filter">
 
 				<h3><i class="fas fa-plus"></i> Add New Filter</h3>
 
@@ -2289,67 +2291,18 @@ class ReportsManagerFilters extends Map {
 						<i class="fa fa-arrow-left"></i> Back
 					</button>
 
-					<button type="submit">
+					<button type="submit" form="report-filter-add">
 						<i class="far fa-save"></i> Save
 					</button>
 				</div>
-
-				<div class="form">
-
-					<label>
-						<span>Name <span class="red">*</span></span>
-						<input type="text" name="name" required>
-					</label>
-
-					<label>
-						<span>Placeholder <span class="red">*</span><span class="right" data-tooltip="Uniquely identifies the filter in this report.">?</span></span>
-						<input type="text" name="placeholder" required>
-					</label>
-
-					<label>
-						<span>Type <span class="red">*</span></span>
-						<select name="type" required></select>
-					</label>
-
-					<label>
-						<span>Description</span>
-						<input type="text" name="description">
-					</label>
-
-					<label>
-						<span>Order</span>
-						<input type="number" name="order">
-					</label>
-
-					<label>
-
-						<span>Default Value <span class="right" data-tooltip="Calculated and applied on first load\nif a global filter with same placeholder isn't added.">?</span></span>
-
-						<select name="default_type">
-							<option value="none">None</option>
-							<option value="default_value">Fixed</option>
-							<option value="offset">Relative</option>
-						</select>
-
-						<input type="text" name="default_value">
-
-						<input type="number" name="offset">
-					</label>
-
-					<label class="dataset">
-						<span>Dataset <span class="right" data-tooltip="A set of possible values for this filter.">?</span></span>
-					</label>
-
-					<label class="multiple">
-						<span>Multiple <span class="right" data-tooltip="Can the user pick multiple values.">?</span></span>
-						<select name="multiple">
-							<option value="0">No</option>
-							<option value="1">Yes</option>
-						</select>
-					</label>
-				</div>
-			</form>
+			</div>
 		`;
+
+		this.addForm.container.id = 'report-filter-add';
+
+		const addFilterContainer = this.container.querySelector('.add-filter');
+
+		addFilterContainer.appendChild(this.addForm.container);
 
 		const tbody = container.querySelector('table tbody');
 
@@ -2362,63 +2315,18 @@ class ReportsManagerFilters extends Map {
 		container.querySelector('.add-filter-button').on('click', () => this.add());
 
 		{
-			this.datasetMultiSelect = new MultiSelect({dropDownPosition: 'top', multiple: false});
 
-			const datalist = [];
+			this.addForm.container.on('submit', () => {
 
-			for(const source of DataSource.list.values()) {
-
-				if(source.query_id == this.stage.report.query_id)
-					continue;
-
-				datalist.push({
-					name: source.name,
-					value: source.query_id,
-					subtitle: '#' + source.query_id,
-				});
-			}
-
-			this.datasetMultiSelect.datalist = datalist;
-			this.datasetMultiSelect.render();
-
-			container.querySelector('label.dataset').appendChild(this.datasetMultiSelect.container);
-
-			this.datasetMultiSelect.value = this.dataset;
-			this.datasetMultiSelect.on('change', () => this.updateFormFields());
-		}
-
-		{
-
-			const form = container.querySelector('.add-filter');
-
-			for(const type of MetaData.filterTypes.values()) {
-
-				if(!type.input_type)
-					continue;
-
-				form.type.insertAdjacentHTML('beforeend', `
-					<option value="${type.name.toLowerCase()}">${type.name}</option>
-				`);
-			}
-
-			form.type.on('change', () => this.changeFilterType());
-			form.default_type.on('change', () => this.updateFormFields());
-
-			this.changeFilterType();
-			this.updateFormFields();
-
-			form.on('submit', e => {
-
-				e.preventDefault();
-
-				if(this.stage.saveReportConfirm())
+				if(this.stage.saveReportConfirm()) {
 					this.insert();
+				}
 			});
 
 			container.querySelector('.filter-back').on('click', () => {
 
 				this.stage.filtersManager.container.querySelector('#filters-list').classList.remove('hidden');
-				form.classList.add('hidden');
+				addFilterContainer.classList.add('hidden');
 			});
 		}
 
@@ -2430,62 +2338,58 @@ class ReportsManagerFilters extends Map {
 
 	add(filter = {}) {
 
-		const form = this.container.querySelector('.add-filter');
-
-		form.reset();
+		this.addForm.container.reset();
 
 		this.stage.filtersManager.container.querySelector('#filters-list').classList.add('hidden');
 
-		form.classList.remove('hidden');
+		this.container.querySelector('.add-filter').classList.remove('hidden');
 
 		for(const key in filter) {
 
-			if(key in form.elements)
-				form.elements[key].value = filter[key];
+			if(key in this.addForm.container.elements)
+				this.addForm.container.elements[key].value = filter[key];
 		}
 
-		if(form.default_value.value)
-			form.default_type.value = 'default_value';
+		// if(this.addForm.container.default_value.value)
+			// this.addForm.container.default_type.value = 'default_value';
 
-		else if(form.offset.value)
-			form.default_type.value = 'offset';
+		// else if(this.addForm.container.offset.value)
+			// this.addForm.container.default_type.value = 'offset';
 
-		else
-			form.default_type.value = 'none';
+		// else
+			// this.addForm.container.default_type.value = 'none';
 
-		this.datasetMultiSelect.value = filter.dataset || [];
+		this.addForm.datasetMultiSelect.value = filter.dataset || [];
 
-		this.changeFilterType();
-		this.updateFormFields();
+		this.addForm.changeFilterType();
+		this.addForm.updateFormFields();
 
-		form.name.focus();
+		this.addForm.container.name.focus();
 	}
 
 	async insert() {
 
 		const form = this.container.querySelector('form.add-filter');
 
-		if(form.default_type.value != 'offset')
-			form.offset.value = '';
+		if(this.addForm.container.default_type.value != 'offset')
+			this.addForm.container.offset.value = '';
 
-		if(form.default_type.value != 'default_value')
-			form.default_value.value = '';
+		if(this.addForm.container.default_type.value != 'default_value')
+			this.addForm.container.default_value.value = '';
 
 		const
-			parameters = {
-				query_id: this.stage.report.query_id,
-				dataset: this.datasetMultiSelect.value[0] || '',
-			},
+			parameters = this.addForm.json,
 			options = {
 				method: 'POST',
-				form: new FormData(form),
 			};
 
-		if(this.has(form.placeholder.value)) {
+		parameters.query_id = this.stage.report.query_id;
+
+		if(this.has(this.addForm.container.placeholder.value)) {
 
 			return new SnackBar({
 				message: 'Placeholer already exists!',
-				subtitle: `Placeholer ${form.placeholder.value} is already in use by ${this.get(form.placeholder.value).name} filter`,
+				subtitle: `Placeholer ${this.addForm.container.placeholder.value} is already in use by ${this.get(this.addForm.container.placeholder.value).name} filter`,
 				type: 'error',
 			});
 		}
@@ -2501,8 +2405,8 @@ class ReportsManagerFilters extends Map {
 			this.stage.filtersManager.container.classList.remove('hidden');
 
 			new SnackBar({
-				message: `${form.name.value} Filter Added`,
-				subtitle: `Type: <strong>${MetaData.filterTypes.get(form.type.value).name}</strong> Placeholer: <strong>${form.placeholder.value}</strong></span>`,
+				message: `${this.addForm.container.name.value} Filter Added`,
+				subtitle: `Type: <strong>${MetaData.filterTypes.get(this.addForm.container.type.value).name}</strong> Placeholer: <strong>${this.addForm.container.placeholder.value}</strong></span>`,
 				icon: 'fa fa-plus',
 			});
 
@@ -2647,41 +2551,6 @@ class ReportsManagerFilters extends Map {
 			tbody.appendChild(row);
 		}
 	}
-
-	changeFilterType() {
-
-		const
-			form = this.container.querySelector('form'),
-			types = ['hidden', 'column', 'literal'];
-
-		if(form.type.value == 'datetime')
-			form.default_value.type = 'datetime-local';
-
-		else if(form.type.value == 'year')
-			form.default_value.type = 'number';
-
-		else if(form.type.value == 'time') {
-
-			form.default_value.type = 'time';
-			form.default_value.step = '1';
-		}
-
-		else if(types.includes(form.type.value))
-			form.default_value.type = 'text';
-
-		else
-			form.default_value.type = form.type.value;
-	}
-
-	updateFormFields() {
-
-		const form = this.container.querySelector('form');
-
-		form.default_value.classList.toggle('hidden', form.default_type.value != 'default_value');
-		form.offset.classList.toggle('hidden', form.default_type.value != 'offset');
-
-		form.querySelector('.multiple').classList.toggle('hidden', !this.datasetMultiSelect.value.length);
-	}
 }
 
 class ReportsManagerFilter {
@@ -2693,12 +2562,15 @@ class ReportsManagerFilter {
 
 		this.stage = stage;
 		this.page = this.stage.page;
+
+		this.form = new DataSourceFilterForm(filter, stage.page);
 	}
 
 	get row() {
 
-		if(this.rowElement)
+		if(this.rowElement) {
 			return this.rowElement;
+		}
 
 		const row = this.rowElement = document.createElement('tr');
 
@@ -2745,19 +2617,19 @@ class ReportsManagerFilter {
 
 	edit() {
 
-		this.stage.filtersManager.container.appendChild(this.form);
+		this.stage.filtersManager.container.appendChild(this.container);
 		this.stage.filtersManager.container.querySelector('#filters-list').classList.add('hidden');
-		this.form.classList.remove('hidden');
+		this.container.classList.remove('hidden');
 
-		this.form.name.focus();
+		this.form.container.name.focus();
 	}
 
-	get form() {
+	get container() {
 
 		if(this.containerElement)
 			return this.containerElement;
 
-		const container = this.containerElement = document.createElement('form');
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('edit-filter');
 
@@ -2771,7 +2643,7 @@ class ReportsManagerFilter {
 					<i class="fa fa-arrow-left"></i> Back
 				</button>
 
-				<button type="submit">
+				<button type="submit" form="filter-form-${this.id}">
 					<i class="far fa-save"></i> Save
 				</button>
 
@@ -2780,62 +2652,11 @@ class ReportsManagerFilter {
 					Updated: <strong title="${this.updated_at}">${Format.ago(this.updated_at)}</strong>
 				</span>
 			</div>
-
-			<div class="form">
-
-				<label>
-					<span>Name <span class="red">*</span></span>
-					<input type="text" name="name" value="${this.name || ''}" required>
-				</label>
-
-				<label>
-					<span>Placeholder <span class="red">*</span><span class="right" data-tooltip="Uniquely identifies the filter in this report.">?</span></span>
-					<input type="text" name="placeholder" value="${this.placeholder || ''}" required>
-				</label>
-
-				<label>
-					<span>Type <span class="red">*</span></span>
-					<select name="type" required></select>
-				</label>
-
-				<label>
-					<span>Description</span>
-					<input type="text" name="description" value="${this.description || ''}">
-				</label>
-
-				<label>
-					<span>Order</span>
-					<input type="number" name="order" value="${this.order || ''}">
-				</label>
-
-				<label>
-
-					<span>Default Value <span class="right" data-tooltip="Calculated and applied on first load\nif a global filter with same placeholder isn't added.">?</span></span>
-
-					<select name="default_type">
-						<option value="none">None</option>
-						<option value="default_value">Fixed</option>
-						<option value="offset">Relative</option>
-					</select>
-
-					<input type="text" name="default_value" value="${this.default_value || ''}">
-
-					<input type="number" name="offset" value="${isNaN(parseFloat(this.offset)) ? '' : this.offset}">
-				</label>
-
-				<label class="dataset">
-					<span>Dataset <span class="right" data-tooltip="A set of possible values for this filter.">?</span></span>
-				</label>
-
-				<label class="multiple">
-					<span>Allow Multiple <span class="right" data-tooltip="Can the user pick multiple values.">?</span></span>
-					<select name="multiple" required>
-						<option value="0">No</option>
-						<option value="1">Yes</option>
-					</select>
-				</label>
-			<form>
 		`;
+
+		this.form.container.id = 'filter-form-' + this.id;
+
+		container.appendChild(this.form.container);
 
 		container.querySelector('.filter-back').on('click', () => {
 
@@ -2843,89 +2664,18 @@ class ReportsManagerFilter {
 			container.classList.add('hidden');
 		});
 
-		{
-			container.multiple.value = this.multiple || '0';
+		this.form.datasetMultiSelect.on('change', () => this.setDirtyForm());
 
-			this.datasetMultiSelect = new MultiSelect({dropDownPosition: 'top', multiple: false});
+		this.form.container.on('submit', e => {
 
-			const datalist = [];
-
-			for(const source of DataSource.list.values()) {
-
-				if(source.query_id == this.stage.report.query_id)
-					continue;
-
-				datalist.push({
-					name: source.name,
-					value: source.query_id,
-					subtitle: '#' + source.query_id,
-				});
-			}
-
-			this.datasetMultiSelect.datalist = datalist;
-			this.datasetMultiSelect.render();
-
-			container.querySelector('label.dataset').appendChild(this.datasetMultiSelect.container);
-
-			this.datasetMultiSelect.value = this.dataset;
-			this.datasetMultiSelect.on('change', () => {
-				this.updateFormFields();
-				this.setDirtyForm();
-			});
-		}
-
-		{
-
-			const
-				default_value = container.default_value.value,
-				default_value_offset = container.offset.value;
-
-			for(const type of MetaData.filterTypes.values()) {
-
-				if(!type.input_type)
-					continue;
-
-				container.type.insertAdjacentHTML('beforeend', `
-					<option value="${type.name.toLowerCase()}">${type.name}</option>
-				`);
-			}
-
-			container.type.value = this.type || 'text';
-
-			if(container.default_value.value)
-				container.default_type.value = 'default_value';
-
-			else if(container.offset.value)
-				container.default_type.value = 'offset';
-
-			else
-				container.default_type.value = 'none';
-
-			container.type.on('change', () => {
-
-				this.changeFilterType();
-
-				container.default_value.value = default_value;
-				container.offset.value = default_value_offset;
-			});
-
-			container.default_type.on('change', () => this.updateFormFields());
-
-			this.changeFilterType();
-			this.updateFormFields();
-		}
-
-		container.on('submit', e => {
-
-			e.preventDefault();
-
-			if(this.stage.saveReportConfirm())
+			if(this.stage.saveReportConfirm()) {
 				this.update();
+			}
 		});
 
 		{
 
-			for(const element of container.elements) {
+			for(const element of this.form.container.elements) {
 
 				element.on('keyup', () => this.setDirtyForm());
 				element.on('change', () => this.setDirtyForm());
@@ -2937,11 +2687,11 @@ class ReportsManagerFilter {
 
 	async update() {
 
-		if(this.form.default_type.value != 'offset')
-			this.form.offset.value = '';
+		if(this.form.container.default_type.value != 'offset')
+			this.form.container.offset.value = '';
 
-		if(this.form.default_type.value != 'default_value')
-			this.form.default_value.value = '';
+		if(this.form.container.default_type.value != 'default_value')
+			this.form.container.default_value.value = '';
 
 		const options = {
 			method: 'POST',
@@ -2949,7 +2699,7 @@ class ReportsManagerFilter {
 
 		try {
 
-			await API.call('reports/filters/update', this.json, options);
+			await API.call('reports/filters/update', this.form.json, options);
 
 			await DataSource.load(true);
 
@@ -2958,8 +2708,8 @@ class ReportsManagerFilter {
 			this.stage.filtersManager.container.classList.remove('hidden');
 
 			new SnackBar({
-				message: `${this.form.name.value} Filter Saved`,
-				subtitle: `Type: <strong>${MetaData.filterTypes.get(this.form.type.value).name}</strong> Placeholer: <strong>${this.form.placeholder.value}</strong>`,
+				message: `${this.form.container.name.value} Filter Saved`,
+				subtitle: `Type: <strong>${MetaData.filterTypes.get(this.form.container.type.value).name}</strong> Placeholer: <strong>${this.form.container.placeholder.value}</strong>`,
 				icon: 'far fa-save',
 			});
 
@@ -2977,8 +2727,9 @@ class ReportsManagerFilter {
 
 	async delete() {
 
-		if(!confirm('Are you sure?!'))
+		if(!confirm('Are you sure?!')) {
 			return;
+		}
 
 		const
 			parameters = {
@@ -3016,68 +2767,23 @@ class ReportsManagerFilter {
 		}
 	}
 
-	get json() {
-
-		const response = {
-			filter_id: this.id,
-			dataset: this.datasetMultiSelect.value[0] || '',
-		};
-
-		for(const [name, value] of new FormData(this.form))
-			response[name] = value;
-
-		response.multiple = parseInt(response.multiple) || 0;
-
-		return response;
-	}
-
-	changeFilterType() {
-
-		const types = ['hidden', 'column', 'literal'];
-
-		if(this.form.type.value == 'datetime')
-			this.form.default_value.type = 'datetime-local';
-
-		else if(this.form.type.value == 'year')
-			this.form.default_value.type = 'number';
-
-		else if(this.form.type.value == 'time') {
-
-			this.form.default_value.type = 'time';
-			this.form.default_value.step = '1';
-		}
-
-		else if(types.includes(this.form.type.value))
-			this.form.default_value.type = 'text';
-
-		else
-			this.form.default_value.type = this.form.type.value;
-	}
-
-	updateFormFields() {
-
-		this.form.default_value.classList.toggle('hidden', this.form.default_type.value != 'default_value');
-		this.form.offset.classList.toggle('hidden', this.form.default_type.value != 'offset');
-
-		this.form.querySelector('.multiple').classList.toggle('hidden', !this.datasetMultiSelect.value.length);
-	}
-
 	setDirtyForm() {
 
 		const
-			submit = this.form.querySelector('button[type=submit]'),
-			json = this.json;
+			submit = this.container.querySelector('button[type=submit]'),
+			json = this.form.json;
 
 		let dirty = false;
 
 		for(const key in json) {
 
-			if(key in this && (this[key] || json[key]) && this[key] != json[key])
+			if(key in this && (this[key] || json[key]) && this[key] != json[key]) {
 				dirty = key;
+			}
 		}
 
 		submit.classList.toggle('not-saved', dirty);
-		submit.title = dirty ? ('Changed Field: ' + dirty) : '';
+		submit.title = dirty ? 'Changed Field: ' + dirty : '';
 	}
 }
 
@@ -8350,89 +8056,53 @@ class ReportVisualizationFilter {
 		this.reportVisualizationFilters = filters;
 		this.reportFilter = reportFilter;
 
+		filter.type = reportFilter.type;
+
 		Object.assign(this, filter);
+
+		this.form = new DataSourceFilterForm(filter);
 	}
 
 	get container() {
 
-		if (this.containerElement)
+		if(this.containerElement)
 			return this.containerElement;
 
 		const container = this.containerElement = document.createElement('fieldset');
 
 		container.innerHTML = `
 			<legend>${this.reportFilter.name}</legend>
-
-			<div class="form">
-
-				<label>
-					<span class="default">Default</span>
-					<select name="default_type">
-						<option value="none">None</option>
-						<option value="default_value">Default Value</option>
-						<option value="offset">Default Value Offset</option>
-					</select>
-
-					<input
-						type="${this.reportFilter.type}"
-						placeholder="${this.reportFilter.default_value != null ? this.reportFilter.default_value : ''}"
-						title="${this.reportFilter.default_value}" value="${this.default_value || ''}"
-						name="default_value">
-
-					<input
-						type="number"
-						placeholder="${this.reportFilter.offset != null ? this.reportFilter.offset : '' }"
-						value="${this.offset || ''}"
-						name="offset">
-				</label>
-
-				<label>
-					<button class="delete" title="Delete"><i class="far fa-trash-alt"></i></button>
-				</label>
-			</div>
 		`;
 
-		const types = ['hidden', 'column', 'literal'];
+		container.appendChild(this.form.container);
 
-		const default_value = container.querySelector('input[name="default_value"]');
+		this.form.container.insertAdjacentHTML('beforeend', `
 
-		if(this.reportFilter.type == 'datetime')
-			default_value.type = 'datetime-local';
+			<label>
+				<button class="delete" title="Delete"><i class="far fa-trash-alt"></i></button>
+			</label>
+		`);
 
-		else if(this.reportFilter.type == 'year')
-			default_value.type = 'number';
-
-		else if(this.reportFilter.type == 'time')
-			default_value.step = '1';
-
-		else if(types.includes(this.reportFilter.type))
-			default_value.type = 'text';
+		this.form.container.name.parentElement.classList.add('hidden');
+		this.form.container.order.parentElement.classList.add('hidden');
+		this.form.container.placeholder.parentElement.classList.add('hidden');
+		this.form.container.type.parentElement.classList.add('hidden');
+		this.form.container.description.parentElement.classList.add('hidden');
+		this.form.datasetMultiSelect.container.parentElement.classList.add('hidden');
 
 		let default_data;
 
-		if(this.reportFilter.default_value)
-			default_data = `Default Value = ${this.reportFilter.default_value}`;
+		if(this.reportFilter.default_value) {
+			default_data = `Default Value: ${this.reportFilter.default_value}`;
+		}
 
-		else if(!isNaN(parseFloat(this.reportFilter.offset)))
-			default_data = `Default Value Offset = ${this.reportFilter.offset}`;
+		else if(!isNaN(parseFloat(this.reportFilter.offset))) {
+			default_data = `Default Value Offset: ${this.reportFilter.offset}`;
+		}
 
-		if(default_data)
-			container.querySelector('.default').insertAdjacentHTML('afterend', `<small>${default_data}</small>`);
-
-		const default_type = container.querySelector('select[name="default_type"]');
-
-		if(this.default_value)
-			default_type.value = 'default_value';
-
-		else if(this.offset)
-			default_type.value = 'offset';
-
-		else
-			default_type.value = 'none';
-
-		this.updateDefaultType();
-
-		default_type.on('change', () => this.updateDefaultType());
+		if(default_data) {
+			this.form.container.default_type.insertAdjacentHTML('beforebegin', `<small>${default_data}</small>`);
+		}
 
 		container.querySelector('.delete').on('click', () => {
 
@@ -8445,31 +8115,18 @@ class ReportVisualizationFilter {
 		return container;
 	}
 
-	updateDefaultType() {
-
-		const default_type = this.container.querySelector('select[name="default_type"]');
-
-		this.container.querySelector('input[name="default_value"]').classList.toggle('hidden', default_type.value != 'default_value');
-		this.container.querySelector('input[name="offset"]').classList.toggle('hidden', default_type.value != 'offset');
-	}
-
 	get json() {
 
-		let
-			offset_value = this.container.querySelector('input[name="offset"]').value,
-			default_value = this.container.querySelector('input[name="default_value"]').value,
-			default_type = this.container.querySelector('select[name="default_type"]').value;
+		const json = this.form.json;
 
-		if(default_type != 'offset')
-			offset_value = '';
-
-		if(default_type != 'default_value')
-			default_value = '';
+		delete json.placeholder;
 
 		return {
-			default_value: default_value,
-			filter_id: this.filter_id,
-			offset: offset_value,
+			filter_id: this.reportFilter.filter_id,
+			name: json.name,
+			order: json.order,
+			default_value: json.default_value,
+			offset: json.offset,
 		};
 	}
 }

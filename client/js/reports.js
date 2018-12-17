@@ -13854,6 +13854,209 @@ class Canvas extends VisualizationsCanvas {
 	}
 }
 
+class DataSourceFilterForm {
+
+	constructor(filter, page) {
+
+		this.filter = filter;
+		this.page = page;
+		this.datasetMultiSelect = new MultiSelect({dropDownPosition: 'top', multiple: false});
+	}
+
+	get container() {
+
+		if(this.containerElement) {
+			return this.containerElement;
+		}
+
+		const container = this.containerElement = document.createElement('form');
+
+		container.classList.add('form');
+
+		container.innerHTML = `
+
+			<label>
+				<span>Name <span class="red">*</span></span>
+				<input type="text" name="name" value="${this.filter.name || ''}" required>
+			</label>
+
+			<label>
+				<span>Placeholder <span class="red">*</span><span class="right" data-tooltip="Uniquely identifies the filter in this report.">?</span></span>
+				<input type="text" name="placeholder" value="${this.filter.placeholder || ''}" required>
+			</label>
+
+			<label>
+				<span>Type <span class="red">*</span></span>
+				<select name="type" required></select>
+			</label>
+
+			<label>
+				<span>Description</span>
+				<input type="text" name="description" value="${this.filter.description || ''}">
+			</label>
+
+			<label>
+				<span>Order</span>
+				<input type="number" name="order" value="${this.filter.order || ''}">
+			</label>
+
+			<label>
+
+				<span>Default Value <span class="right" data-tooltip="Calculated and applied on first load\nif a global filter with same placeholder isn't added.">?</span></span>
+
+				<select name="default_type">
+					<option value="none">None</option>
+					<option value="default_value">Fixed</option>
+					<option value="offset">Relative</option>
+				</select>
+
+				<input type="text" name="default_value" value="${this.filter.default_value || ''}">
+
+				<input type="number" name="offset" value="${isNaN(parseFloat(this.filter.offset)) ? '' : this.filter.offset}">
+			</label>
+
+			<label class="dataset">
+				<span>Dataset <span class="right" data-tooltip="A set of possible values for this filter.">?</span></span>
+			</label>
+
+			<label class="multiple">
+				<span>Allow Multiple <span class="right" data-tooltip="Can the user pick multiple values.">?</span></span>
+				<select name="multiple" required>
+					<option value="0">No</option>
+					<option value="1">Yes</option>
+				</select>
+			</label>
+		`;
+
+		for(const type of MetaData.filterTypes.values()) {
+
+			if(!type.input_type) {
+				continue;
+			}
+
+			container.type.insertAdjacentHTML('beforeend', `
+				<option value="${type.name.toLowerCase()}">${type.name}</option>
+			`);
+		}
+
+		container.type.value = this.filter.type || 'text';
+		container.multiple.value = this.filter.multiple || '0';
+
+		// Filter dataset multiselect setup
+		{
+			const datalist = [];
+
+			for(const source of DataSource.list.values()) {
+
+				if(source.query_id == this.filter.query_id) {
+					continue;
+				}
+
+				datalist.push({
+					name: source.name,
+					value: source.query_id,
+					subtitle: '#' + source.query_id,
+				});
+			}
+
+			this.datasetMultiSelect.datalist = datalist;
+			this.datasetMultiSelect.render();
+
+			container.querySelector('label.dataset').appendChild(this.datasetMultiSelect.container);
+
+			this.datasetMultiSelect.value = this.filter.dataset;
+			this.datasetMultiSelect.on('change', () => this.updateFormFields());
+		}
+
+		{
+
+			const
+				default_value = container.default_value.value,
+				default_value_offset = container.offset.value;
+
+			if(container.default_value.value) {
+				container.default_type.value = 'default_value';
+			}
+
+			else if(container.offset.value) {
+				container.default_type.value = 'offset';
+			}
+
+			else {
+				container.default_type.value = 'none';
+			}
+
+			container.type.on('change', () => {
+
+				this.changeFilterType();
+
+				container.default_value.value = default_value;
+				container.offset.value = default_value_offset;
+			});
+
+			container.default_type.on('change', () => this.updateFormFields());
+
+			this.changeFilterType();
+			this.updateFormFields();
+		}
+
+		container.on('submit', e => e.preventDefault());
+
+		return container;
+	}
+
+	get json() {
+
+		const response = {
+			filter_id: this.filter.filter_id,
+			dataset: this.datasetMultiSelect.value[0] || '',
+		};
+
+		for(const [name, value] of new FormData(this.container)) {
+			response[name] = value;
+		}
+
+		response.multiple = parseInt(response.multiple) || 0;
+
+		return response;
+	}
+
+	changeFilterType() {
+
+		const types = ['hidden', 'column', 'literal'];
+
+		if(this.container.type.value == 'datetime') {
+			this.container.default_value.type = 'datetime-local';
+		}
+
+		else if(this.container.type.value == 'year') {
+			this.container.default_value.type = 'number';
+		}
+
+		else if(this.container.type.value == 'time') {
+
+			this.container.default_value.type = 'time';
+			this.container.default_value.step = '1';
+		}
+
+		else if(types.includes(this.container.type.value)) {
+			this.container.default_value.type = 'text';
+		}
+
+		else {
+			this.container.default_value.type = this.container.type.value;
+		}
+	}
+
+	updateFormFields() {
+
+		this.container.default_value.classList.toggle('hidden', this.container.default_type.value != 'default_value');
+		this.container.offset.classList.toggle('hidden', this.container.default_type.value != 'offset');
+
+		this.container.querySelector('.multiple').classList.toggle('hidden', !this.datasetMultiSelect.value.length);
+	}
+}
+
 DataSourceFilter.setup();
 DataSourceColumnFilter.setup();
 DataSourceColumnAccumulation.setup();
