@@ -1079,7 +1079,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			this.container.querySelector('#schema-toggle').classList.remove('hidden');
 		}
 
-		if(this.report.editable) {
+		if(!this.report.editable) {
 			this.container.querySelector('#save-container > button').disabled = true;
 			this.container.querySelector('#save-container #save-more').disabled = true;
 		}
