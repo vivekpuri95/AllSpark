@@ -2868,7 +2868,7 @@ class ReportsManagerFilter {
 		{
 
 			const
-				default_value = container.default_value.vaslue,
+				default_value = container.default_value.value,
 				default_value_offset = container.offset.value;
 
 			for(const type of MetaData.filterTypes.values()) {
