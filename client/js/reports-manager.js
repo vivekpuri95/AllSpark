@@ -2304,6 +2304,11 @@ class ReportsManagerFilters extends Map {
 
 		addFilterContainer.appendChild(this.addForm.container);
 
+		if(!this.stage.selectedReport.editable) {
+			container.querySelector('button.add-filter-button').title = 'Not enough privileges';
+			container.querySelector('button.add-filter-button').classList.add('grey');
+		}
+
 		const tbody = container.querySelector('table tbody');
 
 		for(const filter of this.values())
@@ -2312,7 +2317,8 @@ class ReportsManagerFilters extends Map {
 		if(!this.size)
 			tbody.innerHTML = `<tr class="NA"><td colspan="8">No filters added yet!</td></tr>`;
 
-		container.querySelector('.add-filter-button').on('click', () => this.add());
+		if(this.stage.selectedReport.editable)
+			container.querySelector('.add-filter-button').on('click', () => this.add());
 
 		{
 
@@ -2597,12 +2603,17 @@ class ReportsManagerFilter {
 			<td>${this.type}</td>
 			<td>${this.default_value || (isNaN(parseFloat(this.offset)) ? '' : this.offset)}</td>
 			<td>${datasetName}</td>
-			<td class="action green"><i class="far fa-edit"></i></td>
-			<td class="action red"><i class="far fa-trash-alt"></i></td>
+			<td class="action ${this.stage.selectedReport.editable ? 'green' : 'grey'}"><i class="far fa-edit"></i></td>
+			<td class="action ${this.stage.selectedReport.deletable ? 'red' : 'grey'}"><i class="far fa-trash-alt"></i></td>
 		`;
 
-		row.querySelector('.green').on('click', () => this.edit());
-		row.querySelector('.red').on('click', () => this.delete());
+		if(row.querySelector('.green')) {
+			row.querySelector('.green').on('click', () => this.edit());
+		}
+
+		if(row.querySelector('.red')) {
+			row.querySelector('.red').on('click', () => this.delete());
+		}
 
 		row.on('mouseenter', () => {
 

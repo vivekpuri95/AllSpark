@@ -510,6 +510,13 @@ exports.schema = class extends API {
 
 		this.user.privilege.needs('connection.list', 'ignore');
 
+		this.assert(
+			this.user.privilege.has("report.insert")
+			|| this.user.privilege.has("report.update")
+			|| this.user.privilege.has("report.delete"),
+			"User needs report access."
+		);
+
 		const authResponse = await auth.connection(this.request.query.id, this.user);
 		this.assert(!authResponse.error, authResponse.message);
 
