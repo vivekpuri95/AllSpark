@@ -679,7 +679,7 @@ router.get('/:type(dashboard|report|visualization)/:id?', API.serve(class extend
 								<i class="far fa-file-pdf"></i>
 								<div>
 									PDF&nbsp;
-									<span class="NA">(BETA)</span>
+									<span class="NA">BETA</span>
 								</div>
 							</span>
 							<span class="item png">

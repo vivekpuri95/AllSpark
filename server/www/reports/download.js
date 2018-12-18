@@ -25,8 +25,8 @@ exports.pdf = class DownloadPdf extends API {
 			child_process.execSync('mkdir /tmp/Allspark');
 		}
 
-		// Wait until the graphs animations rendered.
-		await new Promise(resolve => setTimeout(resolve, 2000));
+		// Wait until the graphs to render.
+		await new Promise(resolve => setTimeout(resolve, 12000));
 
 		// Preparing for download.
 		const fileName = Math.random() + '.' + this.request.query.type;
@@ -54,6 +54,8 @@ exports.pdf = class DownloadPdf extends API {
 		}
 
 		await page.close();
+
+		await chrome.browser.close();
 
 		await this.response.sendFile(`/tmp/Allspark/${fileName}`);
 

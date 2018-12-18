@@ -262,7 +262,7 @@ main #reports > .toolbar {
 					align-items: center;
 				}
 					main #reports > .toolbar .download .options .item.pdf div .NA {
-						font-size: 80%;
+						font-size: 60%;
 					}
 				main #reports > .toolbar .download .options .item:hover i {
 					color: var(--color-surface-text);
