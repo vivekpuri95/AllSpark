@@ -655,6 +655,9 @@ main.preview-left #stages {
 			color: #666;
 			cursor: pointer;
 		}
+		.visualization-form fieldset > .form {
+			padding: 0;
+		}
 	.visualization-form .subform {
 		display: grid;
 		padding: calc(var(--gap) * 2);
@@ -897,6 +900,10 @@ main.preview-left #stages {
 			}
 	.visualization-form .filters {
 	}
+		.visualization-form .filters .body .list {
+			display: grid;
+			grid-gap: calc(var(--gap) * 2);
+		}
 		.visualization-form .transformations .add-transformation .form,
 		.visualization-form .filters .add-filter .form {
 			grid-template-columns: minmax(max-content, 200px) max-content;

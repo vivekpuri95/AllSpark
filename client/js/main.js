@@ -2409,6 +2409,8 @@ class MultiSelect {
 
 		this.selectedValues = new Set();
 		this.inputName = 'multiselect-' + Math.floor(Math.random() * 10000);
+
+		this.callbacks = new Set;
 	}
 
 	/**
@@ -2519,9 +2521,7 @@ class MultiSelect {
 			}
 		}
 
-		if(this.changeCallback)
-			this.changeCallback();
-
+		this.fireCallback('change');
 		this.recalculate();
 	}
 
@@ -2610,9 +2610,7 @@ class MultiSelect {
 					input.checked ? this.selectedValues.add(input.value.toString()) : this.selectedValues.delete(input.value.toString());
 				}
 
-				if(this.changeCallback)
-					this.changeCallback();
-
+				this.fireCallback('change');
 				this.recalculate();
 			});
 
@@ -2693,8 +2691,7 @@ class MultiSelect {
 
 		options.querySelector('.no-matches').classList.toggle('hidden', total != hidden);
 
-		if(this.changeCallback)
-			this.changeCallback();
+		this.fireCallback('change');
 	}
 
 	/**
@@ -2704,11 +2701,16 @@ class MultiSelect {
 	 * @param  Function	callback	The callback to call when the selected value in the multiselect changes.
 	 */
 	on(event, callback) {
+		this.callbacks.add({event, callback});
+	}
 
-		if(event != 'change')
-			throw new Page.exception('Only Change event is supported...');
+	fireCallback(event) {
 
-		this.changeCallback = callback;
+		for(const callback of this.callbacks) {
+
+			if(callback.event == event)
+				callback.callback();
+		}
 	}
 
 	/**
@@ -3465,11 +3467,11 @@ class SearchColumnFilter {
 			searchType = container.querySelector('select.searchType'),
 			searchQuery = container.querySelector('.searchQuery');
 
-		searchQuery.on('keyup', () => this.searchColumns.changeCallback());
-		searchQuery.on('search', () => this.searchColumns.changeCallback());
+		searchQuery.on('keyup', () => this.searchColumns.fireCallback('change'));
+		searchQuery.on('search', () => this.searchColumns.fireCallback('change'));
 
 		for(const select of container.querySelectorAll('select'))
-			select.on('change', () => this.searchColumns.changeCallback());
+			select.on('change', () => this.searchColumns.fireCallback('change'));
 
 		for(const filter of DataSourceColumnFilter.types) {
 
@@ -3495,8 +3497,7 @@ class SearchColumnFilter {
 
 			this.searchColumns.delete(this);
 
-			if (this.searchColumns.changeCallback)
-				this.searchColumns.changeCallback();
+			this.searchColumns.fireCallback('change');
 
 			this.searchColumns.render();
 		});
