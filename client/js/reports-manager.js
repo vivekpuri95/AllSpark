@@ -6478,6 +6478,9 @@ class ReportTransformation {
 		const type = DataSourceTransformation.types.get(this.key);
 
 		this.name = new type().name;
+
+		if(!this.options)
+			this.options = {};
 	}
 
 	get container() {
@@ -6594,6 +6597,15 @@ class ReportTransformation {
 
 		return transformation ? transformation.executionDuration : 0;
 	}
+
+	get json() {
+
+		const response = {
+			type: this.key,
+		};
+
+		return response;
+	}
 }
 
 ReportTransformation.types = new Map;
@@ -6626,7 +6638,7 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 		columns.innerHTML = `<h4>Columns</h4>`;
 		values.innerHTML = `<h4>Values</h4>`;
 
-		for(const row of this.rows || [])
+		for(const row of this.options.rows || [])
 			rows.appendChild(this.row(row));
 
 		const addRow = document.createElement('button');
@@ -6641,7 +6653,7 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 
 		rows.appendChild(addRow);
 
-		for(const column of this.columns || [])
+		for(const column of this.options.columns || [])
 			columns.appendChild(this.column(column));
 
 		const addColumn = document.createElement('button');
@@ -6656,7 +6668,7 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 
 		columns.appendChild(addColumn);
 
-		for(const value of this.values || [])
+		for(const value of this.options.values || [])
 			values.appendChild(this.value(value));
 
 		const addValue = document.createElement('button');
@@ -6682,34 +6694,35 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 
 	get json() {
 
-		const response = {
-			type: this.key,
+		const response = super.json;
+
+		response.options = {
 			rows: [],
 			columns: [],
 			values: [],
 		};
 
 		for(const row of this.container.querySelectorAll('.row')) {
-			response.rows.push({
+			response.options.rows.push({
 				column: row.querySelector('*[name=column]').value,
 			});
 		}
 
 		for(const column of this.container.querySelectorAll('.column')) {
-			response.columns.push({
+			response.options.columns.push({
 				column: column.querySelector('*[name=column]').value,
 			});
 		}
 
 		for(const value of this.container.querySelectorAll('.value')) {
-			response.values.push({
+			response.options.values.push({
 				column: value.querySelector('*[name=column]').value,
 				function: value.querySelector('select[name=function]').value,
 				name: value.querySelector('input[name=name]').value
 			});
 		}
 
-		if(!response.rows.length && !response.columns.length && !response.values.length)
+		if(!response.options.rows.length && !response.options.columns.length && !response.options.values.length)
 			return null;
 
 		return response;
@@ -6813,7 +6826,7 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 
 		container.textContent = null;
 
-		for(const filter of this.filters || [])
+		for(const filter of this.options.filters || [])
 			container.appendChild(this.filter(filter));
 
 		const addFilter = document.createElement('button');
@@ -6835,22 +6848,24 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 
 	get json() {
 
-		const response = {
-			type: this.key,
+		const response = super.json;
+
+		response.options = {
 			filters: [],
 		};
 
 		for(const filter of this.container.querySelectorAll('.filter')) {
 
-			response.filters.push({
+			response.options.filters.push({
 				column: filter.querySelector('select[name=column]').value,
 				function: filter.querySelector('select[name=function]').value,
 				value: filter.querySelector('input[name=value]').value,
 			});
 		}
 
-		if(!response.filters.length)
+		if(!response.options.filters.length) {
 			return null;
+		}
 
 		return response;
 	}
@@ -6949,7 +6964,7 @@ ReportTransformation.types.set('autofill', class ReportTransformationAutofill ex
 
 			<label>
 				<span>Fill With</span>
-				<input type="text" name="content" value="${this.content || ''}">
+				<input type="text" name="content" value="${this.options.content || ''}">
 			</label>
 
 			<label>
@@ -6983,17 +6998,17 @@ ReportTransformation.types.set('autofill', class ReportTransformationAutofill ex
 			endFilter.parentElement.classList.add('hidden');
 		}
 
-		if(this.column)
-			column.dataset.value = this.column;
+		if(this.options.column)
+			column.dataset.value = this.options.column;
 
-		if(this.granularity)
-			granularity.value = this.granularity;
+		if(this.options.granularity)
+			granularity.value = this.options.granularity;
 
-		if(this.start_filter)
-			startFilter.value = this.start_filter;
+		if(this.options.start_filter)
+			startFilter.value = this.options.start_filter;
 
-		if(this.end_filter)
-			endFilter.value = this.end_filter;
+		if(this.options.end_filter)
+			endFilter.value = this.options.end_filter;
 
 		this.render();
 
@@ -7016,14 +7031,17 @@ ReportTransformation.types.set('autofill', class ReportTransformationAutofill ex
 
 	get json() {
 
-		return {
-			type: this.key,
+		const response = super.json;
+
+		response.options = {
 			column: this.container.querySelector('[name=column]').value,
 			granularity: this.container.querySelector('[name=granularity]').value,
 			content: this.container.querySelector('[name=content]').value,
 			start_filter: this.container.querySelector('[name=start_filter]').value,
 			end_filter: this.container.querySelector('[name=end_filter]').value,
 		};
+
+		return response;
 	}
 });
 
@@ -7060,7 +7078,7 @@ ReportTransformation.types.set('stream', class ReportTransformationStream extend
 		joins.innerHTML = `<h4>Join On</h4>`;
 		columns.innerHTML = `<h4>Columns</h4>`;
 
-		for(const join of this.joins || [])
+		for(const join of this.options.joins || [])
 			joins.appendChild(this.join(join));
 
 		const addJoin = document.createElement('button');
@@ -7075,7 +7093,7 @@ ReportTransformation.types.set('stream', class ReportTransformationStream extend
 
 		joins.appendChild(addJoin);
 
-		for(const column of this.columns || [])
+		for(const column of this.options.columns || [])
 			columns.appendChild(this.column(column));
 
 		const addColumn = document.createElement('button');
@@ -7112,7 +7130,7 @@ ReportTransformation.types.set('stream', class ReportTransformationStream extend
 		this.visualizations.datalist = datalist;
 		this.visualizations.render();
 
-		this.visualizations.value = this.visualization_id;
+		this.visualizations.value = this.options.visualization_id;
 
 		container.querySelector('.visualization').appendChild(this.visualizations.container);
 		container.appendChild(joins);
@@ -7123,15 +7141,16 @@ ReportTransformation.types.set('stream', class ReportTransformationStream extend
 
 	get json() {
 
-		const response = {
-			type: this.key,
+		const response = super.json;
+
+		response.options = {
 			visualization_id: this.visualizations.value[0],
 			joins: [],
 			columns: [],
 		};
 
 		for(const join of this.container.querySelectorAll('.join')) {
-			response.joins.push({
+			response.options.joins.push({
 				sourceColumn: join.querySelector('select[name=sourceColumn]').value,
 				function: join.querySelector('select[name=function]').value,
 				streamColumn: join.querySelector('input[name=streamColumn]').value,
@@ -7139,7 +7158,7 @@ ReportTransformation.types.set('stream', class ReportTransformationStream extend
 		}
 
 		for(const column of this.container.querySelectorAll('.column')) {
-			response.columns.push({
+			response.options.columns.push({
 				stream: column.querySelector('select[name=stream]').value,
 				column: column.querySelector('input[name=column]').value,
 				function: column.querySelector('select[name=function]').value,
@@ -7147,8 +7166,9 @@ ReportTransformation.types.set('stream', class ReportTransformationStream extend
 			});
 		}
 
-		if(!response.columns.length)
+		if(!response.options.columns.length) {
 			return null;
+		}
 
 		return response;
 	}
@@ -7279,7 +7299,7 @@ ReportTransformation.types.set('restrict-columns', class ReportTransformationRes
 			label.querySelector('input').disabled = this.multiSelect.value.length ? false : true;
 		});
 
-		label.querySelector('input').checked = this.exclude || '';
+		label.querySelector('input').checked = this.options.exclude || '';
 
 		container.appendChild(columns);
 		container.appendChild(label);
@@ -7306,16 +7326,19 @@ ReportTransformation.types.set('restrict-columns', class ReportTransformationRes
 		this.multiSelect.datalist = datalist;
 		this.multiSelect.render();
 
-		this.multiSelect.value = value.length ? value : this.columns || [];
+		this.multiSelect.value = value.length ? value : this.options.columns || [];
 	}
 
 	get json() {
 
-		return {
-			type: this.key,
+		const response = super.json;
+
+		response.options = {
 			columns: this.multiSelect.value,
 			exclude: this.container.querySelector('label input[name="exclude"]').checked,
 		};
+
+		return response;
 	};
 });
 
@@ -7338,7 +7361,7 @@ ReportTransformation.types.set('sort', class ReportTransformationSort extends Re
 		container.classList.add('sort');
 		container.textContent = null;
 
-		for(const column of this.columns || [])
+		for(const column of this.options.columns || [])
 			container.appendChild(this.column(column));
 
 		const addColumn = document.createElement('button');
@@ -7360,14 +7383,15 @@ ReportTransformation.types.set('sort', class ReportTransformationSort extends Re
 
 	get json() {
 
-		const response = {
-			type: this.key,
+		const response = super.json;
+
+		response.options = {
 			columns: [],
 		};
 
 		for(const column of this.container.querySelectorAll('.column')) {
 
-			response.columns.push({
+			response.options.columns.push({
 				column: column.querySelector('select[name=column]').value,
 				order: column.querySelector('select[name=order]').value,
 				numeric: column.querySelector('select[name=numeric]').value,
@@ -7375,7 +7399,7 @@ ReportTransformation.types.set('sort', class ReportTransformationSort extends Re
 			});
 		}
 
-		if(!response.columns.length)
+		if(!response.options.columns.length)
 			return null;
 
 		return response;
@@ -7501,9 +7525,9 @@ ReportTransformation.types.set('linear-regression', class ReportTransformationRe
 		this.multiSelectX = new MultiSelect({multiple: false, expand: true});
 		this.multiSelectY = new MultiSelect({multiple: false, expand: true});
 
-		if (!this.columns) {
+		if (!this.options.columns) {
 
-			this.columns = {
+			this.options.columns = {
 				x: '',
 				y: '',
 				extrapolate: 0
@@ -7517,7 +7541,7 @@ ReportTransformation.types.set('linear-regression', class ReportTransformationRe
 			this.extrapolateUnits.min = 0;
 			this.extrapolateUnits.step = 1;
 
-			this.extrapolateUnits.value = this.columns.extrapolate || 0;
+			this.extrapolateUnits.value = this.options.columns.extrapolate || 0;
 		}
 	}
 
@@ -7576,18 +7600,18 @@ ReportTransformation.types.set('linear-regression', class ReportTransformationRe
 
 		this.multiSelectX.render();
 
-		if (this.columns.x && this.multiSelectX.datalist.filter(x => x.value == this.columns.x)) {
+		if (this.options.columns.x && this.multiSelectX.datalist.filter(x => x.value == this.options.columns.x)) {
 
-			this.multiSelectX.value = this.columns.x;
+			this.multiSelectX.value = this.options.columns.x;
 		}
 
-		this.multiSelectY.datalist = JSON.parse(JSON.stringify(datalist)).filter(x => x.value != this.columns.x);
+		this.multiSelectY.datalist = JSON.parse(JSON.stringify(datalist)).filter(x => x.value != this.options.columns.x);
 
 		this.multiSelectY.render();
 
-		if (this.columns.y && this.multiSelectY.datalist.filter(x => x.value == this.columns.y)) {
+		if (this.options.columns.y && this.multiSelectY.datalist.filter(x => x.value == this.options.columns.y)) {
 
-			this.multiSelectY.value = this.columns.y;
+			this.multiSelectY.value = this.options.columns.y;
 		}
 
 		this.multiSelectX.on('change', () => {
@@ -7601,17 +7625,18 @@ ReportTransformation.types.set('linear-regression', class ReportTransformationRe
 			this.multiSelectY.datalist = this.multiSelectX.datalist.filter(x => x.value != multiselectXValue);
 
 			this.multiSelectY.render();
-			this.multiSelectY.value = this.multiSelectY.value || this.columns.y;
+			this.multiSelectY.value = this.multiSelectY.value || this.options.columns.y;
 
 		});
 	}
 
 	get json() {
 
-		const value = this.multiSelectY.value[0]
+		const
+			value = this.multiSelectY.value[0],
+			response = super.json;
 
-		return {
-			type: this.key,
+		response.options = {
 			columns: {
 				x: this.multiSelectX.value[0],
 				y: this.multiSelectY.value[0],
@@ -7619,6 +7644,8 @@ ReportTransformation.types.set('linear-regression', class ReportTransformationRe
 				extrapolate: this.extrapolateUnits.value
 			},
 		};
+
+		return response;
 	}
 });
 
@@ -7639,12 +7666,12 @@ ReportTransformation.types.set('custom-column', class ReportTransformationMultip
 
 			<label>
 				<span>Column Name</span>
-				<input type="text" name="column" value="${this.column || ''}">
+				<input type="text" name="column" value="${this.options.column || ''}">
 			</label>
 
 			<label>
 				<span>Formula</span>
-				<textarea name="formula">${this.formula || ''}</textarea>
+				<textarea name="formula">${this.options.formula || ''}</textarea>
 				<small class="error"></small>
 			</label>
 		`;
@@ -7687,11 +7714,15 @@ ReportTransformation.types.set('custom-column', class ReportTransformationMultip
 
 	get json() {
 
-		return {
+		const response = super.json;
+
+		response.options = {
 			type: this.key,
 			column: this.container.querySelector('label input[name="column"]').value,
 			formula: this.container.querySelector('label textarea[name="formula"]').value,
 		};
+
+		return response;
 	}
 });
 

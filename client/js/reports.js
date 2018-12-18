@@ -4202,7 +4202,11 @@ class DataSourceTransformations extends Set {
 
 		const type = DataSourceTransformation.types.get('filters');
 
-		this.add(new type({type: 'filters', filters, implied: true}, this.source));
+		const options = {
+			filters,
+		};
+
+		this.add(new type({type: 'filters', options, implied: true}, this.source));
 	}
 
 	loadSorting() {
@@ -4220,7 +4224,11 @@ class DataSourceTransformations extends Set {
 				}
 			];
 
-		this.add(new type({type: 'sort', columns, implied: true}, this.source));
+			const options = {
+				columns,
+			};
+
+		this.add(new type({type: 'sort', options, implied: true}, this.source));
 	}
 }
 
@@ -4241,6 +4249,9 @@ class DataSourceTransformation {
 			rows: null,
 			columns: new DataSourceColumns(this.source),
 		};
+
+		if(!this.options)
+			this.options = {};
 	}
 
 	async run(response) {
@@ -4302,7 +4313,7 @@ DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot 
 		}
 
 		const
-			[{column: groupColumn}] = this.columns && this.columns.length ? this.columns : [{}],
+			[{column: groupColumn}] = this.options.columns && this.options.columns.length ? this.options.columns : [{}],
 			columns = new Set,
 			rows = new Map;
 
@@ -4319,7 +4330,7 @@ DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot 
 
 			let key = {};
 
-			for(const row of this.rows || []) {
+			for(const row of this.options.rows || []) {
 				key[row.column] = responseRow[row.column];
 			}
 
@@ -4343,11 +4354,11 @@ DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot 
 						continue;
 					}
 
-					row.get(column).push(responseRow[this.values[0].column]);
+					row.get(column).push(responseRow[this.options.values[0].column]);
 				}
 			} else {
 
-				for(const value of this.values || []) {
+				for(const value of this.options.values || []) {
 
 					if(!(value.column in responseRow)) {
 						continue;
@@ -4381,11 +4392,11 @@ DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot 
 					function_ = null;
 
 				if(groupColumn)
-					function_ = this.values[0].function;
+					function_ = this.options.values[0].function;
 
 				else {
 
-					for(const value of this.values) {
+					for(const value of this.options.values) {
 						if((value.name || value.column) == groupColumnValue) {
 							function_ = value.function;
 						}
@@ -4448,7 +4459,7 @@ DataSourceTransformation.types.set('filters', class DataSourceTransformationFilt
 
 	async execute(response = []) {
 
-		if(!response || !response.length || !this.filters || !this.filters.length)
+		if(!response || !response.length || !this.options.filters || !this.options.filters.length)
 			return response;
 
 		const newResponse = [];
@@ -4457,7 +4468,7 @@ DataSourceTransformation.types.set('filters', class DataSourceTransformationFilt
 
 			let status = true;
 
-			for(const _filter of this.filters) {
+			for(const _filter of this.options.filters) {
 
 				const [filter] = DataSourceColumnFilter.types.filter(f => f.slug == _filter.function);
 
@@ -4499,22 +4510,22 @@ DataSourceTransformation.types.set('autofill', class DataSourceTransformationAut
 			start = null,
 			end = null;
 
-		if(this.start_filter  && this.source.filters.has(this.start_filter) && this.end_filter && this.source.filters.has(this.end_filter)) {
+		if(this.options.start_filter  && this.source.filters.has(this.options.start_filter) && this.options.end_filter && this.source.filters.has(this.options.end_filter)) {
 
-			start = Date.parse(this.source.filters.get(this.start_filter).value);
-			end = Date.parse(this.source.filters.get(this.end_filter).value);
+			start = Date.parse(this.source.filters.get(this.options.start_filter).value);
+			end = Date.parse(this.source.filters.get(this.options.end_filter).value);
 		}
 
 		else {
 
 			for(const row of response) {
 
-				if(!start || row[this.column] < start) {
-					start = row[this.column];
+				if(!start || row[this.options.column] < start) {
+					start = row[this.options.column];
 				}
 
-				if(!end || row[this.column] > end) {
-					end = row[this.column];
+				if(!end || row[this.options.column] > end) {
+					end = row[this.options.column];
 				}
 			}
 
@@ -4564,12 +4575,12 @@ DataSourceTransformation.types.set('autofill', class DataSourceTransformationAut
 
 			let key;
 
-			if(this.granularity == 'number') {
-				key = parseFloat(row[this.column]);
+			if(this.options.granularity == 'number') {
+				key = parseFloat(row[this.options.column]);
 			}
 
 			else {
-				key = Date.parse(row[this.column]);
+				key = Date.parse(row[this.options.column]);
 			}
 
 			mappedResponse[key] = row;
@@ -4586,13 +4597,13 @@ DataSourceTransformation.types.set('autofill', class DataSourceTransformationAut
 			else {
 
 				for(const key in response[0]) {
-					newResponse[start][key] = this.content;
+					newResponse[start][key] = this.options.content;
 				}
 
-				newResponse[start][this.column] = granularity[this.granularity].output(start);
+				newResponse[start][this.options.column] = granularity[this.options.granularity].output(start);
 			}
 
-			start = granularity[this.granularity].step(start);
+			start = granularity[this.options.granularity].step(start);
 		}
 
 		return Object.values(newResponse);
@@ -4611,7 +4622,7 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 			return response;
 		}
 
-		if(!this.visualization_id) {
+		if(!this.options.visualization_id) {
 			return this.source.error('Stream visualization not selected!');
 		}
 
@@ -4619,7 +4630,7 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 
 		for(const _report of DataSource.list.values()) {
 
-			const [visualization] = _report.visualizations.filter(v => v.visualization_id == this.visualization_id);
+			const [visualization] = _report.visualizations.filter(v => v.visualization_id == this.options.visualization_id);
 
 			if(!visualization) {
 				continue;
@@ -4633,9 +4644,9 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 			return this.source.error('Stream visualization not found!');
 		}
 
-		[report.visualizations.selected] = report.visualizations.filter(v => v.visualization_id == this.visualization_id);
-
 		const filterFetches = [];
+
+		[report.visualizations.selected] = report.visualizations.filter(v => v.visualization_id == this.options.visualization_id)
 
 		for(const filter of report.filters.values()) {
 
@@ -4669,7 +4680,7 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 
 			let newRow = [];
 
-			for(const column of this.columns) {
+			for(const column of this.options.columns) {
 
 				if(column.stream != 'base') {
 					continue;
@@ -4686,14 +4697,14 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 			for(const streamRow of streamResponse) {
 
 				// If any of the stream's join conditions don't match then skip this row
-				for(const join of this.joins) {
+				for(const join of this.options.joins) {
 
 					if(!filters[join.function].apply(baseRow[join.sourceColumn], streamRow.get(join.streamColumn))) {
 						continue outer;
 					}
 				}
 
-				for(const column of this.columns) {
+				for(const column of this.options.columns) {
 
 					if(column.stream != 'stream') {
 						continue;
@@ -4764,7 +4775,7 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 				{
 					const row = [];
 
-					for(const column of this.columns) {
+					for(const column of this.options.columns) {
 
 						if((column.name || column.column) in newRow) {
 							row[column.name || column.column] = newRow[column.name || column.column];
@@ -4792,11 +4803,11 @@ DataSourceTransformation.types.set('sort', class DataSourceTransformationRestric
 
 	async execute(response = []) {
 
-		if(!response || !response.length || !this.columns) {
+		if(!response || !response.length || !this.options.columns) {
 			return response;
 		}
 
-		for(const column of this.columns) {
+		for(const column of this.options.columns) {
 
 			column.options = {
 				numeric: column.numeric != 'alphabetical',
@@ -4806,7 +4817,7 @@ DataSourceTransformation.types.set('sort', class DataSourceTransformationRestric
 
 		response = response.sort((a, b) => {
 
-			for(const column of this.columns) {
+			for(const column of this.options.columns) {
 
 				if(!(column.column in a) || !(column.column in b)) {
 					continue;
@@ -4850,7 +4861,7 @@ DataSourceTransformation.types.set('restrict-columns', class DataSourceTransform
 
 	async execute(response = []) {
 
-		if(!response || !response.length || !this.columns) {
+		if(!response || !response.length || !this.options.columns) {
 			return response;
 		}
 
@@ -4862,14 +4873,14 @@ DataSourceTransformation.types.set('restrict-columns', class DataSourceTransform
 
 			for(const key in data) {
 
-				if(this.exclude) {
+				if(this.options.exclude) {
 
-					if(!this.columns.includes(key)) {
+					if(!this.options.columns.includes(key)) {
 						temp[key] = data[key];
 					}
 				}
 
-				else if(this.columns.includes(key)) {
+				else if(this.options.columns.includes(key)) {
 					temp[key] = data[key];
 				}
 			}
@@ -4890,7 +4901,7 @@ DataSourceTransformation.types.set('linear-regression', class DataSourceTransfor
 
 	async execute(response = []) {
 
-		if (!(this.columns.x || this.columns.y)) {
+		if (!(this.options.columns.x || this.options.columns.y)) {
 
 			return response;
 		}
@@ -4898,7 +4909,7 @@ DataSourceTransformation.types.set('linear-regression', class DataSourceTransfor
 		this.xs = [], this.ys = [];
 
 		try {
-			if (Date.parse(response[0][this.columns.x])) {
+			if (Date.parse(response[0][this.options.columns.x])) {
 
 				this.isDateX = true;
 			}
@@ -4908,8 +4919,8 @@ DataSourceTransformation.types.set('linear-regression', class DataSourceTransfor
 
 		for (const row of response) {
 
-			this.xs.push(this.isDateX ? +new Date(row[this.columns.x]) : parseFloat(row[this.columns.x]));
-			this.ys.push(parseFloat(row[this.columns.y]));
+			this.xs.push(this.isDateX ? +new Date(row[this.options.columns.x]) : parseFloat(row[this.options.columns.x]));
+			this.ys.push(parseFloat(row[this.options.columns.y]));
 		}
 
 		const slope = this.slope();
@@ -4918,10 +4929,10 @@ DataSourceTransformation.types.set('linear-regression', class DataSourceTransfor
 
 		for (const row of response) {
 
-			row[`${this.columns.name} Linear Regression`] = slope * (this.isDateX ? +new Date(row[this.columns.x]) : row[this.columns.x]) + this.yInterceptPoint;
+			row[`${this.options.columns.name} Linear Regression`] = slope * (this.isDateX ? +new Date(row[this.options.columns.x]) : row[this.options.columns.x]) + this.yInterceptPoint;
 		}
 
-		if (this.columns.extrapolate) {
+		if (this.options.columns.extrapolate) {
 
 			response = this.extrapolate(response);
 		}
@@ -4961,31 +4972,31 @@ DataSourceTransformation.types.set('linear-regression', class DataSourceTransfor
 
 	extrapolate(response) {
 
-		const units = parseInt(this.columns.extrapolate);
+		const units = parseInt(this.options.columns.extrapolate);
 
 		let
 			extrapolatedData = [],
 			lastRow = response[response.length - 1],
-			otherColumns = Object.keys(response[0]).filter(x => ![this.columns.x, this.columns.x].includes(x)),
-			asc = response.length > 1 ? response[response.length - 1][this.columns.x] > response[response.length - 2][this.columns.x] : false
+			otherColumns = Object.keys(response[0]).filter(x => ![this.options.columns.x, this.options.columns.x].includes(x)),
+			asc = response.length > 1 ? response[response.length - 1][this.options.columns.x] > response[response.length - 2][this.options.columns.x] : false
 		;
 
-		switch ((this.source.columns.get(this.columns.x).type || {name: 'string'}).name) {
+		switch ((this.source.columns.get(this.options.columns.x).type || {name: 'string'}).name) {
 
 			case 'date':
 			case 'string':
 
-				const timingUnitSeconds = this.isDateX ? 24 * 60 * 60 * 1000 : (response[3] - resposne[0]) / 3;
+				const timingUnitSeconds = this.isDateX ? 24 * 60 * 60 * 1000 : (response[3] - response[0]) / 3;
 
 				for (let y = 1; y <= units; y++) {
 
-					const ip = (this.isDateX ? +new Date(lastRow[this.columns.x]) : +lastRow[this.columns.x]) + (y * timingUnitSeconds);
+					const ip = (this.isDateX ? +new Date(lastRow[this.options.columns.x]) : +lastRow[this.options.columns.x]) + (y * timingUnitSeconds);
 					const op = (this.lineSlope * ip) + this.yInterceptPoint;
 
 					const row = {};
 
-					row[this.columns.x] = new Date(ip).toISOString();
-					row[`${this.columns.name} Linear Regression`] = op;
+					row[this.options.columns.x] = new Date(ip).toISOString();
+					row[`${this.options.columns.name} Linear Regression`] = op;
 
 					otherColumns.forEach(x => row[x] = row[x] ? row[x] : 0);
 					extrapolatedData.push(row);
@@ -4997,14 +5008,14 @@ DataSourceTransformation.types.set('linear-regression', class DataSourceTransfor
 
 				for (let x = 1; x <= units; x++) {
 
-					let ip = new Date(lastRow[this.columns.x]);
+					let ip = new Date(lastRow[this.options.columns.x]);
 					ip = ip.setMonth(ip.getMonth() + x);
 					const op = this.lineSlope * ip + this.yInterceptPoint;
 
 					const row = {};
 
-					row[this.columns.x] = ip;
-					row[`${this.columns.name} Linear Regression`] = op;
+					row[this.options.columns.x] = ip;
+					row[`${this.options.columns.name} Linear Regression`] = op;
 
 					otherColumns.forEach(x => row[x] = row[x] ? row[x] : 0);
 					extrapolatedData.push(row);
@@ -5027,14 +5038,14 @@ DataSourceTransformation.types.set('custom-column', class DataSourceTransformati
 
 	async execute(response = []) {
 
-		if(!response || !response.length || !this.formula)
+		if(!response || !response.length || !this.options.formula)
 			return response;
 
 		const newResponse = [];
 
 		for(const row of response) {
 
-			let formula = this.formula;
+			let formula = this.options.formula;
 
 			for(const key in row) {
 
@@ -5051,13 +5062,13 @@ DataSourceTransformation.types.set('custom-column', class DataSourceTransformati
 
 			try {
 
-				row[this.column] = eval(formula);
+				row[this.options.column] = eval(formula);
 
-				if(!isNaN(parseFloat(row[this.column])))
-					row[this.column] = parseFloat(row[this.column]);
+				if(!isNaN(parseFloat(row[this.options.column])))
+					row[this.options.column] = parseFloat(row[this.options.column]);
 
 			} catch(e) {
-				row[this.column] = null;
+				row[this.options.column] = null;
 			}
 
 			newResponse.push(row);
@@ -7947,7 +7958,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					}
 				}
 			}
-      
+
 			if(axis.stacked) {
 				columnsData = d3.layout.stack()(columnsData);
 			}
