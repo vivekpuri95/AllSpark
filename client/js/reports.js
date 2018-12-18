@@ -5038,14 +5038,14 @@ DataSourceTransformation.types.set('custom-column', class DataSourceTransformati
 
 	async execute(response = []) {
 
-		if(!response || !response.length || !this.formula)
+		if(!response || !response.length || !this.options.formula)
 			return response;
 
 		const newResponse = [];
 
 		for(const row of response) {
 
-			let formula = this.formula;
+			let formula = this.options.formula;
 
 			for(const key in row) {
 
@@ -5062,13 +5062,13 @@ DataSourceTransformation.types.set('custom-column', class DataSourceTransformati
 
 			try {
 
-				row[this.column] = eval(formula);
+				row[this.options.column] = eval(formula);
 
-				if(!isNaN(parseFloat(row[this.column])))
-					row[this.column] = parseFloat(row[this.column]);
+				if(!isNaN(parseFloat(row[this.options.column])))
+					row[this.options.column] = parseFloat(row[this.options.column]);
 
 			} catch(e) {
-				row[this.column] = null;
+				row[this.options.column] = null;
 			}
 
 			newResponse.push(row);

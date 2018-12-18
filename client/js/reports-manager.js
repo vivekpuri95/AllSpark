@@ -7666,12 +7666,12 @@ ReportTransformation.types.set('custom-column', class ReportTransformationMultip
 
 			<label>
 				<span>Column Name</span>
-				<input type="text" name="column" value="${this.column || ''}">
+				<input type="text" name="column" value="${this.options.column || ''}">
 			</label>
 
 			<label>
 				<span>Formula</span>
-				<textarea name="formula">${this.formula || ''}</textarea>
+				<textarea name="formula">${this.options.formula || ''}</textarea>
 				<small class="error"></small>
 			</label>
 		`;
@@ -7714,11 +7714,15 @@ ReportTransformation.types.set('custom-column', class ReportTransformationMultip
 
 	get json() {
 
-		return {
+		const response = super.json;
+
+		response.options = {
 			type: this.key,
 			column: this.container.querySelector('label input[name="column"]').value,
 			formula: this.container.querySelector('label textarea[name="formula"]').value,
 		};
+
+		return response;
 	}
 });
 
