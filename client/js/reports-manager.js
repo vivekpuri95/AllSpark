@@ -2127,7 +2127,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		this.container.querySelector('.visualization-form.stage-form').insertBefore(this.dashboards.container, this.container.querySelector('.visualization-form.stage-form .filters'));
 
 		this.dashboards.clear();
-		this.page.preview.position('right');
+		await this.page.preview.position('right');
 
 		this.dashboards.load();
 
