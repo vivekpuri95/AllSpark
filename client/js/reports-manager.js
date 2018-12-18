@@ -2350,16 +2350,19 @@ class ReportsManagerFilters extends Map {
 				this.addForm.container.elements[key].value = filter[key];
 		}
 
-		// if(this.addForm.container.default_value.value)
-			// this.addForm.container.default_type.value = 'default_value';
-
-		// else if(this.addForm.container.offset.value)
-			// this.addForm.container.default_type.value = 'offset';
-
-		// else
-			// this.addForm.container.default_type.value = 'none';
-
 		this.addForm.datasetMultiSelect.value = filter.dataset || [];
+
+		if(this.addForm.container.default_value.value) {
+			this.addForm.container.default_type.value = 'default_value';
+		}
+
+		else if(this.addForm.container.offset.value) {
+			this.addForm.container.default_type.value = 'offset';
+		}
+
+		else {
+			this.addForm.container.default_type.value = 'none';
+		}
 
 		this.addForm.changeFilterType();
 		this.addForm.updateFormFields();
@@ -8093,11 +8096,11 @@ class ReportVisualizationFilter {
 		let default_data;
 
 		if(this.reportFilter.default_value) {
-			default_data = `Default Value: ${this.reportFilter.default_value}`;
+			default_data = `Default Fixed Value: ${this.reportFilter.default_value}`;
 		}
 
 		else if(!isNaN(parseFloat(this.reportFilter.offset))) {
-			default_data = `Default Value Offset: ${this.reportFilter.offset}`;
+			default_data = `Default Relative Value: ${this.reportFilter.offset}`;
 		}
 
 		if(default_data) {
