@@ -10,8 +10,9 @@ self.addEventListener('install', event => {
 
 	event.waitUntil((async () => {
 
-		for(const key of await caches.keys())
+		for(const key of await caches.keys()) {
 			caches.delete(key);
+		}
 
 		const cache = await caches.open(cacheName);
 
@@ -33,8 +34,9 @@ self.addEventListener('fetch', async event => {
 		const match = await caches.match(event.request);
 
 		// Return the cached response if we're offline or we're loading a non API resource
-		if(match && (!navigator.onLine || !event.request.url.includes('/v2/')))
+		if(match && (!navigator.onLine || !event.request.url.includes('/v2/'))) {
 			return match;
+		}
 
 		const response = await fetch(event.request.clone());
 
@@ -51,12 +53,15 @@ self.addEventListener('fetch', async event => {
 
 self.addEventListener('message', event => {
 
-	if(!event.data || !event.data.action)
+	if(!event.data || !event.data.action) {
 		return event.ports[0].postMessage({action: '', data: now});
+	}
 
-	if(event.data.action == 'test')
+	if(event.data.action == 'test') {
 		event.ports[0].postMessage({action: event.data.action, response: 'test response'});
+	}
 
-	if(event.data.action == 'startTime')
+	if(event.data.action == 'startTime') {
 		event.ports[0].postMessage({action: event.data.action, response: now});
+	}
 });

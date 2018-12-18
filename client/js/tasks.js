@@ -26,27 +26,31 @@ Page.class = class Tasks extends Page {
 
 		const what = state ? state.what : location.pathname.split('/').pop();
 
-		if(what == 'add')
+		if(what == 'add') {
 			return Task.add(this);
+		}
 
 		if(what == 'define') {
 
 			const id = parseInt(location.pathname.split('/')[location.pathname.split('/').length - 2]);
 
-			if(this.list.has(id))
+			if(this.list.has(id)) {
 				return this.list.get(id).define();
+			}
 		}
 
-		if(this.list.has(parseInt(what)))
+		if(this.list.has(parseInt(what))) {
 			return this.list.get(parseInt(what)).edit();
+		}
 
 		await Sections.show('list');
 	}
 
 	async back() {
 
-		if(history.state)
+		if(history.state) {
 			return history.back();
+		}
 
 		await Sections.show('list');
 
@@ -73,28 +77,32 @@ Page.class = class Tasks extends Page {
 
 	process([tasks, providers, connections]) {
 
-		if(!Array.isArray(tasks))
+		if(!Array.isArray(tasks)) {
 			throw Page.exception('Invalid task list response!');
+		}
 
 		this.list.clear();
 
 		for(const task of tasks) {
 
-			if(!Task.types.has(task.type))
+			if(!Task.types.has(task.type)) {
 				throw Page.exception('Invalid task type!');
+			}
 
 			this.list.set(task.id, new (Task.types.get(task.type))(task, this));
 		}
 
 		this.oauth.providers.clear();
 
-		for(const provider of providers)
+		for(const provider of providers) {
 			this.oauth.providers.set(provider.provider_id, provider);
+		}
 
 		this.oauth.connections.clear();
 
-		for(const connection of connections)
+		for(const connection of connections) {
 			this.oauth.connections.set(connection.id, connection);
+		}
 	}
 
 	render() {
@@ -103,11 +111,13 @@ Page.class = class Tasks extends Page {
 
 		tbody.textContent = null;
 
-		for(const task of this.list.values())
+		for(const task of this.list.values()) {
 			tbody.appendChild(task.row);
+		}
 
-		if(!tbody.children.length)
+		if(!tbody.children.length) {
 			tbody.innerHTML = '<tr><td class="NA" colspan="6">No Tasks found!</td></tr>';
+		}
 	}
 }
 
@@ -152,8 +162,9 @@ class Task {
 
 		await tasks.load();
 
-		if(!tasks.list.has(response.insertId))
+		if(!tasks.list.has(response.insertId)) {
 			throw new Page.exception('New task\'s id not found in task list!');
+		}
 
 		tasks.back();
 	}
@@ -172,8 +183,9 @@ class Task {
 
 		for(const element of Task.form.elements) {
 
-			if(element.name in this)
+			if(element.name in this) {
 				element.value = this[element.name];
+			}
 		}
 
 		Task.form.removeEventListener('submit', Task.formListener);
@@ -223,8 +235,9 @@ class Task {
 
 	get row() {
 
-		if(this.rowContainer)
+		if(this.rowContainer) {
 			return this.rowContainer;
+		}
 
 		const container = this.rowContainer = document.createElement('tr');
 
@@ -265,8 +278,9 @@ Task.types.set('google-analytics', class GoogleAnalyticsTask extends Task {
 
 		const container = this.tasks.container.querySelector('section#define');
 
-		if(container.querySelector('form'))
+		if(container.querySelector('form')) {
 			container.querySelector('form').remove();
+		}
 
 		container.appendChild(this.form);
 
@@ -277,8 +291,9 @@ Task.types.set('google-analytics', class GoogleAnalyticsTask extends Task {
 
 	get form() {
 
-		if(this.formElement)
+		if(this.formElement) {
 			return this.formElement;
+		}
 
 		const form = this.formElement = document.createElement('form');
 
@@ -334,19 +349,22 @@ Task.types.set('google-analytics', class GoogleAnalyticsTask extends Task {
 
 		for(const connection of this.tasks.oauth.connections.values()) {
 
-			if(!this.tasks.oauth.providers.has(connection.provider_id))
+			if(!this.tasks.oauth.providers.has(connection.provider_id)) {
 				continue;
+			}
 
 			form.oauth_connection_id.insertAdjacentHTML('beforeend', `
 				<option value="${connection.id}">${this.tasks.oauth.providers.get(connection.provider_id).name}</option>
 			`);
 		}
 
-		if(this.details && parseInt(this.details.oauth_connection_id))
+		if(this.details && parseInt(this.details.oauth_connection_id)) {
 			form.oauth_connection_id.value = this.details.oauth_connection_id;
+		}
 
-		if(this.details)
+		if(this.details) {
 			form.view.value = this.details.view;
+		}
 
 		form.on('submit', e => {
 			e.preventDefault();
@@ -391,8 +409,9 @@ Task.types.set('google-analytics', class GoogleAnalyticsTask extends Task {
 		this.form.querySelector('.metrics').appendChild(this.metricsMultiSelect.container);
 		this.form.querySelector('.dimensions').appendChild(this.dimensionsMultiSelect.container);
 
-		if(this.metadata || !this.details || !parseInt(this.details.oauth_connection_id))
+		if(this.metadata || !this.details || !parseInt(this.details.oauth_connection_id)) {
 			return;
+		}
 
 		const parameters = {oauth_connection_id: this.details.oauth_connection_id};
 

@@ -24,3 +24,7 @@
 a {
 	color: #333;
 }
+
+button[disabled] {
+	background: #fff;
+}

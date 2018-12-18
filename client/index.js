@@ -899,7 +899,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 								<button id="fork"><i class="fas fa-code-branch"></i> Fork</button>
 							</div>
 						</div>
-						<button id="schema-toggle"><i class="fas fa-database"></i> Schema</button>
+						<button id="schema-toggle" class="hidden"><i class="fas fa-database"></i> Schema</button>
 						<button id="filters-toggle"><i class="fas fa-filter"></i> Filters</button>
 						<button id="preview-toggle"><i class="fas fa-eye"></i> Preview</button>
 						<button id="edit-data-toggle"><i class="fas fa-edit"></i> Edit Data</button>

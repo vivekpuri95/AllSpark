@@ -48,8 +48,9 @@ class Connections extends Page {
 
 	async back() {
 
-		if(history.state)
+		if(history.state) {
 			return history.back();
+		}
 
 		await Sections.show('list');
 
@@ -84,17 +85,21 @@ class Connections extends Page {
 
 		Array.from(DataConnection.types.keys()).map(c => dataConnectionsList[c] = []);
 
-		for(const connection of response[0])
+		for(const connection of response[0]) {
 			dataConnectionsList[connection.type].push(connection);
+		}
 
-		for(const connection in dataConnectionsList)
+		for(const connection in dataConnectionsList) {
 			this.dataConnections.set(connection, new DataConnections(dataConnectionsList[connection], connection, this));
+		}
 
-		for(const provider of response[1] || [])
+		for(const provider of response[1] || []) {
 			this.oAuthProviders.set(provider.provider_id, provider);
+		}
 
-		for(const connection of response[2] || [])
+		for(const connection of response[2] || []) {
 			this.oAuthConnections.set(connection.id, new OAuthConnection(connection, this));
+		}
 	}
 
 	render(list) {
@@ -110,11 +115,11 @@ class Connections extends Page {
 
 		const dataConnections = list || this.dataConnections;
 
-		for(const connection of dataConnections.values())
+		for(const connection of dataConnections.values()) {
 			connContainer.appendChild(connection.container);
+		}
 
 		for(const oauth of this.oAuthConnections.values()) {
-
 			oauthContainer.appendChild(oauth.row);
 		}
 
@@ -126,16 +131,18 @@ class Connections extends Page {
 		const providerList = this.container.querySelector('#add-oauth-connection').provider;
 		providerList.textContent = null;
 
-		for(const provider of this.oAuthProviders.values())
+		for(const provider of this.oAuthProviders.values()) {
 			providerList.insertAdjacentHTML('beforeend', `<option value="${provider.provider_id}">${provider.name}</option>`);
+		}
 
 		Sections.show('list');
 	}
 
 	get connectionsContainer() {
 
-		if(this.connectionsContainerElement)
+		if(this.connectionsContainerElement) {
 			return this.connectionsContainerElement;
+		}
 
 		const container = this.connectionsContainerElement = document.createElement('div');
 		container.classList.add('connections');
@@ -184,12 +191,14 @@ class Connections extends Page {
 
 		for(const [key,value] of this.dataConnections) {
 
-			if(key.includes(string) || MetaData.datasources.get(key).name.toLowerCase().includes(string))
+			if(key.includes(string) || MetaData.datasources.get(key).name.toLowerCase().includes(string)) {
 				result.set(key, value)
+			}
 
 			for(const data of value) {
-				if(data.connection_name.toLowerCase().includes(string))
+				if(data.connection_name.toLowerCase().includes(string)) {
 					result.set(key, value);
+				}
 			}
 		}
 
@@ -215,14 +224,16 @@ class DataConnections extends Set {
 
 		this.form = this.connectionsContainer.querySelector('form');
 
-		for(const connection of connections)
+		for(const connection of connections) {
 			this.add(new DataConnection(connection, page));
+		}
 	}
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const connection = MetaData.datasources.get(this.type);
 
@@ -242,11 +253,13 @@ class DataConnections extends Set {
 
 		const row = container.querySelector('.row');
 
-		for(const connection of this)
+		for(const connection of this) {
 			row.appendChild(connection.row)
+		}
 
-		if(!row.childElementCount)
+		if(!row.childElementCount) {
 			row.innerHTML = '<div class="NA">No connection added</div>'
+		}
 
 		if(user.privileges.has('connection.insert')) {
 
@@ -276,8 +289,9 @@ class DataConnections extends Set {
 		this.connectionsContainer.querySelector('.test-result').classList.add('hidden');
 		this.connectionsContainer.querySelector('h1').textContent = `Add New ${MetaData.datasources.get(this.type).name} Connection`;
 
-		if(DataConnection.eventListener)
+		if(DataConnection.eventListener) {
 			this.form.removeEventListener('submit', DataConnection.eventListener);
+		}
 
 		this.form.reset();
 
@@ -317,8 +331,9 @@ class DataConnections extends Set {
 				}
 			}
 
-			if(await Storage.get('newUser'))
+			if(await Storage.get('newUser')) {
 				await UserOnboard.setup(true);
+			}
 
 			new SnackBar({
 				message: `${this.type} Connection Added`,
@@ -355,8 +370,9 @@ class DataConnection {
 
 	get row() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 		container.classList.add('connection');
@@ -376,8 +392,9 @@ class DataConnection {
 			});
 		}
 
-		if(container.querySelector('.red'))
+		if(container.querySelector('.red')) {
 			container.querySelector('.red').on('click', () => this.delete());
+		}
 
 		return container;
 	}
@@ -386,8 +403,9 @@ class DataConnection {
 
 		this.container.querySelector('h1').textContent = 'Editing ' + this.connection_name;
 
-		if(DataConnection.eventListener)
+		if(DataConnection.eventListener) {
 			this.form.removeEventListener('submit', DataConnection.eventListener);
+		}
 
 		this.form.on('submit', DataConnection.eventListener = async e => {
 			e.preventDefault();
@@ -413,8 +431,10 @@ class DataConnection {
 		test.on('click', DataConnection.test_listener = async () => this.test());
 
 		for(const key in this) {
-			if(this.form.elements[key])
+
+			if(this.form.elements[key]) {
 				this.form.elements[key].value = this[key];
+			}
 		}
 
 		DataConnection.types.get(this.type).render(this);
@@ -520,8 +540,9 @@ class DataConnection {
 
 			await this.page.load();
 
-			if(await Storage.get('newUser'))
+			if(await Storage.get('newUser')) {
 				await UserOnboard.setup(true);
+			}
 
 			new SnackBar({
 				message: `${this.type} Connection Removed`,
@@ -608,7 +629,7 @@ DataConnection.types.set('mssql', class {
 
 	static render(connections = {}) {
 
-		connections.form =  connections.container.querySelector('#connections-form');
+		connections.form = connections.container.querySelector('#connections-form');
 		connections.form.querySelector('#details').classList.remove('hidden');
 
 		connections.form.querySelector('#details').innerHTML = `
@@ -668,7 +689,7 @@ DataConnection.types.set('pgsql', class {
 
 	static render(connections = {}) {
 
-		connections.form =  connections.container.querySelector('#connections-form');
+		connections.form = connections.container.querySelector('#connections-form');
 		connections.form.querySelector('#details').classList.remove('hidden');
 
 		connections.form.querySelector('#details').innerHTML = `
@@ -728,7 +749,7 @@ DataConnection.types.set('oracle', class {
 
 	static render(connections = {}) {
 
-		connections.form =  connections.container.querySelector('#connections-form');
+		connections.form = connections.container.querySelector('#connections-form');
 		connections.form.querySelector('#details').classList.remove('hidden');
 
 		connections.form.querySelector('#details').innerHTML = `
@@ -844,7 +865,7 @@ DataConnection.types.set('mongo', class {
 
 	static render(connections = {}) {
 
-		connections.form =  connections.container.querySelector('#connections-form');
+		connections.form = connections.container.querySelector('#connections-form');
 		connections.form.querySelector('#details').classList.remove('hidden');
 
 		connections.form.querySelector('#details').innerHTML = `
@@ -916,8 +937,9 @@ class OAuthConnection {
 			},
 			options = {method: 'POST'};
 
- 		if(search.get('error') == 'access_denied')
+ 		if(search.get('error') == 'access_denied') {
 			return;
+ 		}
 
  		try {
 			await API.call('oauth/connections/redirect_uri', parameters, options);
@@ -955,8 +977,9 @@ class OAuthConnection {
 
  	get row() {
 
- 		if(this.containerElement)
+ 		if(this.containerElement) {
 			return this.containerElement;
+ 		}
 
  		const container = this.containerElement = document.createElement('tr');
 
@@ -972,9 +995,11 @@ class OAuthConnection {
 
  		container.querySelector('.authenticate').on('click', () => {
 
- 			if(this.access_token || this.refresh_token)
+ 			if(this.access_token || this.refresh_token) {
 				this.test();
- 			else this.authenticate();
+ 			} else {
+ 				this.authenticate();
+ 			}
 		});
 
  		container.querySelector('.delete').on('click', () => this.delete());
@@ -985,7 +1010,9 @@ class OAuthConnection {
  	async test() {
 
  		const
-			parameters = { id: this.id },
+			parameters = {
+				id: this.id
+			},
 			container = this.page.container.querySelector('.test-result');
 
  		let response;
@@ -1065,11 +1092,14 @@ class OAuthConnection {
 
  	async delete() {
 
- 		if(!confirm('Are you sure?! This will not delete the stored data.'))
+ 		if(!confirm('Are you sure?! This will not delete the stored data.')) {
 			return;
+ 		}
+
  		const
 			parameters = { id: this.id },
 			options = { method: 'POST' };
+
  		await API.call('oauth/connections/delete', parameters, options);
  		this.page.load();
 	}

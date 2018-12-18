@@ -71,29 +71,34 @@ class Users extends Page {
 
 	static async load(e) {
 
-		if(e)
+		if(e) {
 			e.preventDefault();
+		}
 
 		const parameters = new URLSearchParams();
 
 		parameters.set('search', "users");
 
-		for(const element of Users.userSearchForm.querySelectorAll('input, select'))
+		for(const element of Users.userSearchForm.querySelectorAll('input, select')) {
 			parameters.set(element.name, element.value);
+		}
 
-		for(const value of Users.category.value)
+		for(const value of Users.category.value) {
 			parameters.append('category_id', value);
+		}
 
 		if(parameters.get('search_by') == 'privilege') {
 
-			for(const value of Users.privilege.value)
+			for(const value of Users.privilege.value) {
 				parameters.append('privilege_id', value);
+			}
 		}
 
 		if(parameters.get('search_by') == 'role') {
 
-			for(const value of Users.role.value)
+			for(const value of Users.role.value) {
 				parameters.append('role_id', value);
+			}
 		}
 
 		const
@@ -108,24 +113,28 @@ class Users extends Page {
 
 		Users.container.textContent = null;
 
-		for(const user of list)
+		for(const user of list) {
 			Users.container.appendChild(user.row);
+		}
 
-		if(!list.length)
+		if(!list.length) {
 			Users.container.innerHTML = '<td colspan="5" class="NA">No rows found</td>'
+		}
 	}
 
 	static loadState(state) {
 
 		const what = state ? state.what : location.pathname.split('/').pop();
 
-		if(what == 'add')
+		if(what == 'add') {
 			return UserManage.add();
+		}
 
 		const user = Users.list.filter(user => user.user_id == what);
 
-		if(user.length)
+		if(user.length) {
 			return user[0].edit();
+		}
 
 		Sections.show('list');
 	}
@@ -158,8 +167,9 @@ class UserManage {
 
 	static back() {
 
-		if(history.state)
+		if(history.state) {
 			return history.back();
+		}
 
 		Sections.show('list');
 		history.pushState(null, '', `/users-manager`);
@@ -193,8 +203,10 @@ class UserManage {
 			};
 
 		for(const element of UserManage.form.elements) {
-			if(element.name)
+
+			if(element.name) {
 				parameters[element.name] = element.value;
+			}
 		}
 
 		try {
@@ -227,8 +239,9 @@ class UserManage {
 
 	constructor(user) {
 
-		for(const key in user)
+		for(const key in user) {
 			this[key] = user[key];
+		}
 
 		this.id = this.user_id;
 		this.name = [this.first_name, this.middle_name, this.last_name].filter(a => a).join(' ');
@@ -245,16 +258,18 @@ class UserManage {
 		UserManage.form.on('submit', UserManage.submitListener = e => this.update(e));
 
 		for(const key in this) {
-			if(UserManage.form.elements[key])
+			if(UserManage.form.elements[key]) {
 				UserManage.form.elements[key].value = this[key];
+			}
 		}
 
 		UserManage.form.password.value = null;
 
 		Privileges.add_filter.classList.remove('hidden');
 
-		if(Privileges.submitListener)
+		if(Privileges.submitListener) {
 			Privileges.add_filter.removeEventListener('submit', Privileges.submitListener);
+		}
 
 		Privileges.add_filter.on('submit', Privileges.submitListener = async (e) => {
 			e.preventDefault();
@@ -288,12 +303,14 @@ class UserManage {
 			};
 
 		for(const element of UserManage.form.elements) {
-			if(element.name)
+			if(element.name) {
 				parameters[element.name] = element.value;
+			}
 		}
 
-		if(!UserManage.form.password.value)
+		if(!UserManage.form.password.value) {
 			delete parameters.password;
+		}
 
 		try {
 
@@ -360,8 +377,9 @@ class UserManage {
 
 	get row() {
 
-		if(this.container)
+		if(this.container) {
 			return this.container;
+		}
 
 		this.container = document.createElement('tr');
 
@@ -395,8 +413,9 @@ class Privileges {
 
 		Privileges.container = document.querySelector('.privileges.form-container');
 
-		if(!user.privileges.has('admin') && !user.privileges.has('superadmin'))
+		if(!user.privileges.has('admin') && !user.privileges.has('superadmin')) {
 			Privileges.container.classList.add('hidden');
+		}
 
 		Privileges.privileges_container = Privileges.container.querySelector('#filters-list');
 
@@ -419,8 +438,9 @@ class Privileges {
 
 		this.list = [];
 
-		for(const key of privileges)
+		for(const key of privileges) {
 			this.list.push(new Privilege(key, user, this));
+		}
 
 		this.user = user;
 	}
@@ -471,8 +491,9 @@ class Privileges {
 
 		container.textContent = null;
 
-		if(!this.list.length)
+		if(!this.list.length) {
 			Privileges.privileges_container.innerHTML = `<div class="NA">No privilege assigned</div>`;
+		}
 
 		for(const privilege of this.list) {
 			container.appendChild(privilege.row);
@@ -484,8 +505,9 @@ class Privilege {
 
 	constructor(privilege, user, parent) {
 
-		for(const key in privilege)
+		for(const key in privilege) {
 			this[key] = privilege[key];
+		}
 
 		this.user = user;
 		this.parent = parent;
@@ -581,8 +603,9 @@ class Privilege {
 
 	async delete(id) {
 
-		if(!window.confirm('Are you sure?!'))
+		if(!window.confirm('Are you sure?!')) {
 			return;
+		}
 
 		const
 			parameters = {
