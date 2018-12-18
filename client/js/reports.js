@@ -4204,7 +4204,7 @@ class DataSourceTransformations extends Set {
 
 		const options = {
 			filters,
-		}
+		};
 
 		this.add(new type({type: 'filters', options, implied: true}, this.source));
 	}
@@ -4226,7 +4226,7 @@ class DataSourceTransformations extends Set {
 
 			const options = {
 				columns,
-			}
+			};
 
 		this.add(new type({type: 'sort', options, implied: true}, this.source));
 	}
