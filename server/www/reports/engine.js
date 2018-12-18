@@ -217,7 +217,7 @@ class report extends API {
 
 			const objRole = new getRole();
 
-			const possiblePrivileges = ["report.edit", constants.privilege.administrator, "superadmin"];
+			const possiblePrivileges = ["report.update", constants.privilege.administrator, "superadmin"];
 
 			const categories = (await objRole.get(this.account.account_id, 'query', 'role', this.request.body.query_id)).map(x => x.category_id);
 
@@ -1282,7 +1282,7 @@ class query extends API {
 
 		const objRole = new getRole();
 
-		const possiblePrivileges = ["report.edit", "admin", "superadmin"];
+		const possiblePrivileges = ["report.update", "admin", "superadmin"];
 
 		const categories = (await objRole.get(this.account.account_id, 'query', 'role', this.request.body.query_id)).map(x => x.category_id);
 
