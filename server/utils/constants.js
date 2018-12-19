@@ -45,7 +45,6 @@ exports.publicEndpoints = [
 	'/v2/authentication/refresh',
 	'/v2/authentication/reset',
 	'/v2/authentication/resetLink',
-	'/v2/authentication/getAccountLists',
 	'/v2/scope/scopeAuth',
 	'/v2/accounts/signup',
 	'/v2/oauth/connections/redirect_uri',
