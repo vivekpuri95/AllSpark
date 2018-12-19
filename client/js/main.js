@@ -3497,7 +3497,7 @@ class SearchColumnFilter {
 
 			this.searchColumns.delete(this);
 
-			this.searchColumns.fireCallback('change');
+			this.searchColumns.changeCallback();
 
 			this.searchColumns.render();
 		});
