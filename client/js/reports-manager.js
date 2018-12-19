@@ -3330,7 +3330,7 @@ class VisualizationManager {
 
 			this.stage.visualizationLogs.clear();
 
-			this.stage.load();
+			await this.stage.load();
 
 			this.stage.page.stages.get('pick-visualization').switcher.querySelector('small').textContent = this.form.name.value;
 
@@ -6839,14 +6839,6 @@ class ReportTransformations extends Set {
 
 		this.add(new (ReportTransformation.types.get(type))({type}, this));
 
-		if(!this.visualization.visualization_id) {
-
-			return new SnackBar({
-				message: 'Visualization Id cannot be empty',
-				type: 'warning'
-			})
-		}
-
 		const
 			option = {
 				method: 'POST',
@@ -6854,7 +6846,7 @@ class ReportTransformations extends Set {
 			parameters = {
 				owner: 'visualization',
 				owner_id: this.visualization.visualization_id,
-				options: "{}",
+				options: '{}',
 				type: type,
 				title: '',
 			};
@@ -6865,7 +6857,7 @@ class ReportTransformations extends Set {
 
 			await DataSource.load(true);
 
-			this.stage.load();
+			await this.stage.load();
 
 			new SnackBar({
 				message: 'Transformation Deleted',
@@ -6922,28 +6914,24 @@ class ReportTransformation {
 			</div>
 			<legend class="interactive">${this.name}</legend>
 			<div class="ellipsis"><i class="fas fa-ellipsis-h"></i></div>
-			<form class="update-transformation">
-				<label class="title hidden">
+			<form class="update-transformation hidden">
+				<label class="title">
 					Title
 					<input type="text" class="transformation-title" value="${this.title || ''}">
 				</label>
-				<div class="transformation ${this.key} hidden"></div>
-				<button type="submit" class="save hidden"><i class="far fa-save"></i>Save</button>
+				<div class="transformation ${this.key}"></div>
+				<button type="submit" class="save"><i class="far fa-save"></i>Save</button>
 			</form>
 		`;
 
 		container.querySelector('legend').on('click', () => {
-			container.querySelector('.transformation').classList.toggle('hidden');
 			container.querySelector('.ellipsis').classList.toggle('hidden');
-			container.querySelector('.title').classList.toggle('hidden');
-			container.querySelector('.save').classList.toggle('hidden');
+			container.querySelector('form').classList.toggle('hidden');
 		});
 
 		container.querySelector('.ellipsis').on('click', () => {
-			container.querySelector('.transformation').classList.toggle('hidden');
 			container.querySelector('.ellipsis').classList.toggle('hidden');
-			container.querySelector('.title').classList.toggle('hidden');
-			container.querySelector('.save').classList.toggle('hidden');
+			container.querySelector('form').classList.toggle('hidden');
 		});
 
 		container.querySelector('.actions .move-up').on('click', () => {
@@ -6966,7 +6954,7 @@ class ReportTransformation {
 			this.transformations.preview();
 		});
 
-		container.querySelector('button.save').on('click', e => this.update(e));
+		container.querySelector('.update-transformation').on('submit', e => this.update(e));
 
 		container.querySelector('.actions .move-down').on('click', () => {
 
@@ -6997,7 +6985,7 @@ class ReportTransformation {
 			this.transformations.preview(position);
 		});
 
-		container.querySelector('.actions .remove').on('click', () => this.deleteTransformation(this.id));
+		container.querySelector('.actions .remove').on('click', () => this.delete(this.id));
 
 		return container;
 	}
@@ -7024,7 +7012,7 @@ class ReportTransformation {
 
 			await DataSource.load(true);
 
-			this.stage.load();
+			await this.stage.load();
 
 			new SnackBar({
 				message: 'Transformation Updated',
@@ -7043,7 +7031,7 @@ class ReportTransformation {
 		}
 	}
 
-	async deleteTransformation(id) {
+	async delete(id) {
 
 		const option = {
 				method: 'POST',
@@ -7055,7 +7043,7 @@ class ReportTransformation {
 
 			await DataSource.load(true);
 
-			this.stage.load();
+			await this.stage.load();
 
 			new SnackBar({
 				message: 'Transformation Added',
@@ -9173,8 +9161,8 @@ class RelatedVisualizations extends Set {
 
 			return new SnackBar({
 				message: 'Visualization Id cannot be empty',
-				type: 'warning'
-			})
+				type: 'warning',
+			});
 		}
 
 		const
