@@ -244,6 +244,9 @@ class PreviewTabsManager extends Array {
 
 		container.querySelector('.close-all-tabs').on('click', () => {
 
+			if(!this.selected.body.children.length && this.length == 1)
+				return;
+
 			this.length = 0;
 			this.render();
 		});
