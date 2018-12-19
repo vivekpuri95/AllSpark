@@ -15,6 +15,36 @@ const sessionLogs = require("./session-logs").sessions;
 
 const EXPIRE_AFTER = 1; //HOURS
 
+exports.getAccountLists = class extends API {
+
+	async getAccountLists() {
+
+		let user = await this.mysql.query(
+			`SELECT * FROM tb_users WHERE email = ?`,
+			[this.request.query.email]
+		);
+
+		this.assert(user.length, "No user with this email is registered with us.");
+
+		let accounts = await this.mysql.query(
+			`SELECT
+				a.*
+			FROM
+				tb_users u
+			JOIN
+				tb_accounts a
+				USING(account_id)
+			WHERE
+				u.email = ?`,
+			[this.request.query.email]
+		);
+
+		this.assert(accounts.length, "No account found");
+
+		return accounts;
+	}
+}
+
 exports.resetlink = class extends API {
 
 	async resetlink() {
@@ -82,13 +112,12 @@ exports.resetlink = class extends API {
 		}
 
 		return 'Password reset email sent!';
-
-
 	}
 }
 
 
 exports.reset = class extends API {
+
 	async reset() {
 
 		if (!this.request.body.password || !this.request.body.reset_token)

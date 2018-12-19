@@ -350,25 +350,31 @@ router.get('/login/forgot', API.serve(class extends HTMLAPI {
 
 	async main() {
 		return `
-			<div class="logo hidden">
-				<img src="" />
-			</div>
+			<section id="accept-email" class="section show">
 
-			<form class="form forgot">
-
-				<label>
-					<span>Email</span>
-					<input type="email" name="email" required>
-				</label>
-
-				<div>
-					<a href='/login'><i class="fa fa-arrow-left"></i> &nbsp;Login</a>
-					<button class="submit">
-						<i class="fa fa-paper-plane"></i>
-						Send Link
-					</button>
+				<div class="logo hidden">
+					<img src="" />
 				</div>
-			</form>
+
+				<form class="form forgot">
+
+					<label>
+						<span>Email</span>
+						<input type="email" name="email" required>
+					</label>
+
+					<div>
+						<a href='/login'><i class="fa fa-arrow-left"></i> &nbsp;Login</a>
+						<button class="submit">
+							<i class="fa fa-paper-plane"></i>
+							Send Link
+						</button>
+					</div>
+				</form>
+
+			</section>
+
+			<section id="accept-account" class="section"></section>
 
 			<div id="message" class="hidden"></div>
 		`;
