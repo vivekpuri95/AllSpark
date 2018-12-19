@@ -7758,7 +7758,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 				this.axes[axis.position].size += 20;
 			}
 
-			if(axis.rotateTicks) {
+			if(axis.rotateTicks && ['top', 'bottom'].includes(axis.position)) {
 				this.axes[axis.position].size += (parseInt(axis.maxTickLength) || 15) * 4;
 			}
 		}
@@ -7836,17 +7836,18 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 			axis.animate = !options.resize && !axis.dontAnimate && !this.options.dontAnimate;
 
+			let maxTickLength = parseInt(axis.maxTickLength);
+
+			if(axis.rotateTicks && isNaN(maxTickLength))
+				maxTickLength = 15;
+
 			if(['top', 'bottom'].includes(axis.position)) {
 
 				const
 					scale = d3.scale.ordinal(),
 					column = [];
 
-				let biggestTick = 0,
-					maxTickLength = parseInt(axis.maxTickLength);
-
-				if(axis.rotateTicks && isNaN(maxTickLength))
-					maxTickLength = 15;
+				let biggestTick = 0;
 
 				for(const row of this.rows) {
 
@@ -7859,12 +7860,12 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					}
 				}
 
-				if(maxTickLength) {
+				if(!isNaN(maxTickLength)) {
 					biggestTick = Math.min(maxTickLength, biggestTick);
 				}
 
 				if(axis.rotateTicks) {
-					biggestTick = 5;
+					biggestTick = 3;
 				}
 
 				scale.domain(column);
@@ -7889,15 +7890,16 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 						}
 					}
 
-					d3Axis.tickValues(ticks)
+					d3Axis
+						.tickValues(ticks)
+						.tickFormat(d => {
 
-					.tickFormat(d => {
+							if(maxTickLength < d.length) {
+								return d.substring(0, maxTickLength) + '\u2026';
+							}
 
-						if(maxTickLength < d.length)
-							return d.substring(0, maxTickLength) + '\u2026';
-
-						return d;
-					});
+							return d;
+						});
 
 					const g = this.svg
 						.append('g')
@@ -8172,9 +8174,18 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					.innerTickSize(this.width * (axis.position == 'right' ? 1 : -1))
 					.orient(axis.position == 'right' ? 'right' : 'left');
 
-				if(['s'].includes(axis.format)) {
-					d3Axis.tickFormat(d3.format(axis.format));
-				}
+				d3Axis.tickFormat(d => {
+
+					if(['s'].includes(axis.format)) {
+						d = d3.format(axis.format)(d);
+					}
+
+					if(!isNaN(maxTickLength)) {
+						d = d.toString().substring(0, maxTickLength) + '\u2026';
+					}
+
+					return d;
+				});
 
 				this.svg
 					.append('g')
