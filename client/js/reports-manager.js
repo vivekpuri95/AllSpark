@@ -6879,7 +6879,7 @@ class ReportTransformations extends Set {
 			this.stage.load();
 
 			new SnackBar({
-				message: 'Transformation Added',
+				message: 'Transformation Deleted',
 				icon: 'far fa-save',
 			});
 
@@ -6910,8 +6910,12 @@ class ReportTransformation {
 
 		this.name = new type().name;
 
-		if(!this.options)
+		if(!this.options) {
 			this.options = {};
+		}
+		// else {
+		// 	this.options = JSON.parse(this.options);
+		// }
 	}
 
 	get container() {
@@ -7009,11 +7013,6 @@ class ReportTransformation {
 
 		container.querySelector('.actions .remove').on('click', () => this.deleteTransformation(this.id));
 
-		container.querySelector('.actions .remove').on('click', () => {
-			this.transformations.delete(this);
-			this.transformations.preview();
-		});
-
 		return container;
 	}
 
@@ -7028,7 +7027,7 @@ class ReportTransformation {
 			parameters = {
 				owner: 'visualization',
 				id: this.id,
-				options: JSON.stringify(this.json),
+				options: JSON.stringify(this.json.options),
 				type: this.type,
 				title: this.container.querySelector('.transformation-title').value,
 			};
