@@ -3471,7 +3471,7 @@ class SearchColumnFilter {
 		searchQuery.on('search', () => this.searchColumns.changeCallback());
 
 		for(const select of container.querySelectorAll('select'))
-			select.on('change', () => this.searchColumns.fireCallback('change'));
+			select.on('change', () => this.searchColumns.changeCallback());
 
 		for(const filter of DataSourceColumnFilter.types) {
 
