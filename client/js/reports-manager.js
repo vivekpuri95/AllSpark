@@ -4164,7 +4164,7 @@ class LinearAxes extends Set {
 							<select name="position" value="${this.position}" required>
 								<option value="bottom">Bottom</option>
 								<option value="left">Left</option>
-								<option value="top">Top</option>
+								<!--<option value="top">Top</option>-->
 								<option value="right">Right</option>
 							</select>
 						</label>
@@ -4228,8 +4228,9 @@ class LinearAxis {
 
 	get container() {
 
-		if(this.axisContainer)
+		if(this.axisContainer) {
 			return this.axisContainer;
+		}
 
 		const container = this.axisContainer = document.createElement('div');
 
@@ -4244,14 +4245,16 @@ class LinearAxis {
 
 		for(const axis of this.axes) {
 
-			if(axis.position == this.position)
+			if(axis.position == this.position) {
 				continue;
+			}
 
 			usedColumns = usedColumns.concat(axis.columns.map(x => x.key));
 		}
 
-		for(const column of usedColumns)
+		for(const column of usedColumns) {
 			datalist = datalist.filter(x => !column.includes(x.value));
+		}
 
 		this.position = this.position || 'top';
 
@@ -4287,7 +4290,7 @@ class LinearAxis {
 						<select name="position">
 							<option value="bottom">Bottom</option>
 							<option value="left">Left</option>
-							<option value="top">Top</option>
+							<!--<option value="top">Top</option>-->
 							<option value="right">Right</option>
 						</select>
 					</label>
@@ -4347,6 +4350,17 @@ class LinearAxis {
 					</label>
 
 					<label class="advanced hidden">
+						<span>Max Tick Length</span>
+						<input type="number" step="1" max="1000" name="maxTickLength" value="${this.maxTickLength || ''}">
+					</label>
+
+					<label class="advanced hidden">
+						<span>
+							<input type="checkbox" name="rotateTicks"> Rotate Ticks
+						</span>
+					</label>
+
+					<label class="advanced hidden">
 						<span>
 							<input type="checkbox" name="contribution"> Contribution
 						</span>
@@ -4403,8 +4417,9 @@ class LinearAxis {
 
 		container.querySelector('.advanced-toggle').on('click', () => {
 
-			for(const elemen of container.querySelectorAll('.advanced'))
+			for(const elemen of container.querySelectorAll('.advanced')) {
 				elemen.classList.toggle('hidden');
+			}
 		});
 
 		container.multiSelectColumns.on('change', () => {
@@ -4412,20 +4427,23 @@ class LinearAxis {
 			let usedColumns = [];
 			const freeColumns = [];
 
-			for(const axis of this.axes)
+			for(const axis of this.axes) {
 				usedColumns = usedColumns.concat(axis.container.multiSelectColumns.value);
+			}
 
 			for(const axis of this.axes) {
 				for(const item of axis.container.multiSelectColumns.datalist) {
-					if(!freeColumns.some(c => c.value.includes(item.value)) && !usedColumns.includes(item.value))
+					if(!freeColumns.some(c => c.value.includes(item.value)) && !usedColumns.includes(item.value)) {
 						freeColumns.push(item);
+					}
 				}
 			}
 
 			for(const axis of this.axes) {
 
-				if(axis == this)
+				if(axis == this) {
 					continue;
+				}
 
 				const selected = axis.container.multiSelectColumns.value;
 
@@ -4438,12 +4456,14 @@ class LinearAxis {
 				}
 
 				for(const value of freeColumns) {
-					if(!newDataList.some(k => k.value.includes(value.value)))
+					if(!newDataList.some(k => k.value.includes(value.value))) {
 						newDataList.push(value);
+					}
 				}
 
-				if(axis.container.multiSelectColumns.datalist.map(x => x.value).sort().join() == newDataList.map(x => x.value).sort().join())
+				if(axis.container.multiSelectColumns.datalist.map(x => x.value).sort().join() == newDataList.map(x => x.value).sort().join()) {
 					continue;
+				}
 
 				axis.container.multiSelectColumns.datalist = newDataList;
 				axis.container.multiSelectColumns.render();
@@ -4457,8 +4477,9 @@ class LinearAxis {
 			this.axes.restCheck(restColumns.checked);
 			axisColumn.classList.toggle('hidden');
 
-			if(restColumns.checked)
+			if(restColumns.checked) {
 				container.querySelector('.restCheck').classList.remove('hidden');
+			}
 		});
 
 		if(this.restcolumns) {
@@ -4476,6 +4497,7 @@ class LinearAxis {
 		container.querySelector('input[name=axisDepth]').value = this.depth;
 		container.querySelector('input[name=axisLineThickness]').value = this.lineThickness;
 		container.querySelector('input[name=axisStacked]').checked = this.stacked;
+		container.querySelector('input[name=rotateTicks]').checked = this.rotateTicks;
 		container.querySelector('input[name=contribution]').checked = this.contribution;
 		container.querySelector('input[name=axisShowValues]').checked = this.showValues;
 		container.querySelector('input[name=axisShowPoints]').checked = this.showPoints;
@@ -4501,9 +4523,11 @@ class LinearAxis {
 			restcolumns: this.container.querySelector('input[name=restcolumns]').checked,
 			format: this.container.querySelector('select[name=format]').value,
 			curve: this.container.querySelector('select[name=curve]').value,
-			depth: this.container.querySelector('input[name=axisDepth]').value,
-			lineThickness: this.container.querySelector('input[name=axisLineThickness]').value,
+			depth: parseFloat(this.container.querySelector('input[name=axisDepth]').value),
+			lineThickness: parseFloat(this.container.querySelector('input[name=axisLineThickness]').value),
+			maxTickLength: parseInt(this.container.querySelector('input[name=maxTickLength]').value),
 			stacked: this.container.querySelector('input[name=axisStacked]').checked,
+			rotateTicks: this.container.querySelector('input[name=rotateTicks]').checked,
 			contribution: this.container.querySelector('input[name=contribution]').checked,
 			showValues: this.container.querySelector('input[name=axisShowValues]').checked,
 			showPoints: this.container.querySelector('input[name=axisShowPoints]').checked,

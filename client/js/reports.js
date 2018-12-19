@@ -7755,7 +7755,11 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 			this.axes[axis.position].size += axis.position == 'left' ? 50 : axis.top == 'top' ? 20 : 30;
 
 			if(axis.label) {
-				this.axes[axis.position].size += 15;
+				this.axes[axis.position].size += 20;
+			}
+
+			if(axis.rotateTicks) {
+				this.axes[axis.position].size += (parseInt(axis.maxTickLength) || 15) * 4;
 			}
 		}
 
@@ -7836,45 +7840,64 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 				const
 					scale = d3.scale.ordinal(),
-					column = [],
-					ticks = [];
+					column = [];
 
-				let biggestTick = '';
+				let biggestTick = 0,
+					maxTickLength = parseInt(axis.maxTickLength);
+
+				if(axis.rotateTicks && isNaN(maxTickLength))
+					maxTickLength = 15;
 
 				for(const row of this.rows) {
 
-					const value = row.getTypedValue(columns[0].key);
+					let value = row.getTypedValue(columns[0].key);
 
 					column.push(value);
 
-					if(biggestTick.length < value.length) {
-						biggestTick = value;
+					if(biggestTick < value.length) {
+						biggestTick = value.length;
 					}
+				}
+
+				if(maxTickLength) {
+					biggestTick = Math.min(maxTickLength, biggestTick);
+				}
+
+				if(axis.rotateTicks) {
+					biggestTick = 5;
 				}
 
 				scale.domain(column);
 
 				scale.rangeBands([0, this.width], 0.1, 0);
 
-				const
-					tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
-					tickInterval = parseInt(this.rows.length / tickNumber);
-
-				for(let i = 0; i < column.length; i++) {
-
-					if(!(i % tickInterval)) {
-						ticks.push(column[i]);
-					}
-				}
-
 				// Add the axis scale
 				if(!this.options.hideScales && !axis.hideScale) {
 
-					const d3Axis = d3.svg.axis()
-						.scale(scale)
-						.orient(axis.position);
+					const
+						tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick * 12)), 1),
+						tickInterval = parseInt(this.rows.length / tickNumber),
+						ticks = [],
+						d3Axis = d3.svg.axis()
+							.scale(scale)
+							.orient(axis.position);
 
-					d3Axis.tickValues(ticks);
+					for(let i = 0; i < column.length; i++) {
+
+						if(!(i % tickInterval)) {
+							ticks.push(column[i]);
+						}
+					}
+
+					d3Axis.tickValues(ticks)
+
+					.tickFormat(d => {
+
+						if(maxTickLength < d.length)
+							return d.substring(0, maxTickLength) + '\u2026';
+
+						return d;
+					});
 
 					const g = this.svg
 						.append('g')
@@ -7887,6 +7910,14 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					else {
 						g.attr('transform', `translate(${this.axes.left.size}, ${axis.label ? 45 : 20})`);
 					}
+
+					if(axis.rotateTicks) {
+
+						const t = g
+							.selectAll('text')
+							.attr('transform', `rotate(-65)`)
+							.style('text-anchor', 'end');
+					}
 				}
 
 				if(axis.label) {
@@ -7898,7 +7929,14 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 						.text(axis.label);
 
 					if(axis.position == 'bottom') {
-						text.attr('transform', `translate(${(this.width / 2)}, ${this.height + 35})`)
+
+						let top = 0;
+
+						if(axis.rotateTicks) {
+							top = (parseInt(axis.maxTickLength) || 15) * 4
+						}
+
+						text.attr('transform', `translate(${(this.width / 2)}, ${this.height + top + 45})`)
 					}
 					else {
 						text.attr('transform', `translate(${(this.width / 2)}, 10)`)
@@ -12494,7 +12532,6 @@ Visualization.list.set('calendar', class CalendarVisualization extends Visualiza
 		}
 	}
 });
-
 
 class CalendarUnit {
 

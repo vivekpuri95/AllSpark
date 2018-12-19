@@ -2170,6 +2170,15 @@ class HTMLEditor {
 		if(this.editor)
 			return;
 
+		this.codeEditor = new CodeEditor({mode: 'html'});
+
+		this.container.appendChild(this.codeEditor.container);
+
+		this.codeEditor.container.classList.add('hidden');
+		this.codeEditor.container.style.height = this.height + 'px';
+
+		this.on('change', () => this.codeEditor.value = this.value);
+
 		[this.editor] = await tinymce.init({
 			selector: '#code-editor-' + this.id,
 			height: this.height,
@@ -2186,15 +2195,6 @@ class HTMLEditor {
 			]
 		});
 
-		this.codeEditor = new CodeEditor({mode: 'html'});
-
-		this.container.appendChild(this.codeEditor.container);
-
-		this.codeEditor.container.classList.add('hidden');
-		this.codeEditor.container.style.height = this.height + 'px';
-
-		this.on('change', () => this.codeEditor.value = this.value);
-
 		this.render();
 	}
 
@@ -2203,7 +2203,7 @@ class HTMLEditor {
 	 */
 	get value() {
 
-		if(this.visualEditor)
+		if(this.visualEditor && this.editor)
 			return this.editor.getContent();
 
 		return this.codeEditor.value;
@@ -3467,8 +3467,8 @@ class SearchColumnFilter {
 			searchType = container.querySelector('select.searchType'),
 			searchQuery = container.querySelector('.searchQuery');
 
-		searchQuery.on('keyup', () => this.searchColumns.fireCallback('change'));
-		searchQuery.on('search', () => this.searchColumns.fireCallback('change'));
+		searchQuery.on('keyup', () => this.searchColumns.changeCallback());
+		searchQuery.on('search', () => this.searchColumns.changeCallback());
 
 		for(const select of container.querySelectorAll('select'))
 			select.on('change', () => this.searchColumns.fireCallback('change'));
