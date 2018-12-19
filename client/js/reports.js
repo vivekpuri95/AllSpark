@@ -7758,7 +7758,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 				this.axes[axis.position].size += 20;
 			}
 
-			if(axis.rotateTicks && ['top', 'bottom'].includes(axis.position)) {
+			if(axis.rotateTicks && ['top', 'bottom'].includes(axis.position) && !this.options.hideScales && !axis.hideScale) {
 				this.axes[axis.position].size += (parseInt(axis.maxTickLength) || 15) * 4;
 			}
 		}
@@ -8180,7 +8180,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 						d = d3.format(axis.format)(d);
 					}
 
-					if(!isNaN(maxTickLength)) {
+					if(!isNaN(maxTickLength) && maxTickLength < d.toString().length) {
 						d = d.toString().substring(0, maxTickLength) + '\u2026';
 					}
 

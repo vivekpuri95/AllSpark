@@ -4345,12 +4345,12 @@ class LinearAxis {
 					</label>
 
 					<label class="advanced hidden">
-						<span>Line Thickness <span class="right" data-tooltip="Line Visualization Only">?</span></span>
+						<span>Line Thickness <span class="right" data-tooltip="Line Visualization Only.">?</span></span>
 						<input type="number" step="0.1" name="axisLineThickness" value="${this.lineThickness || ''}">
 					</label>
 
 					<label class="advanced hidden">
-						<span>Max Tick Length <span class="right" data-tooltip="Cut off axis tick values after given length">?</span></span>
+						<span>Max Tick Length <span class="right" data-tooltip="Cut off axis tick values after given length.">?</span></span>
 						<input type="number" step="1" min="0" name="maxTickLength" value="${this.maxTickLength || ''}">
 					</label>
 
