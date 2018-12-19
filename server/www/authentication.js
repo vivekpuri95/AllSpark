@@ -15,36 +15,6 @@ const sessionLogs = require("./session-logs").sessions;
 
 const EXPIRE_AFTER = 1; //HOURS
 
-exports.getAccountLists = class extends API {
-
-	async getAccountLists() {
-
-		let user = await this.mysql.query(
-			`SELECT * FROM tb_users WHERE email = ?`,
-			[this.request.query.email]
-		);
-
-		this.assert(user.length, "No user with this email is registered with us.");
-
-		let accounts = await this.mysql.query(
-			`SELECT
-				a.*
-			FROM
-				tb_users u
-			JOIN
-				tb_accounts a
-				USING(account_id)
-			WHERE
-				u.email = ?`,
-			[this.request.query.email]
-		);
-
-		this.assert(accounts.length, "No account found");
-
-		return accounts;
-	}
-}
-
 exports.resetlink = class extends API {
 
 	async resetlink() {
@@ -141,9 +111,20 @@ exports.reset = class extends API {
 
 		user_id = user_id[0]['user_id'];
 
+		const account_id = await this.mysql.query(
+			`
+				SELECT
+					account_id
+				FROM
+					tb_users
+				WHERE
+					user_id = ?
+			`, [user_id]
+		);
+
 		const newHashPass = await commonFun.makeBcryptHash(this.request.body.password);
 
-		await this.mysql.query('UPDATE tb_users SET password = ? WHERE user_id = ? AND account_id = ?', [newHashPass, user_id, this.account.account_id], 'write');
+		await this.mysql.query('UPDATE tb_users SET password = ? WHERE user_id = ? AND account_id = ?', [newHashPass, user_id, account_id[0].account_id], 'write');
 
 		await this.mysql.query('UPDATE tb_password_reset SET status = 0 WHERE status = 1 AND user_id = ?', [user_id], 'write');
 
