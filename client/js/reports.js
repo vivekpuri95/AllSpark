@@ -7759,7 +7759,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 			}
 
 			if(axis.rotateTicks && ['top', 'bottom'].includes(axis.position) && !this.options.hideScales && !axis.hideScale) {
-				this.axes[axis.position].size += (parseInt(axis.maxTickLength) || 15) * 4;
+				this.axes[axis.position].size += (isNaN(parseInt(axis.maxTickLength)) ? 15 : parseInt(axis.maxTickLength)) * 6;
 			}
 		}
 
@@ -7935,7 +7935,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 						let top = 0;
 
 						if(axis.rotateTicks) {
-							top = (parseInt(axis.maxTickLength) || 15) * 4
+							top = (isNaN(parseInt(axis.maxTickLength)) ? 15 : parseInt(axis.maxTickLength)) * 6;
 						}
 
 						text.attr('transform', `translate(${(this.width / 2)}, ${this.height + top + 45})`)

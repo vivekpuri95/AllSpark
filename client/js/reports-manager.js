@@ -4345,7 +4345,7 @@ class LinearAxis {
 					</label>
 
 					<label class="advanced hidden">
-						<span>Line Thickness <span class="right" data-tooltip="Line Visualization Only.">?</span></span>
+						<span>Line Thickness <span class="right" data-tooltip="Line Type Only.">?</span></span>
 						<input type="number" step="0.1" name="axisLineThickness" value="${this.lineThickness || ''}">
 					</label>
 
@@ -4523,9 +4523,9 @@ class LinearAxis {
 			restcolumns: this.container.querySelector('input[name=restcolumns]').checked,
 			format: this.container.querySelector('select[name=format]').value,
 			curve: this.container.querySelector('select[name=curve]').value,
-			depth: parseFloat(this.container.querySelector('input[name=axisDepth]').value),
-			lineThickness: parseFloat(this.container.querySelector('input[name=axisLineThickness]').value),
-			maxTickLength: parseInt(this.container.querySelector('input[name=maxTickLength]').value),
+			depth: this.container.querySelector('input[name=axisDepth]').value,
+			lineThickness: this.container.querySelector('input[name=axisLineThickness]').value,
+			maxTickLength: this.container.querySelector('input[name=maxTickLength]').value,
 			stacked: this.container.querySelector('input[name=axisStacked]').checked,
 			rotateTicks: this.container.querySelector('input[name=rotateTicks]').checked,
 			contribution: this.container.querySelector('input[name=contribution]').checked,
