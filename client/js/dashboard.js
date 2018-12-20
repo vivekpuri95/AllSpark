@@ -1605,7 +1605,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 			}
 
 			if (options.dontLoad) {
-				return;
+				continue;
 			}
 
 			if (found && Array.from(this.page.loadedVisualizations).some(v => v.query == report)) {

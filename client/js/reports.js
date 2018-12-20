@@ -1365,9 +1365,21 @@ class DataSourceFilters extends Map {
 			}
 		});
 
+		// To make sure the "Apply" button comes last
+		let maxOrder = null;
+
+		for(const filter of this.values()) {
+
+			if(isNaN(parseFloat(maxOrder))) {
+				maxOrder = filter.order;
+			}
+
+			maxOrder = Math.max(maxOrder, filter.order)
+		}
+
 		container.insertAdjacentHTML('beforeend', `
 
-			<label>
+			<label style="order: ${maxOrder + 1};">
 				<span>&nbsp;</span>
 				<button type="submit" class="apply">
 					<i class="fas fa-paper-plane"></i> Apply
