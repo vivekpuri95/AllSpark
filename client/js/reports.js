@@ -130,6 +130,7 @@ class DataSource {
 			let message = e.message;
 
 			if(typeof e.body == 'object') {
+
 				message = message.replace('You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use', '');
 				this.error(JSON.stringify(message, 0, 4));
 
@@ -1365,9 +1366,21 @@ class DataSourceFilters extends Map {
 			}
 		});
 
+		// To make sure the "Apply" button comes last
+		let maxOrder = null;
+
+		for(const filter of this.values()) {
+
+			if(isNaN(parseFloat(maxOrder))) {
+				maxOrder = filter.order;
+			}
+
+			maxOrder = Math.max(maxOrder, filter.order)
+		}
+
 		container.insertAdjacentHTML('beforeend', `
 
-			<label>
+			<label style="order: ${maxOrder + 1};">
 				<span>&nbsp;</span>
 				<button type="submit" class="apply">
 					<i class="fas fa-paper-plane"></i> Apply

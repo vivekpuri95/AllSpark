@@ -869,8 +869,9 @@ main.preview-left #stages {
 			padding-top: 15px;
 		}
 
-
-	#stage-configure-visualization .dashboards {
+	#stage-configure-visualization .dashboards .list {
+		grid-gap: calc(var(--gap) * 2);
+		display: grid;
 	}
 		#stage-configure-visualization .dashboards .form {
 			grid-template-columns: repeat(7, max-content);
@@ -923,25 +924,29 @@ main.preview-left #stages {
 				margin: 0;
 			}
 
-	.visualization-form .related-visualizations .form {
-		grid-template-columns: repeat(6, max-content);
+	.visualization-form .related-visualizations .list {
 		grid-gap: calc(var(--gap) * 2);
+		display: grid;
 	}
-	.visualization-form .related-visualizations .add .form {
-		padding: 0;
-	}
-	.visualization-form .related-visualizations button.delete:hover {
-		color: var(--color-red);
-	}
-	.visualization-form .related-visualizations .list button > i {
-		margin: 0;
-	}
-		.visualization-form .related-visualizations .form label input.item {
-			width: 70px;
+		.visualization-form .related-visualizations .form {
+			grid-template-columns: repeat(6, max-content);
+			grid-gap: calc(var(--gap) * 2);
 		}
-		.visualization-form .related-visualizations .form .visualization {
-			width: 200px;
+		.visualization-form .related-visualizations .add .form {
+			padding: 0;
 		}
+		.visualization-form .related-visualizations button.delete:hover {
+			color: var(--color-red);
+		}
+		.visualization-form .related-visualizations .list button > i {
+			margin: 0;
+		}
+			.visualization-form .related-visualizations .form label input.item {
+				width: 70px;
+			}
+			.visualization-form .related-visualizations .form .visualization {
+				width: 200px;
+			}
 
 	.visualization-form .configuration-section h3 .count {
 		color: var(--color-grey);

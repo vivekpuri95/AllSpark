@@ -98,7 +98,8 @@ exports.update = class extends API {
 
 		let values =  {
 			visualization_id: visualization_id || canvasRow.visualization_id,
-			format: format
+			owner_id: owner_id,
+			format: format,
 		};
 
 		if(canvasRow.owner == 'dashboard') {
