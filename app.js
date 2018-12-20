@@ -1,5 +1,6 @@
 "use strict";
 
+const nr = require('newrelic');
 const express = require('express');
 const path = require('path');
 const compression = require('compression');
@@ -10,7 +11,7 @@ const bodyParser = require('body-parser');
 
 const index = require('./server/routes/index');
 const client = require('./client/index');
-const nr = require('newrelic');
+
 
 const app = express();
 
