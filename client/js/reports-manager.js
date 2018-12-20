@@ -249,11 +249,10 @@ class ReportsMangerPreview {
 
 		this.page.container.classList.add('preview-' + this._position);
 
-		try {
-			await this.report.visualizations.selected.load();
-		} catch(e) {}
+		await this.report.visualizations.selected.load();
 
 		this.move({render: false});
+
 	}
 
 	set hidden(hidden) {
