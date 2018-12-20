@@ -45,13 +45,25 @@ exports.resetlink = class extends API {
 		const query = `INSERT INTO tb_password_reset(user_id, reset_token, status) values ?`;
 		await this.mysql.query(query, [[[user_id, token, 1]]], 'write');
 
+		const [account] = await this.mysql.query(`
+				SELECT
+					*
+				FROM
+					tb_accounts
+				where
+					account_id = ?
+			`, [this.request.body.account_id]
+		);
+
+		this.assert(account.account_id, "Account not found");
+
 		let emailUrl = this.account.url.includes(this.request.headers.host) ? this.request.headers.host : this.account.url[0];
 
 		let mailer = new Mailer();
 		mailer.from_email = 'no-reply@' + config.get("mailer").get("domain");
-		mailer.from_name = this.account.name;
+		mailer.from_name = account.name;
 		mailer.to.add(this.request.body.email);
-		mailer.subject = `Password reset for ${this.account.name}`;
+		mailer.subject = `Password reset for ${account.name}`;
 		mailer.html = `
 			<div style="height:300px;width: 750px;margin:0 auto;border: 1px solid #ccc;padding: 20px 40px; box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);">
 
@@ -64,8 +76,8 @@ exports.resetlink = class extends API {
 						Hi ${full_name}, <br/><br/>
 						<span style="color: #666;"> Please click on the link below to reset your password.</span>
 					</div>
-					<a href="https://${emailUrl}/login/reset?reset_token=${token}&email=${this.request.body.email}" style="font-size: 16px; text-decoration: none; padding: 20px;display:block;background: #eee;border: 1px solid #ccc;margin: 20px 0;text-align: center; " target="_blank">
-						https://${emailUrl}/login/reset?reset_token=${token}&email=${this.request.body.email}
+					<a href="https://${emailUrl}/login/reset?reset_token=${token}&email=${this.request.body.email}&account=${account.name}" style="font-size: 16px; text-decoration: none; padding: 20px;display:block;background: #eee;border: 1px solid #ccc;margin: 20px 0;text-align: center; " target="_blank">
+						https://${emailUrl}/login/reset?reset_token=${token}&email=${this.request.body.email}&account=${account.name}
 					</a>
 
 					<div style="font-size:14px;color:#666">Thank You.</div>

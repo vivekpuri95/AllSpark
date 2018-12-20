@@ -58,7 +58,7 @@ Page.class = class ForgotPassword extends Page {
 		const container = this.container.querySelector('#accept-account');
 
 		container.innerHTML = `
-			<div>Select the account to reset password for.</div>
+			<div>Select the account to reset password for: </div>
 		`;
 
 		for(const account of accounts) {
@@ -77,6 +77,13 @@ Page.class = class ForgotPassword extends Page {
 
 			container.appendChild(item);
 		}
+
+		const backButton = document.createElement('button');
+		backButton.textContent = 'Back';
+
+		backButton.on('click', () => Sections.show('accept-email'));
+
+		container.appendChild(backButton);
 
 		if(accounts.length == 1) {
 
@@ -103,9 +110,7 @@ Page.class = class ForgotPassword extends Page {
 
 			const response = await API.call('authentication/resetlink', parameters, options);
 
-			this.message.classList.add('notice');
-			this.message.textContent = response;
-
+			window.location = '/login?resetlink=true';
 		}
 		catch(error) {
 

@@ -22,8 +22,12 @@ Page.class = class Login extends Page {
 			return this.message('Account not found!', 'warning');
 		}
 
-		if(this.urlSearchParameters.has('passwordReset') && this.urlSearchParameters.get('passwordReset') == 'true') {
+		if(this.urlSearchParameters.get('passwordReset')) {
 			this.message('Password reset successful', 'notice');
+		}
+
+		if(this.urlSearchParameters.get('resetLink')) {
+			this.message('Password reset link has been sent successfully', 'notice');
 		}
 
 		if(this.urlSearchParameters.get('email')) {

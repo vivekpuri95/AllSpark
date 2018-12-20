@@ -400,9 +400,16 @@ router.get('/login/reset', API.serve(class extends HTMLAPI {
 			<form class="form reset">
 
 				<label>
+					<span>Email</span>
+					<input name="email" disabled>
+				</label>
+
+				<label>
 					<span>New Password</span>
 					<input type="password" name="password" required>
 				</label>
+
+				<span class="account"></span>
 
 				<div>
 					<button class="submit">
