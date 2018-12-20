@@ -33,7 +33,7 @@ exports.pdf = class DownloadPdf extends API {
 
 		if(this.request.query.type == 'pdf') {
 
-			await page.pdf({path: `/tmp/Allspark/${fileName}`, format: 'A4', scale: 0.5});
+			await page.pdf({path: `/tmp/Allspark/${fileName}`, format: 'A4', scale: 0.5, displayHeaderFooter: true});
 		}
 		else if(this.request.query.type == 'png') {
 
