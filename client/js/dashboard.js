@@ -45,6 +45,10 @@ Page.class = class Dashboards extends Page {
 			this.container.querySelector('.nav-blanket').classList.toggle('hidden', !this.nav.classList.contains('show'));
 		});
 
+		if(this.urlSearchParameters.get('download')) {
+			Storage.set('menu-collapsed', 1);
+		}
+
 		this.reports.querySelector('.toolbar #back').on('click', async () => {
 
 			this.renderList();
@@ -610,7 +614,12 @@ class Dashboard {
 			rowHeight: 50,
 		};
 
-		Dashboard.screenHeightOffset = 1.5 * screen.availHeight;
+		let offset = 1.5;
+
+		if(this.page.urlSearchParameters.get('download'))
+			offset = Math.min();
+
+		Dashboard.screenHeightOffset = offset * screen.availHeight;
 
 		this.visibleVisuliaztions = new Set;
 
@@ -750,14 +759,8 @@ class Dashboard {
 		share.on('click', () => {
 
 			const
-				parameters = new URLSearchParams(),
-				dialougeBox = new DialogBox();
-
-			for(const [key, value] of Dashboard.selectedValues) {
-				parameters.set(key, value);
-			}
-
-			const shareURL = `${location.origin}${location.pathname}?${parameters}`;
+				dialougeBox = new DialogBox(),
+				shareURL = `${location.href}?${Dashboard.urlSearchString()}`;
 
 			dialougeBox.heading = `Share this URL`;
 
@@ -771,6 +774,117 @@ class Dashboard {
 
 			dialougeBox.body.querySelector('.share-url input').select();
 		});
+
+		const
+			download = page.container.querySelector('.download'),
+			downloadOptions = download.querySelector('.options');
+
+		download.querySelector('button').on('click', (e) => {
+
+			e.stopPropagation();
+
+			downloadOptions.classList.toggle('hidden');
+		});
+
+		document.on('click', () => {
+			downloadOptions.classList.add('hidden');
+		});
+
+		downloadOptions.querySelector('.pdf').on('click', e => {
+			e.stopPropagation();
+			Dashboard.download('pdf')
+		});
+
+		downloadOptions.querySelector('.png').on('click', e => {
+			e.stopPropagation();
+			Dashboard.download('png')
+		});
+
+		downloadOptions.querySelector('.jpeg').on('click', e => {
+			e.stopPropagation();
+			Dashboard.download('jpeg')
+		});
+	}
+
+	static urlSearchString() {
+
+		const parameters = new URLSearchParams();
+
+		for(const [key, value] of Dashboard.selectedValues)
+			parameters.set(key, value);
+
+		return parameters;
+	}
+
+	static async download(type) {
+
+		await API.refreshToken();
+
+		const searchParam = new URLSearchParams(location.search);
+
+		searchParam.set('download', true);
+		searchParam.set('locale', navigator.language);
+		searchParam.set('external_parameters', 1);
+		searchParam.set('token', (await Storage.get('token')).body);
+		searchParam.set('refresh_token', await Storage.get('refresh_token'));
+
+		for(const [key, value] of Dashboard.urlSearchString()) {
+			searchParam.set(key, value);
+		}
+
+		const
+			urlToDownload = `${location.origin}${location.pathname}?${searchParam}`,
+			options = {
+				raw: true,
+			},
+			parameter = {
+				url: urlToDownload,
+				type: type,
+			};
+
+		let content;
+
+		try {
+
+			content = await API.call('reports/download/pdf', parameter, options);
+		}
+		catch(e) {
+
+			return new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message || e,
+				icon: 'fas fa-ban',
+				type: 'error',
+			});
+		}
+
+		if(content.headers.get('content-type').includes('pdf')) {
+
+			content = await content.blob();
+
+			const link = document.createElement('a');
+			link.href = window.URL.createObjectURL(content);
+			link.download = page.list.get(page.currentDashboard).name + '-' + Format.dateTime(Date.now()) + '.pdf';
+			link.click();
+		}
+		else if(content.headers.get('content-type').includes('image')) {
+
+			content = await content.blob();
+
+			const link = document.createElement('a');
+			link.href = window.URL.createObjectURL(content);
+			link.download = page.list.get(page.currentDashboard).name + '-' + Format.dateTime(Date.now()) + '.' + type;
+			link.click();
+		}
+		else {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: `Unable to download ${type}`,
+				icon: 'fas fa-ban',
+				type: 'error',
+			});
+		}
 	}
 
 	static sortVisualizations(visibleVisuliaztions) {
@@ -1605,7 +1719,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 			}
 
 			if (options.dontLoad) {
-				return;
+				continue;
 			}
 
 			if (found && Array.from(this.page.loadedVisualizations).some(v => v.query == report)) {

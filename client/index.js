@@ -34,7 +34,16 @@ class HTMLAPI extends API {
 
 		let theme = 'light';
 
-		if(!this.user && this.request.cookies.token) {
+		if(this.request.query.download) {
+
+			const token_details = await commonFunctions.getUserDetailsJWT(this.request.query.refresh_token);
+
+			if(!token_details.error) {
+				this.user = new User(token_details);
+			}
+		}
+
+		if(!this.user && (this.request.cookies.token)) {
 
 			const token_details = await commonFunctions.getUserDetailsJWT(this.request.cookies.token);
 
@@ -350,25 +359,32 @@ router.get('/login/forgot', API.serve(class extends HTMLAPI {
 
 	async main() {
 		return `
+
 			<div class="logo hidden">
 				<img src="" />
 			</div>
 
-			<form class="form forgot">
+			<section id="accept-email" class="section show">
 
-				<label>
-					<span>Email</span>
-					<input type="email" name="email" required>
-				</label>
+				<form class="form forgot">
 
-				<div>
-					<a href='/login'><i class="fa fa-arrow-left"></i> &nbsp;Login</a>
-					<button class="submit">
-						<i class="fa fa-paper-plane"></i>
-						Send Link
-					</button>
-				</div>
-			</form>
+					<label>
+						<span>Email</span>
+						<input type="email" name="email" required>
+					</label>
+
+					<div>
+						<a href='/login'><i class="fa fa-arrow-left"></i> &nbsp;Login</a>
+						<button class="submit">
+							<i class="fa fa-paper-plane"></i>
+							Send Link
+						</button>
+					</div>
+				</form>
+
+			</section>
+
+			<section id="accept-account" class="section"></section>
 
 			<div id="message" class="hidden"></div>
 		`;
@@ -394,9 +410,16 @@ router.get('/login/reset', API.serve(class extends HTMLAPI {
 			<form class="form reset">
 
 				<label>
+					<span>Email</span>
+					<input name="email" disabled>
+				</label>
+
+				<label>
 					<span>New Password</span>
 					<input type="password" name="password" required>
 				</label>
+
+				<span class="account"></span>
 
 				<div>
 					<button class="submit">
@@ -645,6 +668,30 @@ router.get('/:type(dashboard|report|visualization)/:id?', API.serve(class extend
 						<i class="fas fa-share"></i>
 						Share
 					</button>
+
+					<div class="download">
+						<button>
+							<i class="fas fa-download"></i>
+							Download
+						</button>
+						<div class="options hidden">
+							<span class="item pdf">
+								<i class="far fa-file-pdf"></i>
+								<div>
+									PDF&nbsp;
+									<span class="NA">BETA</span>
+								</div>
+							</span>
+							<span class="item png">
+								<i class="far fa-image"></i>
+								PNG
+							</span>
+							<span class="item jpeg">
+								<i class="far fa-file-image"></i>
+								JPEG
+							</span>
+						</div>
+					</div>
 
 					<button id="full-screen">
 						<i class="fas fa-expand"></i>

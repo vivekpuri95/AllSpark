@@ -1,3 +1,4 @@
+
 Page.class = class ResetPassword extends Page {
 
 	constructor() {
@@ -18,6 +19,10 @@ Page.class = class ResetPassword extends Page {
 			return;
 		}
 
+		this.form.email.value = this.urlSearchParameters.get('email');
+
+		this.form.querySelector('.account').textContent = `Account: ${this.urlSearchParameters.get('account')}`;
+
 		const logo = this.container.querySelector('.logo img');
 
 		logo.on('load', () => logo.parentElement.classList.remove('hidden'));
@@ -33,12 +38,12 @@ Page.class = class ResetPassword extends Page {
 		this.message.textContent = null;
 
 		const parameters = {
-			reset_token: this.urlSearchParameters.get('reset_token')
+			reset_token: this.urlSearchParameters.get('reset_token'),
+			password: this.form.password.value,
 		};
 
 		const options = {
 			method: 'POST',
-			form: new FormData(this.form),
 		};
 
 		try {

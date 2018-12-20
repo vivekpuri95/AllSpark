@@ -32,11 +32,13 @@ main > * {
 			padding: 0;
 			grid-gap: calc(var(--gap) * 5);
 		}
-			main .form.reset,
-			main .form.forgot {
+			main .form.reset {
 				background: var(--color-surface);
 				box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
 				padding: calc(var(--gap) * 2);
+			}
+			main .form.forgot {
+				padding: 0;
 			}
 		main .form label {
 			max-width: initial;
