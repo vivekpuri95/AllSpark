@@ -350,11 +350,12 @@ router.get('/login/forgot', API.serve(class extends HTMLAPI {
 
 	async main() {
 		return `
-			<section id="accept-email" class="section show">
 
-				<div class="logo hidden">
-					<img src="" />
-				</div>
+			<div class="logo hidden">
+				<img src="" />
+			</div>
+
+			<section id="accept-email" class="section show">
 
 				<form class="form forgot">
 

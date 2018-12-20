@@ -26,7 +26,7 @@ Page.class = class Login extends Page {
 			this.message('Password reset successful', 'notice');
 		}
 
-		if(this.urlSearchParameters.get('resetLink')) {
+		if(this.urlSearchParameters.get('resetlink')) {
 			this.message('Password reset link has been sent successfully', 'notice');
 		}
 
