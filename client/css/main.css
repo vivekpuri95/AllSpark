@@ -230,6 +230,7 @@ body {
 			overflow: hidden;
 			align-items: center;
 			justify-content: center;
+			max-height: 50px !important;
 		}
 		body > header .logo:hover {
 			background: none;

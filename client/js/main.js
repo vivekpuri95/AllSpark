@@ -264,7 +264,13 @@ class Page {
 		await Storage.set('external_parameters', JSON.parse(parameters.get('external_parameters')));
 		await Storage.set('refresh_token', parameters.get('refresh_token'));
 
-		window.history.replaceState({}, '', window.location.pathname);
+		const searchParams = new URLSearchParams(window.location.search);
+
+		searchParams.delete('external_parameters');
+		searchParams.delete('refresh_token');
+		searchParams.delete('token');
+
+		window.history.replaceState({}, '', `${window.location.pathname}?${searchParams}`);
 	}
 
 	static async loadOnboardScripts() {
@@ -1385,6 +1391,13 @@ class AJAX {
 			return User.logout({next: true, redirect: options.redirectOnLogout, message: message});
 		}
 
+		if(options.raw) {
+			return {
+				data: response,
+				status: true,
+			};
+		}
+
 		return response.headers.get('content-type').includes('json') ? await response.json() : await response.text();
 	}
 }
@@ -1459,7 +1472,7 @@ class API extends AJAX {
 	static loadFormData(parameters, formData) {
 
 		if(!(formData instanceof FormData))
-			throw new Page.exception('The form object is not an instance of FormDat class!');
+			throw new Page.exception('The form object is not an instance of FormData class!');
 
 		for(const key of formData.keys()) {
 
@@ -1741,7 +1754,7 @@ class Format {
 		};
 
 		if(!Format.date.formatter)
-			Format.date.formatter = new Intl.DateTimeFormat(undefined, options);
+			Format.date.formatter = new Intl.DateTimeFormat(page.urlSearchParameters.get('locale') || undefined, options);
 
 		if(typeof date == 'string')
 			date = Date.parse(date);
@@ -1764,7 +1777,7 @@ class Format {
 		};
 
 		if(!Format.month.formatter)
-			Format.month.formatter = new Intl.DateTimeFormat(undefined, options);
+			Format.month.formatter = new Intl.DateTimeFormat(page.urlSearchParameters.get('locale') || undefined, options);
 
 		if(typeof month == 'string')
 			month = Date.parse(month);
@@ -1786,7 +1799,7 @@ class Format {
 		};
 
 		if(!Format.year.formatter)
-			Format.year.formatter = new Intl.DateTimeFormat(undefined, options);
+			Format.year.formatter = new Intl.DateTimeFormat(page.urlSearchParameters.get('locale') || undefined, options);
 
 		if(typeof year == 'string')
 			year = Date.parse(year);
@@ -1808,7 +1821,7 @@ class Format {
 		};
 
 		if(!Format.time.formatter)
-			Format.time.formatter = new Intl.DateTimeFormat(undefined, options);
+			Format.time.formatter = new Intl.DateTimeFormat(page.urlSearchParameters.get('locale') || undefined, options);
 
 		if(typeof time == 'string')
 			time = Date.parse(time);
@@ -1839,7 +1852,7 @@ class Format {
 
 			selectedFormat = {
 				format: format,
-				formatter: new Intl.DateTimeFormat(undefined, format),
+				formatter: new Intl.DateTimeFormat(page.urlSearchParameters.get('locale') || undefined, format),
 			};
 
 			Format.cachedFormat.push(selectedFormat);
@@ -1870,7 +1883,7 @@ class Format {
 		};
 
 		if(!Format.dateTime.formatter)
-			Format.dateTime.formatter = new Intl.DateTimeFormat(undefined, options);
+			Format.dateTime.formatter = new Intl.DateTimeFormat(page.urlSearchParameters.get('locale') || undefined, options);
 
 		if(typeof dateTime == 'string')
 			dateTime = Date.parse(dateTime);
