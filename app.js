@@ -10,6 +10,7 @@ const bodyParser = require('body-parser');
 
 const index = require('./server/routes/index');
 const client = require('./client/index');
+const nr = require('newrelic');
 
 const app = express();
 
