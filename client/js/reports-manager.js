@@ -2380,7 +2380,7 @@ class ReportsManagerFilters extends Map {
 
 		const form = this.container.querySelector('form.add-filter');
 
-		if(this.addForm.container.default_type.value != 'offset') {
+		if(this.addForm.container.default_type.value != 'offset' || !this.addForm.container.offset_value.value) {
 			this.addForm.container.offset_value.value = '';
 			this.addForm.container.offset_unit.value = 'second';
 			this.addForm.container.offset_direction.value = '-1';
@@ -2580,9 +2580,21 @@ class ReportsManagerFilter {
 
 		if(!isNaN(parseInt(this.offset))) {
 
+			let type = 'day';
+
+			if(this.type == 'datetime') {
+				type = 'seconds';
+			}
+			else if(this.type == 'month') {
+				type = 'month';
+			}
+			else if(this.type == 'year') {
+				type = 'year';
+			}
+
 			this.offset = {
 				value: Math.abs(this.offset.value),
-				unit: this.type,
+				unit: type,
 				direction: this.offset > 0 ? 1 : -1,
 				snap: false,
 			};

@@ -1481,9 +1481,21 @@ class DataSourceFilter {
 
 		if(!isNaN(parseInt(this.offset))) {
 
+			let type = 'day';
+
+			if(this.type == 'datetime') {
+				type = 'seconds';
+			}
+			else if(this.type == 'month') {
+				type = 'month';
+			}
+			else if(this.type == 'year') {
+				type = 'year';
+			}
+
 			this.offset = {
 				value: Math.abs(this.offset.value),
-				unit: this.type,
+				unit: type,
 				direction: this.offset > 0 ? 1 : -1,
 				snap: true,
 			};
@@ -13986,16 +13998,19 @@ class DataSourceFilterForm {
 
 			let type = 'day';
 
-			if(this.filter.type == 'month') {
-				type = 'month'
+			if(this.filter.type == 'datetime') {
+				type = 'seconds';
+			}
+			else if(this.filter.type == 'month') {
+				type = 'month';
 			}
 			else if(this.filter.type == 'year') {
-				type = 'year'
+				type = 'year';
 			}
 
 			this.filter.offset = {
 				value: Math.abs(this.filter.offset),
-				unit: this.filter.type,
+				unit: type,
 				direction: this.filter.offset > 0 ? 1 : -1,
 				snap: false,
 			};
