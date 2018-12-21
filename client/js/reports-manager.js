@@ -2574,9 +2574,10 @@ class ReportsManagerFilter {
 		if(!isNaN(parseInt(this.offset))) {
 
 			this.offset = {
-				value: Math.abs(this.offset),
+				value: Math.abs(this.offset.value),
 				unit: this.type,
 				direction: this.offset > 0 ? 1 : -1,
+				snap: false,
 			};
 		}
 
@@ -2589,7 +2590,7 @@ class ReportsManagerFilter {
 		this.form = new DataSourceFilterForm(filter, stage.page);
 	}
 
-	get row() {
+	get row() {`
 
 		if(this.rowElement) {
 			return this.rowElement;

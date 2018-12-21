@@ -1482,9 +1482,10 @@ class DataSourceFilter {
 		if(!isNaN(parseInt(this.offset))) {
 
 			this.offset = {
-				value: Math.abs(this.fitler.offset),
+				value: Math.abs(this.offset.value),
 				unit: this.type,
 				direction: this.offset > 0 ? 1 : -1,
+				snap: true,
 			};
 		}
 
