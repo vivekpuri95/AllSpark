@@ -1695,7 +1695,7 @@ class DataSourceFilter {
 				if(this.offset.snap) {
 					value = new Date(Date.UTC(date.getFullYear() + offset, 0, 1)).toISOString().substring(0, 10);
 				} else {
-					value = new Date(Date.UTC(date.getFullYear() + offset, date.getMonth(), date.getDay())).toISOString().substring(0, 10);
+					value = new Date(Date.UTC(date.getFullYear() + offset, date.getMonth(), date.getDate())).toISOString().substring(0, 10);
 				}
 			}
 		}
