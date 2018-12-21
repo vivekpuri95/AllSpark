@@ -1657,19 +1657,29 @@ class DataSourceFilter {
 				offset = this.offset.value * this.offset.direction;
 
 			if(this.offset.unit == 'second') {
-				value = new Date(date.getTime() + (offset * 1000)).toISOString().substring(0, 19).replace('T', ' ');
+				value = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours(), date.getMinutes(), date.getSeconds() + offset)).toISOString().substring(0, 19).replace('T', ' ');
 			}
 
 			else if(this.offset.unit == 'minute') {
-				value = new Date(date.getTime() + (offset * 1000 * 60)).toISOString().substring(0, 19).replace('T', ' ');
+
+				if(this.offset.snap) {
+					value = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours(), date.getMinutes() + offset, 0)).toISOString().substring(0, 19).replace('T', ' ');
+				} else {
+					value = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours(), date.getMinutes() + offset, date.getSeconds())).toISOString().substring(0, 19).replace('T', ' ');
+				}
 			}
 
 			else if(this.offset.unit == 'hour') {
-				value = new Date(date.getTime() + (offset * 1000 * 60 * 60)).toISOString().substring(0, 19).replace('T', ' ');
+
+				if(this.offset.snap) {
+					value = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours() + offset, 0, 0)).toISOString().substring(0, 19).replace('T', ' ');
+				} else {
+					value = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours() + offset, date.getMinutes(), date.getSeconds())).toISOString().substring(0, 19).replace('T', ' ');
+				}
 			}
 
 			else if(this.offset.unit == 'day') {
-				value = new Date(Date.nowUTC() + (offset * 1000 * 60 * 60 * 24)).toISOString().substring(0, 10);
+				value = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate() + offset)).toISOString().substring(0, 10);
 			}
 
 			else if(this.offset.unit == 'week') {
