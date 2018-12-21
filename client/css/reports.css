@@ -1771,6 +1771,28 @@ main .dataset {
 			border: double var(--color-border);
 			border-width: 0 3px 3px 0;
 		}
+
+.filter-form .offset {
+	max-width: 200px;
+	display: grid;
+	grid-template-columns: 70px 70px 50px;
+	grid-gap: var(--gap);
+}
+	.filter-form .offset .snap {
+		font-size: 90%;
+		grid-template-columns: max-content 1fr;
+		align-items: center;
+	}
+	.filter-form .offset .result {
+		grid-column: 2 / 4;
+		align-items: center;
+		display: flex;
+		flex-wrap: wrap;
+	}
+		.filter-form .offset .result .key {
+			margin-right: var(--gap);
+		}
+
 @media (max-width:750px) {
 
 	.visualization-canvas > .list {

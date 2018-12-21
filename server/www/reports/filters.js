@@ -16,9 +16,8 @@ class Filters extends API {
 		this.assert(name && placeholder, 'Name or placeholder is missing');
 
 		let values = {
-			name, query_id, placeholder, type, multiple, default_value, description,
+			name, query_id, placeholder, type, multiple, default_value, description, offset,
 			order: isNaN(parseInt(order)) ? null : parseInt(order),
-			offset: isNaN(parseInt(offset)) ? null : parseInt(offset),
 			dataset: isNaN(parseInt(dataset)) ? null : parseInt(dataset),
 		};
 
@@ -63,9 +62,8 @@ class Filters extends API {
 
 		let
 			values = {
-				name, placeholder, type, multiple, default_value, description,
+				name, placeholder, type, multiple, default_value, description, offset,
 				order: isNaN(parseInt(order)) ? null : parseInt(order),
-				offset: isNaN(parseInt(offset)) ? null : parseInt(offset),
 				dataset: isNaN(parseInt(dataset)) ? null : parseInt(dataset),
 			},
 			[filterQuery] = await this.mysql.query('SELECT * FROM tb_query_filters WHERE filter_id = ?', [filter_id]),

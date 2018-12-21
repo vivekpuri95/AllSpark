@@ -2361,7 +2361,7 @@ class ReportsManagerFilters extends Map {
 			this.addForm.container.default_type.value = 'default_value';
 		}
 
-		else if(this.addForm.container.offset.value) {
+		else if(this.addForm.container.offset_value.value) {
 			this.addForm.container.default_type.value = 'offset';
 		}
 
@@ -2380,7 +2380,7 @@ class ReportsManagerFilters extends Map {
 		const form = this.container.querySelector('form.add-filter');
 
 		if(this.addForm.container.default_type.value != 'offset')
-			this.addForm.container.offset.value = '';
+			this.addForm.container.offset_value.value = '';
 
 		if(this.addForm.container.default_type.value != 'default_value')
 			this.addForm.container.default_value.value = '';
@@ -2701,18 +2701,22 @@ class ReportsManagerFilter {
 	async update() {
 
 		if(this.form.container.default_type.value != 'offset')
-			this.form.container.offset.value = '';
+			this.form.container.offset_value.value = '';
 
 		if(this.form.container.default_type.value != 'default_value')
 			this.form.container.default_value.value = '';
 
-		const options = {
-			method: 'POST',
-		};
+		const
+			options = {
+				method: 'POST',
+			},
+			json = this.form.json;
+
+		json.offset = JSON.stringify(json.offset);
 
 		try {
 
-			await API.call('reports/filters/update', this.form.json, options);
+			await API.call('reports/filters/update', json, options);
 
 			await DataSource.load(true);
 
