@@ -14119,6 +14119,9 @@ class DataSourceFilterForm {
 			if(this.filter.offset && this.filter.offset.direction)
 				container.offset_direction.value = this.filter.offset.direction;
 
+			if(this.filter.offset && this.filter.offset.snap)
+				container.offset_snap.checked = this.filter.offset.snap;
+
 			container.offset_value.on('change', () => this.offsetChange());
 			container.offset_unit.on('change', () => this.offsetChange());
 			container.offset_direction.on('change', () => this.offsetChange());
