@@ -2351,8 +2351,9 @@ class ReportsManagerFilters extends Map {
 
 		for(const key in filter) {
 
-			if(key in this.addForm.container.elements)
+			if(key in this.addForm.container.elements) {
 				this.addForm.container.elements[key].value = filter[key];
+			}
 		}
 
 		this.addForm.datasetMultiSelect.value = filter.dataset || [];

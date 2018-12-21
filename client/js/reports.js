@@ -13984,6 +13984,15 @@ class DataSourceFilterForm {
 
 		if(!isNaN(parseInt(this.filter.offset))) {
 
+			let type = 'day';
+
+			if(this.filter.type == 'month') {
+				type = 'month'
+			}
+			else if(this.filter.type == 'year') {
+				type = 'year'
+			}
+
 			this.filter.offset = {
 				value: Math.abs(this.filter.offset),
 				unit: this.filter.type,
@@ -13992,7 +14001,7 @@ class DataSourceFilterForm {
 			};
 		}
 
-		else if(typeof this.offset == 'string') {
+		else if(typeof this.filter.offset == 'string') {
 
 			try {
 				this.filter.offset = JSON.parse(this.filter.offset);
@@ -14085,7 +14094,7 @@ class DataSourceFilterForm {
 
 			<label class="multiple">
 				<span>Allow Multiple <span class="right" data-tooltip="Can the user pick multiple values.">?</span></span>
-				<select name="multiple" required>
+				<select name="multiple">
 					<option value="0">No</option>
 					<option value="1">Yes</option>
 				</select>
