@@ -2571,6 +2571,21 @@ class ReportsManagerFilter {
 		this.stage = stage;
 		this.page = this.stage.page;
 
+		if(!isNaN(parseInt(this.offset))) {
+
+			this.offset = {
+				value: Math.abs(this.offset),
+				unit: this.type,
+				direction: this.offset > 0 ? 1 : -1,
+			};
+		}
+
+		try {
+			this.offset = JSON.parse(this.offset);
+		} catch(e) {
+			this.offset = {};
+		}
+
 		this.form = new DataSourceFilterForm(filter, stage.page);
 	}
 
@@ -2595,12 +2610,18 @@ class ReportsManagerFilter {
 			`;
 		}
 
+		let default_value = this.default_value;
+
+		if(this.offset && !isNaN(parseFloat(this.offset.value))) {
+			default_value = `${this.offset.value} ${this.offset.unit} ${this.offset.direction > 0 ? 'form now' : 'ago'} ${this.offset.snap ? '(snap)' : ''}`
+		}
+
 		row.innerHTML = `
 			<td>${this.id}</td>
 			<td>${this.name}</td>
 			<td>${this.placeholder}</td>
 			<td>${this.type}</td>
-			<td>${this.default_value || (isNaN(parseFloat(this.offset)) ? '' : this.offset)}</td>
+			<td>${default_value || ''}</td>
 			<td>${datasetName}</td>
 			<td class="action ${this.stage.selectedReport.editable ? 'green' : 'grey'}"><i class="far fa-edit"></i></td>
 			<td class="action ${this.stage.selectedReport.deletable ? 'red' : 'grey'}"><i class="far fa-trash-alt"></i></td>
