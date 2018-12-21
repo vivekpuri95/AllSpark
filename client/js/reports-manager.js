@@ -2729,7 +2729,7 @@ class ReportsManagerFilter {
 
 	async update() {
 
-		if(this.form.container.default_type.value != 'offset') {
+		if(this.form.container.default_type.value != 'offset' || !this.form.container.offset_value.value) {
 			this.form.container.offset_value.value = '';
 			this.form.container.offset_unit.value = 'second';
 			this.form.container.offset_direction.value = '-1';
