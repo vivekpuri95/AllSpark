@@ -2590,7 +2590,7 @@ class ReportsManagerFilter {
 		this.form = new DataSourceFilterForm(filter, stage.page);
 	}
 
-	get row() {`
+	get row() {
 
 		if(this.rowElement) {
 			return this.rowElement;
