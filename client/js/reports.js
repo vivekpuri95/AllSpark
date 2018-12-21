@@ -13988,13 +13988,17 @@ class DataSourceFilterForm {
 				value: Math.abs(this.filter.offset),
 				unit: this.filter.type,
 				direction: this.filter.offset > 0 ? 1 : -1,
+				snap: false,
 			};
 		}
 
-		try {
-			this.filter.offset = JSON.parse(this.filter.offset);
-		} catch(e) {
-			this.filter.offset = {};
+		else if(typeof this.offset == 'string') {
+
+			try {
+				this.filter.offset = JSON.parse(this.filter.offset);
+			} catch(e) {
+				this.filter.offset = {};
+			}
 		}
 	}
 
@@ -14168,7 +14172,18 @@ class DataSourceFilterForm {
 				container.offset_snap.checked = this.filter.offset.snap;
 			});
 
-			container.default_type.on('change', () => this.updateFormFields());
+			container.default_type.on('change', () => {
+
+				this.updateFormFields();
+
+				if(container.default_type.value == 'offset') {
+					container.offset_value.focus();
+				}
+
+				else if(container.default_type.value == 'default_value') {
+					container.default_value.focus();
+				}
+			});
 
 			this.changeFilterType();
 			this.updateFormFields();
@@ -14191,9 +14206,9 @@ class DataSourceFilterForm {
 		}
 
 		response.offset = {
-			value: parseInt(response.offset_value),
+			value: isNaN(parseInt(response.offset_value)) ? null : parseInt(response.offset_value),
 			unit: response.offset_unit,
-			direction: parseInt(response.offset_direction),
+			direction: parseInt(response.offset_direction) || -1,
 			snap: this.container.offset_snap.checked,
 		};
 

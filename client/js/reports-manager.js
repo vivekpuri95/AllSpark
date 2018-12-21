@@ -2379,11 +2379,16 @@ class ReportsManagerFilters extends Map {
 
 		const form = this.container.querySelector('form.add-filter');
 
-		if(this.addForm.container.default_type.value != 'offset')
+		if(this.addForm.container.default_type.value != 'offset') {
 			this.addForm.container.offset_value.value = '';
+			this.addForm.container.offset_unit.value = 'second';
+			this.addForm.container.offset_direction.value = '-1';
+			this.addForm.container.offset_snap.checked = false;
+		}
 
-		if(this.addForm.container.default_type.value != 'default_value')
+		if(this.addForm.container.default_type.value != 'default_value') {
 			this.addForm.container.default_value.value = '';
+		}
 
 		const
 			parameters = this.addForm.json,
@@ -2392,6 +2397,7 @@ class ReportsManagerFilters extends Map {
 			};
 
 		parameters.query_id = this.stage.report.query_id;
+		parameters.offset = JSON.stringify(parameters.offset);
 
 		if(this.has(this.addForm.container.placeholder.value)) {
 
@@ -2614,7 +2620,7 @@ class ReportsManagerFilter {
 		let default_value = this.default_value;
 
 		if(this.offset && !isNaN(parseFloat(this.offset.value))) {
-			default_value = `${this.offset.value} ${this.offset.unit} ${this.offset.direction > 0 ? 'form now' : 'ago'} ${this.offset.snap ? '(snap)' : ''}`
+			default_value = `${this.offset.value} ${this.offset.unit || ''} ${this.offset.direction > 0 ? 'from now' : 'ago'} ${this.offset.snap ? '(snap)' : ''}`
 		}
 
 		row.innerHTML = `
@@ -2722,11 +2728,16 @@ class ReportsManagerFilter {
 
 	async update() {
 
-		if(this.form.container.default_type.value != 'offset')
+		if(this.form.container.default_type.value != 'offset') {
 			this.form.container.offset_value.value = '';
+			this.form.container.offset_unit.value = 'second';
+			this.form.container.offset_direction.value = '-1';
+			this.form.container.offset_snap.checked = false;
+		}
 
-		if(this.form.container.default_type.value != 'default_value')
+		if(this.form.container.default_type.value != 'default_value') {
 			this.form.container.default_value.value = '';
+		}
 
 		const
 			options = {
@@ -2816,7 +2827,7 @@ class ReportsManagerFilter {
 
 		for(const key in json) {
 
-			if(key in this && (this[key] || json[key]) && this[key] != json[key]) {
+			if(key in this && (this[key] || json[key]) && JSON.stringify(this[key]) != JSON.stringify(json[key])) {
 				dirty = key;
 			}
 		}
