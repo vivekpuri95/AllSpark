@@ -1479,37 +1479,6 @@ class DataSourceFilter {
 
 		this.valueHistory = [];
 
-		if(!isNaN(parseInt(this.offset))) {
-
-			let type = 'day';
-
-			if(this.type == 'datetime') {
-				type = 'seconds';
-			}
-			else if(this.type == 'month') {
-				type = 'month';
-			}
-			else if(this.type == 'year') {
-				type = 'year';
-			}
-
-			this.offset = {
-				value: Math.abs(this.offset.value),
-				unit: type,
-				direction: this.offset > 0 ? 1 : -1,
-				snap: true,
-			};
-		}
-
-		else if(typeof this.offset == 'string') {
-
-			try {
-				this.offset = JSON.parse(this.offset);
-			} catch(e) {
-				this.offset = {};
-			}
-		}
-
 		if(this.type != 'daterange') {
 			return;
 		}
@@ -1662,64 +1631,8 @@ class DataSourceFilter {
 			}
 		}
 
-		if(this.offset && !isNaN(parseFloat(this.offset.value))) {
-
-			const
-				date = new Date(),
-				offset = this.offset.value * this.offset.direction;
-
-			if(this.offset.unit == 'second') {
-				value = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours(), date.getMinutes(), date.getSeconds() + offset)).toISOString().substring(0, 19).replace('T', ' ');
-			}
-
-			else if(this.offset.unit == 'minute') {
-
-				if(this.offset.snap) {
-					value = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours(), date.getMinutes() + offset, 0)).toISOString().substring(0, 19).replace('T', ' ');
-				} else {
-					value = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours(), date.getMinutes() + offset, date.getSeconds())).toISOString().substring(0, 19).replace('T', ' ');
-				}
-			}
-
-			else if(this.offset.unit == 'hour') {
-
-				if(this.offset.snap) {
-					value = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours() + offset, 0, 0)).toISOString().substring(0, 19).replace('T', ' ');
-				} else {
-					value = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours() + offset, date.getMinutes(), date.getSeconds())).toISOString().substring(0, 19).replace('T', ' ');
-				}
-			}
-
-			else if(this.offset.unit == 'day') {
-				value = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate() + offset)).toISOString().substring(0, 10);
-			}
-
-			else if(this.offset.unit == 'week') {
-
-				if(this.offset.snap) {
-					value = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate() - date.getDay() + (offset * 7))).toISOString().substring(0, 10);
-				} else {
-					value = new Date(Date.nowUTC() + (offset * 1000 * 60 * 60 * 24 * 7)).toISOString().substring(0, 10);
-				}
-			}
-
-			else if(this.offset.unit == 'month') {
-
-				if(this.offset.snap) {
-					value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + offset, 1)).toISOString().substring(0, 10);
-				} else {
-					value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + offset, date.getDate())).toISOString().substring(0, 10);
-				}
-			}
-
-			else if(this.offset.unit == 'year') {
-
-				if(this.offset.snap) {
-					value = new Date(Date.UTC(date.getFullYear() + offset, 0, 1)).toISOString().substring(0, 10);
-				} else {
-					value = new Date(Date.UTC(date.getFullYear() + offset, date.getMonth(), date.getDate())).toISOString().substring(0, 10);
-				}
-			}
+		if(this.offset && this.offset.length) {
+			value = DataSourceFilter.parseOffset(this.offset);
 		}
 
 		// If an offset and a default value was provided for the offset then create a new default value
@@ -1823,6 +1736,88 @@ class DataSourceFilter {
 			}
 
 			companion.value = new Date(Date.nowUTC() + date * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+		}
+	}
+
+	static parseOffset(offset, base = null) {
+
+		if(Array.isArray(offset)) {
+
+			let value = null;
+
+			for(const entry of offset) {
+
+				value = DataSourceFilter.parseOffset(entry, value);
+			}
+
+			return value;
+		}
+
+		if(base) {
+			base = new Date(base);
+		}
+		else {
+			base = new Date();
+		}
+
+		const offsetValue = offset.value * offset.direction;
+
+		if(offset.unit == 'second') {
+			return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours(), base.getMinutes(), base.getSeconds() + offsetValue)).toISOString().substring(0, 19).replace('T', ' ');
+		}
+
+		else if(offset.unit == 'minute') {
+
+			if(offset.snap) {
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours(), base.getMinutes() + offsetValue, 0)).toISOString().substring(0, 19).replace('T', ' ');
+			} else {
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours(), base.getMinutes() + offsetValue, base.getSeconds())).toISOString().substring(0, 19).replace('T', ' ');
+			}
+		}
+
+		else if(offset.unit == 'hour') {
+
+			if(offset.snap) {
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours() + offsetValue, 0, 0)).toISOString().substring(0, 19).replace('T', ' ');
+			} else {
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours() + offsetValue, base.getMinutes(), base.getSeconds())).toISOString().substring(0, 19).replace('T', ' ');
+			}
+		}
+
+		else if(offset.unit == 'day') {
+
+			if(offset.snap) {
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate() + offsetValue)).toISOString().substring(0, 10);
+			} else {
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate() + offsetValue, base.getHours(), base.getMinutes(), base.getSeconds())).toISOString().substring(0, 19).replace('T', ' ')
+			}
+		}
+
+		else if(offset.unit == 'week') {
+
+			if(offset.snap) {
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate() - base.getDay() + (offsetValue * 7))).toISOString().substring(0, 10);
+			} else {
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate() + (offsetValue * 7))).toISOString().substring(0, 10);
+			}
+		}
+
+		else if(offset.unit == 'month') {
+
+			if(offset.snap) {
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth() + offsetValue, 1)).toISOString().substring(0, 10);
+			} else {
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth() + offsetValue, base.getDate())).toISOString().substring(0, 10);
+			}
+		}
+
+		else if(offset.unit == 'year') {
+
+			if(offset.snap) {
+				return new Date(Date.UTC(base.getFullYear() + offsetValue, 0, 1)).toISOString().substring(0, 10);
+			} else {
+				return new Date(Date.UTC(base.getFullYear() + offsetValue, base.getMonth(), base.getDate())).toISOString().substring(0, 10);
+			}
 		}
 	}
 }
@@ -13993,37 +13988,6 @@ class DataSourceFilterForm {
 		this.filter = filter;
 		this.page = page;
 		this.datasetMultiSelect = new MultiSelect({dropDownPosition: 'top', multiple: false});
-
-		if(!isNaN(parseInt(this.filter.offset))) {
-
-			let type = 'day';
-
-			if(this.filter.type == 'datetime') {
-				type = 'seconds';
-			}
-			else if(this.filter.type == 'month') {
-				type = 'month';
-			}
-			else if(this.filter.type == 'year') {
-				type = 'year';
-			}
-
-			this.filter.offset = {
-				value: Math.abs(this.filter.offset),
-				unit: type,
-				direction: this.filter.offset > 0 ? 1 : -1,
-				snap: false,
-			};
-		}
-
-		else if(typeof this.filter.offset == 'string') {
-
-			try {
-				this.filter.offset = JSON.parse(this.filter.offset);
-			} catch(e) {
-				this.filter.offset = {};
-			}
-		}
 	}
 
 	get container() {
@@ -14063,6 +14027,18 @@ class DataSourceFilterForm {
 				<input type="number" name="order" value="${this.filter.order || ''}">
 			</label>
 
+			<label class="dataset">
+				<span>Dataset <span class="right" data-tooltip="A set of possible values for this filter.">?</span></span>
+			</label>
+
+			<label class="multiple">
+				<span>Allow Multiple <span class="right" data-tooltip="Can the user pick multiple values.">?</span></span>
+				<select name="multiple">
+					<option value="0">No</option>
+					<option value="1">Yes</option>
+				</select>
+			</label>
+
 			<div class="label">
 
 				<span>Default Value <span class="right" data-tooltip="Calculated and applied on first load\nif a global filter with same placeholder isn't added.">?</span></span>
@@ -14075,45 +14051,16 @@ class DataSourceFilterForm {
 
 				<input type="text" name="default_value" value="${this.filter.default_value || ''}">
 
-				<div class="offset">
-
-					<input type="number" step="1" name="offset_value" value="${!this.filter.offset || isNaN(parseFloat(this.filter.offset.value)) ? '' : this.filter.offset.value}">
-
-					<select name="offset_unit">
-						<option value="second">Second</option>
-						<option value="minute">Minute</option>
-						<option value="hour">Hour</option>
-						<option value="day">Day</option>
-						<option value="week">Week</option>
-						<option value="month">Month</option>
-						<option value="year">Year</option>
-					</select>
-
-					<select name="offset_direction">
-						<option value="-1">Ago</option>
-						<option value="1">From Now</option>
-					</select>
-
-					<label class="snap"><input type="checkbox" name="offset_snap"> Snap</label>
-
-					<div class="NA result">
-						<span class="key">Result:</span>
-						<span class="value"></span>
+				<div class="offsets">
+					<div class="footer">
+						<span class="result">
+							<span class="key">Final:</span>
+							<span class="value"></span>
+						</span>
+						<button type="button" class="add-offset"><i class="fa fa-plus"></i> Add Offset</button>
 					</div>
 				</div>
 			</div>
-
-			<label class="dataset">
-				<span>Dataset <span class="right" data-tooltip="A set of possible values for this filter.">?</span></span>
-			</label>
-
-			<label class="multiple">
-				<span>Allow Multiple <span class="right" data-tooltip="Can the user pick multiple values.">?</span></span>
-				<select name="multiple">
-					<option value="0">No</option>
-					<option value="1">Yes</option>
-				</select>
-			</label>
 		`;
 
 		for(const type of MetaData.filterTypes.values()) {
@@ -14125,22 +14072,6 @@ class DataSourceFilterForm {
 			container.type.insertAdjacentHTML('beforeend', `
 				<option value="${type.name.toLowerCase()}">${type.name}</option>
 			`);
-		}
-
-		{
-			if(this.filter.offset && this.filter.offset.unit)
-				container.offset_unit.value = this.filter.offset.unit;
-
-			if(this.filter.offset && this.filter.offset.direction)
-				container.offset_direction.value = this.filter.offset.direction;
-
-			if(this.filter.offset && this.filter.offset.snap)
-				container.offset_snap.checked = this.filter.offset.snap;
-
-			container.offset_value.on('change', () => this.offsetChange());
-			container.offset_unit.on('change', () => this.offsetChange());
-			container.offset_direction.on('change', () => this.offsetChange());
-			container.offset_snap.on('change', () => this.offsetChange());
 		}
 
 		container.type.value = this.filter.type || 'text';
@@ -14173,14 +14104,13 @@ class DataSourceFilterForm {
 		}
 
 		{
-
 			const default_value = container.default_value.value;
 
 			if(container.default_value.value) {
 				container.default_type.value = 'default_value';
 			}
 
-			else if(container.offset_value.value) {
+			else if(this.filter.offset && this.filter.offset.length) {
 				container.default_type.value = 'offset';
 			}
 
@@ -14188,32 +14118,26 @@ class DataSourceFilterForm {
 				container.default_type.value = 'none';
 			}
 
-			container.type.on('change', () => {
+			container.type.on('change', () => this.changeFilterType());
 
-				this.changeFilterType();
-
-				container.default_value.value = default_value;
-				container.offset_value.value = this.filter.offset.value;
-				container.offset_unit.value = this.filter.offset.unit;
-				container.offset_direction.value = this.filter.offset.direction;
-				container.offset_snap.checked = this.filter.offset.snap;
-			});
-
-			container.default_type.on('change', () => {
-
-				this.updateFormFields();
-
-				if(container.default_type.value == 'offset') {
-					container.offset_value.focus();
-				}
-
-				else if(container.default_type.value == 'default_value') {
-					container.default_value.focus();
-				}
-			});
+			container.default_type.on('change', () => this.updateFormFields());
 
 			this.changeFilterType();
 			this.updateFormFields();
+		}
+
+		// Set up offset rows & behavior
+		{
+			const
+				offsets = container.querySelector('.offsets'),
+				footer = container.querySelector('.footer'),
+				addOffset = container.querySelector('.footer .add-offset');
+
+			for(const offset of this.filter.offset || []) {
+				offsets.insertBefore(this.offset(offset), footer);
+			}
+
+			addOffset.on('click', () => offsets.insertBefore(this.offset(), footer));
 		}
 
 		container.on('submit', e => e.preventDefault());
@@ -14229,22 +14153,34 @@ class DataSourceFilterForm {
 		};
 
 		for(const [name, value] of new FormData(this.container)) {
-			response[name] = value;
+
+			if(name in this.filter) {
+				response[name] = value;
+			}
 		}
 
-		response.offset = {
-			value: isNaN(parseInt(response.offset_value)) ? null : parseInt(response.offset_value),
-			unit: response.offset_unit,
-			direction: parseInt(response.offset_direction) || -1,
-			snap: this.container.offset_snap.checked,
-		};
-
-		delete response.offset_value;
-		delete response.offset_unit;
-		delete response.offset_direction;
-		delete response.offset_snap;
-
 		response.multiple = parseInt(response.multiple) || 0;
+
+		response.offset = [];
+
+		if(!response.default_value) {
+
+			for(const offset of this.container.querySelectorAll('.offset')) {
+
+				const
+					value = offset.querySelector('input[name=value]').value,
+					unit = offset.querySelector('select[name=unit]').value,
+					direction = offset.querySelector('select[name=direction]').value,
+					snap = offset.querySelector('input[name=snap]').checked;
+
+				response.offset.push({
+					value: isNaN(parseInt(value)) ? null : parseInt(value),
+					unit,
+					direction: parseInt(direction),
+					snap,
+				});
+			}
+		}
 
 		return response;
 	}
@@ -14279,7 +14215,7 @@ class DataSourceFilterForm {
 	updateFormFields() {
 
 		this.container.default_value.classList.toggle('hidden', this.container.default_type.value != 'default_value');
-		this.container.querySelector('.offset').classList.toggle('hidden', this.container.default_type.value != 'offset');
+		this.container.querySelector('.offsets').classList.toggle('hidden', this.container.default_type.value != 'offset');
 
 		this.container.querySelector('.multiple').classList.toggle('hidden', !this.datasetMultiSelect.value.length);
 
@@ -14294,12 +14230,79 @@ class DataSourceFilterForm {
 
 		this.offsetChangeTimeout = setInterval((f = () => {
 
-			const filter = new DataSourceFilter(this.json);
+			const
+				offset = this.json.offset,
+				containers = this.container.querySelectorAll('.offsets .offset .result .value'),
+				copy = [];
 
-			this.container.querySelector('.offset > .result .value').innerHTML = filter.value || '&mdash;';
+			for(const [index, entry] of offset.entries()) {
+
+				copy.push(entry);
+				containers[index].innerHTML = DataSourceFilter.parseOffset(copy) || '&mdash;';
+			}
+
+			this.container.querySelector('.offsets > .footer .result .value').innerHTML = DataSourceFilter.parseOffset(offset) || '&mdash;';
 
 			return f;
 		})(), 500);
+	}
+
+	offset(offset = {}) {
+
+		const container = document.createElement('div');
+
+		container.classList.add('offset');
+
+		container.innerHTML = `
+
+			<input type="number" step="1" name="value" value="${isNaN(parseFloat(offset.value)) ? '' : offset.value}">
+
+			<select name="unit">
+				<option value="second">Second</option>
+				<option value="minute">Minute</option>
+				<option value="hour">Hour</option>
+				<option value="day">Day</option>
+				<option value="week">Week</option>
+				<option value="month">Month</option>
+				<option value="year">Year</option>
+			</select>
+
+			<select name="direction">
+				<option value="-1">Ago</option>
+				<option value="1">From Now</option>
+			</select>
+
+			<label class="snap" title="Snap to the nearest time unit"><input type="checkbox" name="snap"> Snap</label>
+
+			<span class="delete" title="Remove Offset"><i class="far fa-trash-alt"></i></span>
+
+			<div class="result">
+				<span class="key">Result:</span>
+				<span class="value"></span>
+			</div>
+		`;
+
+		const
+			value = container.querySelector('input[name=value]'),
+			unit = container.querySelector('select[name=unit]'),
+			direction = container.querySelector('select[name=direction]'),
+			snap = container.querySelector('input[name=snap]');
+
+		value.value = isNaN(parseInt(offset.value)) ? '' : offset.value;
+		unit.value = offset.unit || 'second';
+		direction.value = offset.direction || '-1' ;
+		snap.checked = offset.snap;
+
+		value.on('change', () => this.offsetChange());
+		unit.on('change', () => this.offsetChange());
+		direction.on('change', () => this.offsetChange());
+		snap.on('change', () => this.offsetChange());
+
+		container.querySelector('.delete').on('click', () => container.remove());
+
+		this.offsetChange();
+
+		return container;
 	}
 }
 

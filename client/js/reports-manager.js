@@ -2378,19 +2378,6 @@ class ReportsManagerFilters extends Map {
 
 	async insert() {
 
-		const form = this.container.querySelector('form.add-filter');
-
-		if(this.addForm.container.default_type.value != 'offset' || !this.addForm.container.offset_value.value) {
-			this.addForm.container.offset_value.value = '';
-			this.addForm.container.offset_unit.value = 'second';
-			this.addForm.container.offset_direction.value = '-1';
-			this.addForm.container.offset_snap.checked = false;
-		}
-
-		if(this.addForm.container.default_type.value != 'default_value') {
-			this.addForm.container.default_value.value = '';
-		}
-
 		const
 			parameters = this.addForm.json,
 			options = {
@@ -2578,34 +2565,6 @@ class ReportsManagerFilter {
 		this.stage = stage;
 		this.page = this.stage.page;
 
-		if(!isNaN(parseInt(this.offset))) {
-
-			let type = 'day';
-
-			if(this.type == 'datetime') {
-				type = 'seconds';
-			}
-			else if(this.type == 'month') {
-				type = 'month';
-			}
-			else if(this.type == 'year') {
-				type = 'year';
-			}
-
-			this.offset = {
-				value: Math.abs(this.offset.value),
-				unit: type,
-				direction: this.offset > 0 ? 1 : -1,
-				snap: false,
-			};
-		}
-
-		try {
-			this.offset = JSON.parse(this.offset);
-		} catch(e) {
-			this.offset = {};
-		}
-
 		this.form = new DataSourceFilterForm(filter, stage.page);
 	}
 
@@ -2632,8 +2591,8 @@ class ReportsManagerFilter {
 
 		let default_value = this.default_value;
 
-		if(this.offset && !isNaN(parseFloat(this.offset.value))) {
-			default_value = `${this.offset.value} ${this.offset.unit || ''} ${this.offset.direction > 0 ? 'from now' : 'ago'} ${this.offset.snap ? '(snap)' : ''}`
+		if(this.offset && this.offset.length) {
+			default_value = Format.number(this.offset.length) + ' offset rule' + (this.offset > 1 ? 's' : '');
 		}
 
 		row.innerHTML = `
@@ -2740,17 +2699,6 @@ class ReportsManagerFilter {
 	}
 
 	async update() {
-
-		if(this.form.container.default_type.value != 'offset' || !this.form.container.offset_value.value) {
-			this.form.container.offset_value.value = '';
-			this.form.container.offset_unit.value = 'second';
-			this.form.container.offset_direction.value = '-1';
-			this.form.container.offset_snap.checked = false;
-		}
-
-		if(this.form.container.default_type.value != 'default_value') {
-			this.form.container.default_value.value = '';
-		}
 
 		const
 			options = {
@@ -8166,7 +8114,7 @@ class ReportVisualizationFilter {
 		this.form.container.insertAdjacentHTML('beforeend', `
 
 			<label>
-				<button class="delete" title="Delete"><i class="far fa-trash-alt"></i></button>
+				<button type="button" class="delete" title="Delete"><i class="far fa-trash-alt"></i></button>
 			</label>
 		`);
 
@@ -8177,21 +8125,17 @@ class ReportVisualizationFilter {
 		this.form.container.description.parentElement.classList.add('hidden');
 		this.form.datasetMultiSelect.container.parentElement.classList.add('hidden');
 
-		let default_data;
+		let default_value = this.reportFilter.default_value;
 
-		if(this.reportFilter.default_value) {
-			default_data = `Default Fixed Value: ${this.reportFilter.default_value}`;
+		if(this.reportFilter.offset && this.reportFilter.offset.length) {
+			default_value = Format.number(this.reportFilter.offset.length) + ' offset rule' + (this.reportFilter.offset > 1 ? 's' : '');
 		}
 
-		else if(!isNaN(parseFloat(this.reportFilter.offset))) {
-			default_data = `Default Relative Value: ${this.reportFilter.offset}`;
+		if(default_value) {
+			this.form.container.default_type.insertAdjacentHTML('beforebegin', `<small>From Report: ${default_value}</small>`);
 		}
 
-		if(default_data) {
-			this.form.container.default_type.insertAdjacentHTML('beforebegin', `<small>${default_data}</small>`);
-		}
-
-		container.querySelector('.delete').on('click', () => {
+		container.querySelector('label .delete').on('click', () => {
 
 			this.container.parentElement.removeChild(container);
 
