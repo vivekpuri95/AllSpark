@@ -2676,10 +2676,18 @@ class MultiSelect {
 	 */
 	recalculate() {
 
-		if(!this.containerElement || !this.optionsContainer)
+		if(!this.containerElement)
 			return;
 
 		const search = this.container.querySelector('input[type=search]');
+
+		if(!this.optionsContainer) {
+
+			const [first] =  this.datalist.filter(x => x.value == this.selectedValues.values().next().value);
+			search.placeholder = first ? this.selectedValues.size > 1 ? `${first.name} and ${this.selectedValues - 1} more` : first.name : 'Search...';
+
+			return;
+		}
 
 		if(!this.datalist && !this.datalist.length)
 			return;
