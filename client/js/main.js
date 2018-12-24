@@ -2460,7 +2460,7 @@ class MultiSelect {
 
 			e.stopPropagation();
 
-			if(!container.querySelector('.options')) {
+			if(!this.optionsContainer) {
 
 				container.appendChild(this.options);
 				this.render();
@@ -2472,14 +2472,14 @@ class MultiSelect {
 					option.classList.add('hidden');
 			}
 
-			container.querySelector('.options').classList.remove('hidden');
+			this.options.classList.remove('hidden');
 			this.container.querySelector('input[type=search]').placeholder = 'Search...';
 		});
 
 		search.on('dblclick', () => {
 
 			if(!this.expand && this.optionsContainer)
-				container.querySelector('.options').classList.add('hidden');
+				this.options.classList.add('hidden');
 
 			search.value = '';
 			this.recalculate();
@@ -2490,7 +2490,7 @@ class MultiSelect {
 		document.body.on('click', () => {
 
 			if(!this.expand && this.optionsContainer)
-				container.querySelector('.options').classList.add('hidden');
+				this.options.classList.add('hidden');
 
 			search.value = '';
 			this.recalculate();
@@ -2599,9 +2599,9 @@ class MultiSelect {
 			return;
 		}
 
-		this.container.querySelector('header .all').classList.toggle('hidden', !this.multiple);
+		this.options.querySelector('header .all').classList.toggle('hidden', !this.multiple);
 
-		const optionList = this.container.querySelector('.options .list');
+		const optionList = this.options.querySelector('.list');
 
 		optionList.textContent = null;
 
@@ -2679,9 +2679,7 @@ class MultiSelect {
 		if(!this.containerElement || !this.optionsContainer)
 			return;
 
-		const
-			search = this.container.querySelector('input[type=search]'),
-			options = this.container.querySelector('.options');
+		const search = this.container.querySelector('input[type=search]');
 
 		if(!this.datalist && !this.datalist.length)
 			return;
@@ -2709,17 +2707,17 @@ class MultiSelect {
 		}
 
 		const
-			total = options.querySelectorAll('.list label').length,
-			hidden = options.querySelectorAll('.list label.hidden').length,
-			selected = options.querySelectorAll('.list input:checked').length,
-			firstSelected = options.querySelector('.list label.selected div > span');
+			total = this.options.querySelectorAll('.list label').length,
+			hidden = this.options.querySelectorAll('.list label.hidden').length,
+			selected = this.options.querySelectorAll('.list input:checked').length,
+			firstSelected = this.options.querySelector('.list label.selected div > span');
 
 		search.placeholder = 'Search...';
 
 		if(firstSelected)
 			search.placeholder = selected > 1 ? `${firstSelected.textContent} and ${selected - 1} more` : firstSelected.textContent;
 
-		const footer = options.querySelector('footer');
+		const footer = this.options.querySelector('footer');
 
 		footer.classList.remove('hidden');
 		footer.innerHTML = `
@@ -2728,7 +2726,7 @@ class MultiSelect {
 			<span>Selected: <strong>${selected}</strong></span>
 		`;
 
-		options.querySelector('.no-matches').classList.toggle('hidden', total != hidden);
+		this.options.querySelector('.no-matches').classList.toggle('hidden', total != hidden);
 
 		this.fireCallback('change');
 	}
