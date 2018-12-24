@@ -383,7 +383,7 @@ exports.list = class extends API {
 				connectionMapping[row.owner_id]["role"].push(row);
 			}
 
-			if (row.target == 'user') {
+			if (row.target == 'user' && row.target_id == this.user.user_id) {
 
 				connectionMapping[row.owner_id]["users"].push(row);
 			}
