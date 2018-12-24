@@ -2596,7 +2596,7 @@ class MultiSelect {
 
 		if(!this.optionsContainer) {
 
-			return;
+			return this.recalculate();
 		}
 
 		this.options.querySelector('header .all').classList.toggle('hidden', !this.multiple);
