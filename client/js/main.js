@@ -2681,6 +2681,9 @@ class MultiSelect {
 
 		const search = this.container.querySelector('input[type=search]');
 
+		if(!this.datalist && !this.datalist.length)
+			return;
+
 		if(!this.optionsContainer) {
 
 			const [first] =  this.datalist.filter(x => x.value == this.selectedValues.values().next().value);
@@ -2688,9 +2691,6 @@ class MultiSelect {
 
 			return;
 		}
-
-		if(!this.datalist && !this.datalist.length)
-			return;
 
 		for(const row of this.datalist) {
 
