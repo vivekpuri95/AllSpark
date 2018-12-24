@@ -1725,7 +1725,6 @@ class DashboardGlobalFilters extends DataSourceFilters {
 			if (found && Array.from(this.page.loadedVisualizations).some(v => v.query == report)) {
 				report.visualizations.selected.load(options);
 			}
-
 			report.visualizations.selected.subReportDialogBox = null;
 			report.container.style.opacity = found ? 1 : 0.4;
 		}

@@ -14160,9 +14160,10 @@ class DataSourceFilterForm {
 
 		response.multiple = parseInt(response.multiple) || 0;
 
+		response.default_value = '';
 		response.offset = [];
 
-		if(!response.default_value) {
+		if(this.container.default_type.value == 'offset') {
 
 			for(const offset of this.container.querySelectorAll('.offset')) {
 
@@ -14181,9 +14182,15 @@ class DataSourceFilterForm {
 			}
 		}
 
-		if(!response.offset.length) {
-			response.offset = null;
+		else if(this.container.default_type.value == 'fixed') {
+			response.default_value = this.container.default_value.value;
 		}
+
+		if(response.order != '')
+			response.order = parseFloat(response.order);
+
+		if(response.dataset != '')
+			response.dataset = parseFloat(response.dataset);
 
 		return response;
 	}
