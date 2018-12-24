@@ -14258,7 +14258,7 @@ class DataSourceFilterForm {
 
 		container.innerHTML = `
 
-			<input type="number" step="1" name="value" value="${isNaN(parseFloat(offset.value)) ? '' : offset.value}">
+			<input type="number" step="1" name="value" value="${isNaN(parseFloat(offset.value)) ? '' : offset.value}" required>
 
 			<select name="unit">
 				<option value="second">Second</option>
