@@ -8042,11 +8042,13 @@ class ReportVisualizationFilters extends Map {
 
 		this.container.querySelector('.add-filter').classList.remove('hidden');
 
-		for(const filter of this.values())
+		for(const filter of this.values()) {
 			filterList.appendChild(filter.container);
+		}
 
-		if(!this.size)
+		if(!this.size) {
 			filterList.innerHTML = '<div class="NA">No filters added yet!</div>';
+		}
 
 		const optionsList = this.container.querySelector('.add-filter select');
 
@@ -8054,8 +8056,9 @@ class ReportVisualizationFilters extends Map {
 
 		for(const filter of this.stage.report.filters) {
 
-			if(!this.has(filter.filter_id))
+			if(!this.has(filter.filter_id)) {
 				optionsList.insertAdjacentHTML('beforeend', `<option value="${filter.filter_id}">${filter.name}</option>`);
+			}
 		}
 
 		this.container.querySelector('.add-filter').classList.toggle('hidden', this.size == this.stage.report.filters.length);
@@ -8070,7 +8073,6 @@ class ReportVisualizationFilters extends Map {
 		const response = [];
 
 		for(const filter of this.values()) {
-
 			response.push(filter.json);
 		}
 
@@ -8100,8 +8102,9 @@ class ReportVisualizationFilter {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('fieldset');
 

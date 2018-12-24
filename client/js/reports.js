@@ -14184,7 +14184,7 @@ class DataSourceFilterForm {
 			}
 		}
 
-		else if(this.container.default_type.value == 'fixed') {
+		else if(this.container.default_type.value == 'default_value') {
 			response.default_value = this.container.default_value.value;
 		}
 
