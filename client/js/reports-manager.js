@@ -2362,7 +2362,7 @@ class ReportsManagerFilters extends Map {
 			this.addForm.container.default_type.value = 'default_value';
 		}
 
-		else if(this.addForm.container.offset_value.value) {
+		else if(filter.offset && filter.offset.length) {
 			this.addForm.container.default_type.value = 'offset';
 		}
 

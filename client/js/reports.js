@@ -2366,7 +2366,9 @@ class DataSourceColumn {
 		`;
 
 		if(!this.source.editable) {
+
 			const saveData = form.querySelector('footer .save');
+
 			saveData.disabled = true;
 			saveData.dataset.tooltip = 'Insufficient Privileges';
 			saveData.dataset.tooltipPosition = 'left';
@@ -14153,10 +14155,7 @@ class DataSourceFilterForm {
 		};
 
 		for(const [name, value] of new FormData(this.container)) {
-
-			if(name in this.filter) {
-				response[name] = value;
-			}
+			response[name] = value;
 		}
 
 		response.multiple = parseInt(response.multiple) || 0;
@@ -14180,6 +14179,10 @@ class DataSourceFilterForm {
 					snap,
 				});
 			}
+		}
+
+		if(!response.offset.length) {
+			response.offset = null;
 		}
 
 		return response;
@@ -14231,7 +14234,7 @@ class DataSourceFilterForm {
 		this.offsetChangeTimeout = setInterval((f = () => {
 
 			const
-				offset = this.json.offset,
+				offset = this.json.offset || [],
 				containers = this.container.querySelectorAll('.offsets .offset .result .value'),
 				copy = [];
 
