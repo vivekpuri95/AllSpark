@@ -2442,23 +2442,13 @@ class MultiSelect {
 
 		container.innerHTML = `
 			<input type="search" placeholder="Search...">
-			<div class="options hidden">
-				<header>
-					<a class="all">All</a>
-					<a class="clear">Clear</a>
-				</header>
-				<div class="list"></div>
-				<div class="no-matches NA hidden">No data found</div>
-				<footer class="hidden"></footer>
-			</div>
 		`;
 
-		const
-			options = container.querySelector('.options'),
-			search = container.querySelector('input[type=search]');
+		const search = container.querySelector('input[type=search]');
 
 		if(this.expand) {
-			options.classList.remove('hidden');
+
+			container.appendChild(this.options);
 			container.classList.add('expanded');
 		}
 
@@ -2470,20 +2460,26 @@ class MultiSelect {
 
 			e.stopPropagation();
 
+			if(!container.querySelector('.options')) {
+
+				container.appendChild(this.options);
+				this.render();
+			}
+
 			if(!container.classList.contains('expanded')) {
 
 				for(const option of document.querySelectorAll('.multi-select .options'))
 					option.classList.add('hidden');
 			}
 
-			options.classList.remove('hidden');
+			container.querySelector('.options').classList.remove('hidden');
 			this.container.querySelector('input[type=search]').placeholder = 'Search...';
 		});
 
 		search.on('dblclick', () => {
 
-			if(!this.expand)
-				options.classList.add('hidden');
+			if(!this.expand && this.optionsContainer)
+				container.querySelector('.options').classList.add('hidden');
 
 			search.value = '';
 			this.recalculate();
@@ -2491,14 +2487,10 @@ class MultiSelect {
 
 		search.on('keyup', () => this.recalculate());
 
-		options.on('click', e => e.stopPropagation());
-		options.querySelector('header .all').on('click', () => this.all());
-		options.querySelector('header .clear').on('click', () => this.clear());
-
 		document.body.on('click', () => {
 
-			if(!this.expand)
-				options.classList.add('hidden');
+			if(!this.expand && this.optionsContainer)
+				container.querySelector('.options').classList.add('hidden');
 
 			search.value = '';
 			this.recalculate();
@@ -2544,6 +2536,7 @@ class MultiSelect {
 	 * @return Array	An array of 'value' properties of the datalist.
 	 */
 	get value() {
+
 		return Array.from(this.selectedValues);
 	}
 
@@ -2562,7 +2555,35 @@ class MultiSelect {
 	 * Get the disabled status of the MultiSelect.
 	 */
 	get disabled() {
+
 		return this._disabled;
+	}
+
+	get options() {
+
+		if(this.optionsContainer) {
+
+			return this.optionsContainer;
+		}
+
+		const options = this.optionsContainer = document.createElement('div');
+		options.classList.add('options');
+
+		options.innerHTML = `
+			<header>
+				<a class="all">All</a>
+				<a class="clear">Clear</a>
+			</header>
+			<div class="list"></div>
+			<div class="no-matches NA hidden">No data found</div>
+			<footer class="hidden"></footer>
+		`;
+
+		options.on('click', e => e.stopPropagation());
+		options.querySelector('header .all').on('click', () => this.all());
+		options.querySelector('header .clear').on('click', () => this.clear());
+
+		return options;
 	}
 
 	/**
@@ -2572,6 +2593,11 @@ class MultiSelect {
 	render() {
 
 		this.container.querySelector('input[type=search]').disabled = this.disabled || false;
+
+		if(!this.optionsContainer) {
+
+			return;
+		}
 
 		this.container.querySelector('header .all').classList.toggle('hidden', !this.multiple);
 
@@ -2650,7 +2676,7 @@ class MultiSelect {
 	 */
 	recalculate() {
 
-		if(!this.containerElement)
+		if(!this.containerElement || !this.optionsContainer)
 			return;
 
 		const
