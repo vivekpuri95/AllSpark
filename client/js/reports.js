@@ -14142,7 +14142,9 @@ class DataSourceFilterForm {
 			addOffset.on('click', () => offsets.insertBefore(this.offset(), footer));
 		}
 
-		container.on('submit', e => e.preventDefault());
+		container.on('submit', e => {
+			e.preventDefault();
+		});
 
 		return container;
 	}
