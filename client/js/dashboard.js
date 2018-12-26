@@ -80,59 +80,29 @@ Page.class = class Dashboards extends Page {
 			return this.searchBarFilter;
 		}
 
-		const filters = [
-			{
-				key: 'Report ID',
-				rowValue: row => [row.query_id],
-			},
-			{
-				key: 'Name',
-				rowValue: row => row.name ? [row.name] : [],
-			},
-			{
-				key: 'Description',
-				rowValue: row => row.description ? [row.description] : [],
-			},
-			{
-				key: 'Tags',
-				rowValue: row => row.tags ? row.tags.split(',') : [],
-			},
-			{
-				key: 'Filters Length',
-				rowValue: row => [row.filters.length]
-			},
-			{
-				key: 'Filters Name',
-				rowValue: row => row.filters.map(f => f.name),
-			},
-			{
-				key: 'Visualizations Name',
-				rowValue: row => row.visualizations.map(f => f.name),
-			},
-			{
-				key: 'Visualizations Type',
-				rowValue: row => {
-					return row.visualizations.map(f => f.type)
-						 .map(m => MetaData.visualizations.has(m) ?
-						 (MetaData.visualizations.get(m)).name : []);
+		const
+			filters = [
+				{
+					key: 'Visualization ID',
+					rowValue: row => [row.visualization_id],
 				},
-			},
-			{
-				key: 'Visualizations Length',
-				rowValue: row => [row.visualizations.length],
-			},
-			{
-				key: 'Report Creation',
-				rowValue: row => row.created_at ? [row.created_at] : [],
-			},
-			{
-				key: 'Report Last Updated At',
-				rowValue: row => row.updated_at ? [row.updated_at] : [],
-			}
-		];
+				{
+					key: 'Name',
+					rowValue: row => row.name ? [row.name] : [],
+				},
+				{
+					key: 'Type',
+					rowValue: row => [row.type],
+				},
+				{
+					key: 'Tags',
+					rowValue: row => row.tags ? row.tags.split(',').map(t => t.trim()) : [],
+				}
+			]
+		;
 
 		this.searchBarFilter = new SearchColumnFilters({
-			data: Array.from(DataSource.list.values()),
+			data: [],
 			filters: filters,
 			advanceSearch: true,
 			page,
@@ -273,37 +243,45 @@ Page.class = class Dashboards extends Page {
 				<th>ID</th>
 				<th>Title</th>
 				<th>Description</th>
+				<th>Type</th>
 				<th>Tags</th>
-				<th>Category</th>
-				<th>Visualizations</th>
 			</tr>
 		`;
 
-		let reports = [];
+		let visualizations = [];
 
-		if(this.searchBar) {
-			reports = this.searchBar.filterData;
+		for (const report of [...DataSource.list.values()]) {
+
+			if (!(report.visualizations && report.visualizations.length)) {
+
+				continue;
+			}
+
+			if(this.listContainer.form.subtitle.value && report.subtitle != this.listContainer.form.subtitle.value) {
+
+				continue;
+			}
+
+			visualizations.push(...report.visualizations);
 		}
 
-		for (const report of reports) {
+		if(this.searchBar) {
 
-			if (!report.is_enabled || report.is_deleted) {
-				continue;
-			}
+			this.searchBar.data = visualizations;
+		}
 
-			if (this.listContainer.form.subtitle.value && report.subtitle != this.listContainer.form.subtitle.value) {
-				continue;
-			}
+		for(const visualization of (this.searchBar ? this.searchBar.filterData : visualizations)) {
 
 			const tr = document.createElement('tr');
 
-			let description = report.description ? report.description.split(' ').slice(0, 20) : [];
+			let
+				description = visualization.description ? visualization.description.split(' ').slice(0, 20) : [],
+				tags = visualization.tags ? visualization.tags.split(',') : [];
 
 			if (description.length === 20) {
+
 				description.push('&hellip;');
 			}
-
-			let tags = report.tags ? report.tags.split(',') : [];
 
 			tags = tags.map(tag => {
 
@@ -317,12 +295,11 @@ Page.class = class Dashboards extends Page {
 			});
 
 			tr.innerHTML = `
-				<td>${report.query_id}</td>
-				<td><a href="/report/${report.query_id}" target="_blank" class="link">${report.name}</a></td>
+				<td>${visualization.visualization_id}</td>
+				<td><a href="/visualization/${visualization.visualization_id}" target="_blank" class="link">${visualization.name}</a></td>
 				<td>${description.join(' ') || ''}</td>
+				<td>${visualization.type}</td>
 				<td class="tags"></td>
-				<td>${MetaData.categories.has(report.subtitle) && MetaData.categories.get(report.subtitle).name || ''}</td>
-				<td><div class="visualisation-display">${report.visualizations.map(v => `<div class="visualization-name">${v.name} `+` <br> <span class="NA"> ${v.type}` + `</span></div>`).join('')}</div></td>
 			`;
 
 			for (const tag of tags) {
@@ -332,15 +309,16 @@ Page.class = class Dashboards extends Page {
 			tr.querySelector('.link').on('click', e => e.stopPropagation());
 
 			tr.on('click', async () => {
-				this.report(report.query_id);
-				history.pushState({filter: report.query_id}, '', `/report/${report.query_id}`);
+
+				this.report(visualization.visualization_id, true);
+				history.pushState({filter: visualization.visualization_id}, '', `/visualization/${visualization.visualization_id}`);
 			});
 
 			tbody.appendChild(tr);
 		}
 
 		if (!tbody.children.length)
-			tbody.innerHTML = `<tr class="NA no-reports"><td colspan="6">No Reports Found!</td></tr>`;
+			tbody.innerHTML = `<tr class="NA no-reports"><td colspan="6">No Visualizations Found!</td></tr>`;
 	}
 
 	/**
