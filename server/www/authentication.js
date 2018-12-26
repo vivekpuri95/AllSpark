@@ -102,7 +102,7 @@ exports.reset = class extends API {
 
 	async reset() {
 
-		if (!this.request.body.password || !this.request.body.reset_token)
+		if (!this.request.body.password || !this.request.body.reset_token || this.aaccount.auth_api)
 			return false;
 
 		const query = `
