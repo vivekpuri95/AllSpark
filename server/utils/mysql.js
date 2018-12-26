@@ -13,11 +13,6 @@ let poolObj = {};
 
 for (const connection in dbConfig) {
 
-	if(connection == 'write' && Config.has('readOnlyMode') && Config.get('readOnlyMode')) {
-
-		continue;
-	}
-
 	poolObj[connection] = {
 		connection,
 		pool: mysql.createPool(dbConfig[connection]),
@@ -70,9 +65,9 @@ class MySQL {
 
 	async query(sql, values = null, connectionName = "read") {
 
-		if(connectionName == 'write' && Config.has('readOnlyMode') && Config.get('readOnlyMode')) {
+		if(connectionName == 'write' && (Config.has('readOnlyMode') ? Config.get('readOnlyMode') : false)) {
 
-			throw(new Error('Connection not found. Please try after some time.'));
+			throw(new Error('The panel is currently in read only mode for maintenance. Please try after some time.'));
 		}
 
 		if(!poolObj[connectionName]) {
