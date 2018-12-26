@@ -1,9 +1,10 @@
 "use strict";
 
 const mysql = require('mysql');
-const Redis = require("./redis").Redis;
+const redis = require("./redis").Redis;
+const config = require('config');
 
-const dbConfig = require('config').get("sql_db");
+const dbConfig = config.get("sql_db");
 
 console.log('INITIALIZE POOL###################################');
 
@@ -57,12 +58,17 @@ class MySQL {
 			};
 		}
 
-		await Redis.hset(`${process.env.NODE_ENV}#credentials`, "mysql", Object.values(poolObj).filter(x => x.pool && x.connection.id).map(x => x.connection.id).join(", "));
+		await redis.hset(`${process.env.NODE_ENV}#credentials`, "mysql", Object.values(poolObj).filter(x => x.pool && x.connection.id).map(x => x.connection.id).join(", "));
 
 		console.log("MYSql Connections Available: ", Object.keys(poolObj));
 	}
 
 	async query(sql, values = null, connectionName = "read") {
+
+		if(connectionName == 'write' && (config.has('readOnlyMode') ? config.get('readOnlyMode') : false)) {
+
+			throw(new Error('The panel is currently in read only mode for maintenance. Please try after some time.'));
+		}
 
 		if(!poolObj[connectionName]) {
 
