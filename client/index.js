@@ -973,6 +973,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 								<tr>
 									<th>Name</th>
 									<th>Type</th>
+									<th>Tags</th>
 									<th>Preview</th>
 									<th>Edit</th>
 									<th>Delete</th>
