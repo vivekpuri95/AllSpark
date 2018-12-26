@@ -2,8 +2,9 @@
 
 const mysql = require('mysql');
 const Redis = require("./redis").Redis;
+const Config = require('config');
 
-const dbConfig = require('config').get("sql_db");
+const dbConfig = Config.get("sql_db");
 
 console.log('INITIALIZE POOL###################################');
 
@@ -11,6 +12,11 @@ console.log('INITIALIZE POOL###################################');
 let poolObj = {};
 
 for (const connection in dbConfig) {
+
+	if(connection == 'write' && Config.has('readOnlyMode') && Config.get('readOnlyMode')) {
+
+		continue;
+	}
 
 	poolObj[connection] = {
 		connection,
@@ -63,6 +69,11 @@ class MySQL {
 	}
 
 	async query(sql, values = null, connectionName = "read") {
+
+		if(connectionName == 'write' && Config.has('readOnlyMode') && Config.get('readOnlyMode')) {
+
+			throw(new Error('Connection not found. Please try after some time.'));
+		}
 
 		if(!poolObj[connectionName]) {
 
