@@ -33,7 +33,8 @@ class Tests extends API {
 
 			await this.mysql.query(
 				'UPDATE tb_query_filters SET offset = ? WHERE filter_id = ?',
-				[JSON.stringify(filter.offset), filter.filter_id]
+				[JSON.stringify(filter.offset), filter.filter_id],
+				'write'
 			);
 		}
 	}
