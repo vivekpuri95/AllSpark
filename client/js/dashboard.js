@@ -1362,7 +1362,7 @@ class Dashboard {
 
 	getCategoryFilter() {
 
-		if(!this.format.category_id || (this.page.searchBar && [...this.page.searchBar.values()].filter(x => x.json.columnName == 'Category').length)) {
+		if(!this.format.category_id) {
 
 			return;
 		}
@@ -1383,7 +1383,7 @@ class Dashboard {
 
 	getTagFilters() {
 
-		if(!this.format.tags || !this.format.tags.length || (this.page.searchBar && [...this.page.searchBar.values()].filter(x => x.json.columnName == 'Tags').length)) {
+		if(!this.format.tags || !this.format.tags.length) {
 
 			return;
 		}
