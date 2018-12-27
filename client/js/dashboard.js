@@ -240,7 +240,6 @@ Page.class = class Dashboards extends Page {
 
 		thead.innerHTML = `
 			<tr>
-				<th>ID</th>
 				<th>Title</th>
 				<th>Description</th>
 				<th>Type</th>
@@ -302,8 +301,11 @@ Page.class = class Dashboards extends Page {
 			});
 
 			tr.innerHTML = `
-				<td>${visualization.visualization_id}</td>
-				<td><a href="/visualization/${visualization.visualization_id}" target="_blank" class="link">${visualization.name}</a></td>
+				<td>
+					<a href="${visualization.visualization_id ? '/visualization/' + visualization.visualization_id : '/report/' + visualization.source.query_id}" target="_blank" class="link">
+						${visualization.name} <span class="NA">${visualization.visualization_id ? '#' + visualization.visualization_id : ''}</span>
+					</a>
+				</td>
 				<td>${description.join(' ') || ''}</td>
 				<td>${visualization.type}</td>
 				<td class="tags"></td>
