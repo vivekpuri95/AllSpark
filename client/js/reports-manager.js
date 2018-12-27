@@ -2219,7 +2219,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 			tbody.appendChild(row);
 		}
 
-		if(!this.report.visualizations.length)
+		if(!this.visualizations.length)
 			tbody.innerHTML = '<tr class="NA"><td colspan="6">No Visualization Found!</td></tr>';
 
 		await this.page.preview.position('right');
@@ -3212,6 +3212,8 @@ class VisualizationManager {
 
 		if(e)
 			e.preventDefault();
+
+		this.form.tags.value = this.form.tags.value.split(',').map(t => t.trim()).filter(t => t).join(', ');
 
 		const
 			parameters = {

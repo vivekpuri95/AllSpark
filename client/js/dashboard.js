@@ -249,7 +249,7 @@ Page.class = class Dashboards extends Page {
 		const
 			visualizations = [],
 			currentDashboardFormat = this.list.get(this.currentDashboard) ? this.list.get(this.currentDashboard).format || {} : {},
-			[subtitleFilter] = this.searchBar ? [...this.searchBar.values()].filter(x => x.json.columnName == 'Subtitle') : [],
+			[subtitleFilter] = this.searchBar ? [...this.searchBar.values()].filter(x => x.json.columnName == 'Category') : [],
 			defaultCategoryName = MetaData.categories.has(currentDashboardFormat.category_id) ? MetaData.categories.get(currentDashboardFormat.category_id).name : '',
 			currentSubtitleValue = subtitleFilter ? subtitleFilter.json.query : defaultCategoryName
 		;
@@ -1355,7 +1355,7 @@ class Dashboard {
 
 	getCategoryFilter() {
 
-		if(!this.format.category_id) {
+		if(!this.format.category_id || (this.page.searchBar && [...this.page.searchBar.values()].filter(x => x.json.columnName == 'Category').length)) {
 
 			return;
 		}
@@ -1376,7 +1376,7 @@ class Dashboard {
 
 	getTagFilters() {
 
-		if(!this.format.tags || !this.format.tags.length) {
+		if(!this.format.tags || !this.format.tags.length || (this.page.searchBar && [...this.page.searchBar.values()].filter(x => x.json.columnName == 'Tags').length)) {
 
 			return;
 		}
