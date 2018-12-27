@@ -1143,7 +1143,7 @@ main .tabs .tabs-header {
 		padding: 0 12px;
 		white-space: nowrap;
 		display: grid;
-		grid-gap: calc(var(--gap) * 2);
+		grid-gap: 12px;
 		grid-auto-flow: column;
 	}
 		main .tabs .tabs-header .icons .add-tab,
