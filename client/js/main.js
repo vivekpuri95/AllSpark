@@ -2442,23 +2442,13 @@ class MultiSelect {
 
 		container.innerHTML = `
 			<input type="search" placeholder="Search...">
-			<div class="options hidden">
-				<header>
-					<a class="all">All</a>
-					<a class="clear">Clear</a>
-				</header>
-				<div class="list"></div>
-				<div class="no-matches NA hidden">No data found</div>
-				<footer class="hidden"></footer>
-			</div>
 		`;
 
-		const
-			options = container.querySelector('.options'),
-			search = container.querySelector('input[type=search]');
+		const search = container.querySelector('input[type=search]');
 
 		if(this.expand) {
-			options.classList.remove('hidden');
+
+			container.appendChild(this.options);
 			container.classList.add('expanded');
 		}
 
@@ -2470,20 +2460,26 @@ class MultiSelect {
 
 			e.stopPropagation();
 
+			if(!this.optionsContainer) {
+
+				container.appendChild(this.options);
+				this.render();
+			}
+
 			if(!container.classList.contains('expanded')) {
 
 				for(const option of document.querySelectorAll('.multi-select .options'))
 					option.classList.add('hidden');
 			}
 
-			options.classList.remove('hidden');
+			this.options.classList.remove('hidden');
 			this.container.querySelector('input[type=search]').placeholder = 'Search...';
 		});
 
 		search.on('dblclick', () => {
 
-			if(!this.expand)
-				options.classList.add('hidden');
+			if(!this.expand && this.optionsContainer)
+				this.options.classList.add('hidden');
 
 			search.value = '';
 			this.recalculate();
@@ -2491,14 +2487,10 @@ class MultiSelect {
 
 		search.on('keyup', () => this.recalculate());
 
-		options.on('click', e => e.stopPropagation());
-		options.querySelector('header .all').on('click', () => this.all());
-		options.querySelector('header .clear').on('click', () => this.clear());
-
 		document.body.on('click', () => {
 
-			if(!this.expand)
-				options.classList.add('hidden');
+			if(!this.expand && this.optionsContainer)
+				this.options.classList.add('hidden');
 
 			search.value = '';
 			this.recalculate();
@@ -2544,6 +2536,7 @@ class MultiSelect {
 	 * @return Array	An array of 'value' properties of the datalist.
 	 */
 	get value() {
+
 		return Array.from(this.selectedValues);
 	}
 
@@ -2562,7 +2555,35 @@ class MultiSelect {
 	 * Get the disabled status of the MultiSelect.
 	 */
 	get disabled() {
+
 		return this._disabled;
+	}
+
+	get options() {
+
+		if(this.optionsContainer) {
+
+			return this.optionsContainer;
+		}
+
+		const options = this.optionsContainer = document.createElement('div');
+		options.classList.add('options');
+
+		options.innerHTML = `
+			<header>
+				<a class="all">All</a>
+				<a class="clear">Clear</a>
+			</header>
+			<div class="list"></div>
+			<div class="no-matches NA hidden">No data found</div>
+			<footer class="hidden"></footer>
+		`;
+
+		options.on('click', e => e.stopPropagation());
+		options.querySelector('header .all').on('click', () => this.all());
+		options.querySelector('header .clear').on('click', () => this.clear());
+
+		return options;
 	}
 
 	/**
@@ -2573,9 +2594,14 @@ class MultiSelect {
 
 		this.container.querySelector('input[type=search]').disabled = this.disabled || false;
 
-		this.container.querySelector('header .all').classList.toggle('hidden', !this.multiple);
+		if(!this.optionsContainer) {
 
-		const optionList = this.container.querySelector('.options .list');
+			return this.recalculate();
+		}
+
+		this.options.querySelector('header .all').classList.toggle('hidden', !this.multiple);
+
+		const optionList = this.options.querySelector('.list');
 
 		optionList.textContent = null;
 
@@ -2653,12 +2679,18 @@ class MultiSelect {
 		if(!this.containerElement)
 			return;
 
-		const
-			search = this.container.querySelector('input[type=search]'),
-			options = this.container.querySelector('.options');
+		const search = this.container.querySelector('input[type=search]');
 
 		if(!this.datalist && !this.datalist.length)
 			return;
+
+		if(!this.optionsContainer) {
+
+			const [first] =  this.datalist.filter(x => x.value == this.selectedValues.values().next().value);
+			search.placeholder = first ? this.selectedValues.size > 1 ? `${first.name} and ${this.selectedValues - 1} more` : first.name : 'Search...';
+
+			return;
+		}
 
 		for(const row of this.datalist) {
 
@@ -2683,17 +2715,17 @@ class MultiSelect {
 		}
 
 		const
-			total = options.querySelectorAll('.list label').length,
-			hidden = options.querySelectorAll('.list label.hidden').length,
-			selected = options.querySelectorAll('.list input:checked').length,
-			firstSelected = options.querySelector('.list label.selected div > span');
+			total = this.options.querySelectorAll('.list label').length,
+			hidden = this.options.querySelectorAll('.list label.hidden').length,
+			selected = this.options.querySelectorAll('.list input:checked').length,
+			firstSelected = this.options.querySelector('.list label.selected div > span');
 
 		search.placeholder = 'Search...';
 
 		if(firstSelected)
 			search.placeholder = selected > 1 ? `${firstSelected.textContent} and ${selected - 1} more` : firstSelected.textContent;
 
-		const footer = options.querySelector('footer');
+		const footer = this.options.querySelector('footer');
 
 		footer.classList.remove('hidden');
 		footer.innerHTML = `
@@ -2702,7 +2734,7 @@ class MultiSelect {
 			<span>Selected: <strong>${selected}</strong></span>
 		`;
 
-		options.querySelector('.no-matches').classList.toggle('hidden', total != hidden);
+		this.options.querySelector('.no-matches').classList.toggle('hidden', total != hidden);
 
 		this.fireCallback('change');
 	}
