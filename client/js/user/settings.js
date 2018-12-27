@@ -25,12 +25,16 @@ class ChangePassword {
 
 	render() {
 
-		if(this.account.auth_api) {
+		const changePassword = this.page.container.querySelector('.change-password');
 
-			this.page.container.querySelector('.change-password').remove();
+		if(account.auth_api) {
+
+			changePassword.remove();
 
 			return;
 		}
+
+		changePassword.classList.remove('hidden');
 
 		const form = this.page.container.querySelector('.change-password .form');
 

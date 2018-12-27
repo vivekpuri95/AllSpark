@@ -450,7 +450,7 @@ router.get('/user/settings/:id?', API.serve(class extends HTMLAPI {
 
 		return `
 
-			<div class="change-password">
+			<div class="change-password hidden">
 				<h3>Change Password</h3>
 				<form class="block form">
 
