@@ -56,12 +56,6 @@ Page.class = class Dashboards extends Page {
 			history.pushState(null, '', window.location.pathname.slice(0, window.location.pathname.lastIndexOf('/')));
 		});
 
-		// for(const category of MetaData.categories.values()) {
-		// 	this.listContainer.form.subtitle.insertAdjacentHTML('beforeend', `<option value="${category.category_id}">${category.name}</option>`);
-		// }
-		//
-		// this.listContainer.form.subtitle.on('change', () => this.renderList());
-
 		window.on('popstate', e => this.load(e.state));
 
 		this.navbar = new Navbar(new Map, this);
@@ -99,7 +93,7 @@ Page.class = class Dashboards extends Page {
 					rowValue: row => row.tags ? row.tags.split(',').map(t => t.trim()) : [],
 				},
 				{
-					key: 'Subtitle',
+					key: 'Category',
 					rowValue: row => row.subtitle ? [row.subtitle] : [],
 				}
 			]
@@ -1189,21 +1183,11 @@ class Dashboard {
 
 		if (this.format && this.format.category_id) {
 
-			// this.page.listContainer.form.subtitle.value = this.format.category_id;
+			this.getCategoryFilter();
+
+			this.getTagFilters();
 
 			this.page.searchBarFilter.container.classList.remove('hidden');
-
-			const tagFilter = new SearchColumnFilter(this.page.searchBarFilter);
-
-			this.page.searchBarFilter.add(tagFilter);
-
-			this.page.searchBarFilter.render();
-
-			tagFilter.json = {
-				searchQuery: MetaData.categories.has(this.format.category_id) ? MetaData.categories.get(this.format.category_id).name : '',
-				searchValue: 'Subtitle',
-				searchType: 'equalto',
-			};
 
 			this.page.renderList();
 
@@ -1367,6 +1351,50 @@ class Dashboard {
 			};
 
 		await API.call('reports/dashboard/update', parameters, options);
+	}
+
+	getCategoryFilter() {
+
+		if(!this.format.category_id) {
+
+			return;
+		}
+
+		const categoryFilter = new SearchColumnFilter(this.page.searchBarFilter);
+
+		this.page.searchBarFilter.add(categoryFilter);
+
+		this.page.searchBarFilter.render();
+
+		categoryFilter.json = {
+			searchQuery: MetaData.categories.has(this.format.category_id) ? MetaData.categories.get(this.format.category_id).name : '',
+			searchValue: 'Category',
+			searchType: 'equalto',
+		};
+
+	}
+
+	getTagFilters() {
+
+		if(!this.format.tags || !this.format.tags.length) {
+
+			return;
+		}
+
+		for(const tag of this.format.tags) {
+
+			const tagFilter = new SearchColumnFilter(this.page.searchBarFilter);
+
+			this.page.searchBarFilter.add(tagFilter);
+
+			tagFilter.json = {
+				searchQuery: tag,
+				searchValue: 'Tags',
+				searchType: 'equalto',
+			};
+		}
+
+		this.page.searchBarFilter.render();
 	}
 }
 
