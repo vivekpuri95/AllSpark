@@ -2635,6 +2635,7 @@ class ReportsManagerFilter {
 		this.container.classList.remove('hidden');
 
 		this.form.container.name.focus();
+		this.form.offsetChange();
 	}
 
 	get container() {
