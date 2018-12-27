@@ -1524,7 +1524,7 @@ class Nav {
 
 		container.classList.add('item');
 
-		if (!allVisualizations.length && (!this.dashboard.format || !parseInt(this.dashboard.format.category_id))) {
+		if (!allVisualizations.length && (!this.dashboard.format || (!parseInt(this.dashboard.format.category_id)) && !this.dashboard.format.tags)) {
 			container.classList.add('hidden');
 		}
 
