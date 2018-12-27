@@ -1281,12 +1281,13 @@ class DataSourceFilters extends Map {
 			}
 
 			// Remove the 'start', 'end', 'date' and spaces to create a name that would (hopefuly) identify the filter pairs.
-			const name = filter.name.replace(/(start|end|date)/ig, '').trim();
+			const name = filter.name.replace(/(start|end|date|_)/ig, '').trim();
 
 			if(!filterGroups.has(name)) {
+
 				filterGroups.set(name, [{
 					filter_id: Math.random(),
-					name: filter.name.replace(/(start|end|date)/ig, '') + ' Date Range',
+					name: name + ' Date Range',
 					placeholder: name + '_date_range',
 					placeholders: [],
 					type: 'daterange',
@@ -1301,7 +1302,12 @@ class DataSourceFilters extends Map {
 		}
 
 		// Remove any groups that don't have a start and end date (only)
-		for(const [name, group] of filterGroups)
+		for(const [name, group] of filterGroups) {
+
+			if(!group.some(f => f.name.toLowerCase().includes('start')) || !group.some(f => f.name.toLowerCase().includes('end'))) {
+				filterGroups.delete(name);
+			}
+		}
 
 		// Go through each filter group and sort by the name to bring start filter before the end.
 		// And also add them to the master global filter list to bring them together.
@@ -1623,11 +1629,11 @@ class DataSourceFilter {
 			const [visualization_filter] = this.filters.source.visualizations.selected.options.filters.filter(x => x.filter_id == this.filter_id);
 
 			if(visualization_filter && visualization_filter.default_value) {
-			   return visualization_filter.default_value;
+				return visualization_filter.default_value;
 			}
 
 			else if(visualization_filter && visualization_filter.offset) {
-			   this.offset = visualization_filter.offset;
+				this.offset = visualization_filter.offset;
 			}
 		}
 
