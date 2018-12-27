@@ -56,6 +56,13 @@ Page.class = class Dashboards extends Page {
 			history.pushState(null, '', window.location.pathname.slice(0, window.location.pathname.lastIndexOf('/')));
 		});
 
+		this.listContainer.form.on('submit', e => {
+
+			e.preventDefault();
+
+			this.renderList();
+		});
+
 		window.on('popstate', e => this.load(e.state));
 
 		this.navbar = new Navbar(new Map, this);
