@@ -60,6 +60,13 @@ Page.class = class Dashboards extends Page {
 			this.listContainer.form.subtitle.insertAdjacentHTML('beforeend', `<option value="${category.category_id}">${category.name}</option>`);
 		}
 
+		const watermarkDiv = document.createElement('div');
+		watermarkDiv.classList.add('hidden', 'pdf-watermark');
+
+		watermarkDiv.textContent = `Downloaded from ${window.location.hostname}`
+
+		this.container.appendChild(watermarkDiv);
+
 		this.listContainer.form.subtitle.on('change', () => this.renderList());
 
 		window.on('popstate', e => this.load(e.state));

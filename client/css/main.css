@@ -137,6 +137,24 @@ a:active {
 	color: inherit;
 }
 
+@media print {
+
+	button.side {
+		display: none !important;
+	}
+
+	body > main div.pdf-watermark {
+		width: 100%;
+		display: block !important;
+		background: var(--color-background) !important;
+		margin-right: 20px;
+		font-size: 110%;
+		text-align: right;
+		padding: 15px;
+		color: var(--color-background-text) !important;
+	}
+}
+
 .hidden {
 	display: none !important;
 }
