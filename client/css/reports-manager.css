@@ -1111,7 +1111,7 @@ main.preview-top .tabs {
 	height: 40vh;
 }
 main.preview-bottom .tabs {
-	height: 40vh;
+	height: 35vh;
 	grid-column: 1 / 4;
 }
 main.preview-right .tabs {
