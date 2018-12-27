@@ -56,13 +56,6 @@ Page.class = class Dashboards extends Page {
 			history.pushState(null, '', window.location.pathname.slice(0, window.location.pathname.lastIndexOf('/')));
 		});
 
-		this.listContainer.form.on('submit', e => {
-
-			e.preventDefault();
-
-			this.renderList();
-		});
-
 		window.on('popstate', e => this.load(e.state));
 
 		this.navbar = new Navbar(new Map, this);
@@ -101,7 +94,7 @@ Page.class = class Dashboards extends Page {
 				},
 				{
 					key: 'Category',
-					rowValue: row => row.subtitle ? [row.subtitle] : [],
+					rowValue: row => MetaData.categories.has(row.report.subtitle) ? [MetaData.categories.get(row.report.subtitle).name] : [],
 				}
 			]
 		;
@@ -120,6 +113,8 @@ Page.class = class Dashboards extends Page {
 		this.searchBarFilter.on('change', () => this.renderList());
 
 		this.renderList();
+
+		return this.searchBarFilter;
 	}
 
 	parents(id) {
@@ -256,7 +251,7 @@ Page.class = class Dashboards extends Page {
 		const
 			visualizations = [],
 			currentDashboardFormat = this.list.get(this.currentDashboard) ? this.list.get(this.currentDashboard).format || {} : {},
-			[subtitleFilter] = this.searchBar ? [...this.searchBar.values()].filter(x => x.json.columnName == 'Category') : [],
+			[subtitleFilter] = [...this.searchBar.values()].filter(x => x.json.columnName == 'Category'),
 			defaultCategoryName = MetaData.categories.has(currentDashboardFormat.category_id) ? MetaData.categories.get(currentDashboardFormat.category_id).name : '',
 			currentSubtitleValue = subtitleFilter ? subtitleFilter.json.query : defaultCategoryName
 		;
@@ -275,17 +270,14 @@ Page.class = class Dashboards extends Page {
 				continue;
 			}
 
-			report.visualizations.map(x => x.subtitle = MetaData.categories.has(report.subtitle) ? MetaData.categories.get(report.subtitle).name : '');
+			report.visualizations.map(x => x.report = report);
 
 			visualizations.push(...report.visualizations);
 		}
 
-		if(this.searchBar) {
+		this.searchBar.data = visualizations;
 
-			this.searchBar.data = visualizations;
-		}
-
-		for(const visualization of (this.searchBar ? this.searchBar.filterData : visualizations)) {
+		for(const visualization of this.searchBar.filterData) {
 
 			const tr = document.createElement('tr');
 
@@ -1195,8 +1187,6 @@ class Dashboard {
 			this.getCategoryFilter();
 
 			this.getTagFilters();
-
-			this.page.searchBarFilter.container.classList.remove('hidden');
 
 			this.page.renderList();
 
