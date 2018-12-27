@@ -3138,7 +3138,7 @@ class VisualizationManager {
 							
 							<label>
 								<span>Tags <span class="right NA">Comma Separated</span></span>
-								<input type="text" name="tags" required>
+								<input type="text" name="tags">
 							</label>
 						</div>
 					</div>
