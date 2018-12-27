@@ -1181,7 +1181,7 @@ class Dashboard {
 
 	async load() {
 
-		if (this.format && this.format.category_id) {
+		if (this.format && (this.format.category_id || this.format.tags)) {
 
 			this.getCategoryFilter();
 
@@ -1217,7 +1217,7 @@ class Dashboard {
 
 	async render(resize) {
 
-		if (this.format && this.format.category_id) {
+		if (this.format && (this.format.category_id || this.format.tags)) {
 			return;
 		}
 
