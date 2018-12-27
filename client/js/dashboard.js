@@ -232,6 +232,8 @@ Page.class = class Dashboards extends Page {
 
 	renderList() {
 
+		this.listContainer.querySelector('h2').textContent = this.list.has(this.currentDashboard) ? this.list.get(this.currentDashboard).name : 'Dashboard';
+
 		const
 			thead = this.listContainer.querySelector('thead'),
 			tbody = this.listContainer.querySelector('tbody');
@@ -1371,7 +1373,6 @@ class Dashboard {
 			searchValue: 'Category',
 			searchType: 'equalto',
 		};
-
 	}
 
 	getTagFilters() {
