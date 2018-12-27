@@ -1554,7 +1554,7 @@ class Nav {
 			}
 
 			this.page.render({
-				dashboardId: this.dashboard.visualizations.length || (this.dashboard.format && this.dashboard.format.category_id) ? this.dashboard.id : 0,
+				dashboardId: this.dashboard.visualizations.length || (this.dashboard.format && (this.dashboard.format.category_id || this.dashboard.format.tags)) ? this.dashboard.id : 0,
 				renderNav: false,
 				updateNav: false
 			});
