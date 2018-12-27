@@ -94,7 +94,7 @@ Page.class = class Dashboards extends Page {
 				},
 				{
 					key: 'Category',
-					rowValue: row => MetaData.categories.has(row.report.subtitle) ? [MetaData.categories.get(row.report.subtitle).name] : [],
+					rowValue: row => MetaData.categories.has(row.source.subtitle) ? [MetaData.categories.get(row.source.subtitle).name] : [],
 				}
 			]
 		;
@@ -258,11 +258,6 @@ Page.class = class Dashboards extends Page {
 
 		for (const report of [...DataSource.list.values()]) {
 
-			if (!(report.visualizations && report.visualizations.length)) {
-
-				continue;
-			}
-
 			const categoryName = MetaData.categories.has(report.subtitle) ? MetaData.categories.get(report.subtitle).name : '';
 
 			if(currentSubtitleValue && categoryName != currentSubtitleValue) {
@@ -270,9 +265,14 @@ Page.class = class Dashboards extends Page {
 				continue;
 			}
 
-			report.visualizations.map(x => x.report = report);
+			const datasource = new DataSource(report, page);
 
-			visualizations.push(...report.visualizations);
+			if (!(datasource.visualizations && datasource.visualizations.length)) {
+
+				continue;
+			}
+
+			visualizations.push(...datasource.visualizations);
 		}
 
 		this.searchBar.data = visualizations;
