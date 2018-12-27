@@ -3458,6 +3458,17 @@ class SearchColumnFilters extends Set {
 			filters.innerHTML = '<div class="NA">No Filters Added</div>';
 	}
 
+	clear() {
+
+		for(const filter of this) {
+
+			if(filter != this.globalSearch) {
+
+				this.delete(filter);
+			}
+		}
+	}
+
 	on(event, callback) {
 
 		if(event != 'change')

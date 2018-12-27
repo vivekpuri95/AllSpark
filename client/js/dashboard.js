@@ -1190,6 +1190,8 @@ class Dashboard {
 
 		if (this.format && (this.format.category_id || this.format.tags)) {
 
+			this.page.searchBarFilter.clear();
+
 			this.getCategoryFilter();
 
 			this.getTagFilters();
