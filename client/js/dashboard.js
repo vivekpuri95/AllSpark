@@ -241,7 +241,6 @@ Page.class = class Dashboards extends Page {
 		thead.innerHTML = `
 			<tr>
 				<th>Title</th>
-				<th>Description</th>
 				<th>Type</th>
 				<th>Tags</th>
 			</tr>
@@ -306,12 +305,11 @@ Page.class = class Dashboards extends Page {
 						${visualization.name} <span class="NA">${visualization.visualization_id ? '#' + visualization.visualization_id : ''}</span>
 					</a>
 				</td>
-				<td>${description.join(' ') || ''}</td>
 				<td>${visualization.type}</td>
 				<td class="tags"></td>
 			`;
 
-			for (const tag of tags || []) {
+			for (const tag of tags) {
 
 				tr.querySelector('.tags').appendChild(tag);
 			}
