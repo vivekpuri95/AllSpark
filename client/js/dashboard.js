@@ -311,7 +311,8 @@ Page.class = class Dashboards extends Page {
 				<td class="tags"></td>
 			`;
 
-			for (const tag of tags) {
+			for (const tag of tags || []) {
+
 				tr.querySelector('.tags').appendChild(tag);
 			}
 
