@@ -3200,7 +3200,7 @@ class VisualizationManager {
 
 		this.form.name.value = this.name;
 		this.form.type.value = this.type;
-		this.form.tags.value = this.tags;
+		this.form.tags.value = this.tags || '';
 
 		(async () => {
 			await this.descriptionEditor.setup();
