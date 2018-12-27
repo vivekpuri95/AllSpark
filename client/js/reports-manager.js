@@ -2351,8 +2351,9 @@ class ReportsManagerFilters extends Map {
 
 		for(const key in filter) {
 
-			if(key in this.addForm.container.elements)
+			if(key in this.addForm.container.elements) {
 				this.addForm.container.elements[key].value = filter[key];
+			}
 		}
 
 		this.addForm.datasetMultiSelect.value = filter.dataset || [];
@@ -2361,7 +2362,7 @@ class ReportsManagerFilters extends Map {
 			this.addForm.container.default_type.value = 'default_value';
 		}
 
-		else if(this.addForm.container.offset.value) {
+		else if(filter.offset && filter.offset.length) {
 			this.addForm.container.default_type.value = 'offset';
 		}
 
@@ -2377,14 +2378,6 @@ class ReportsManagerFilters extends Map {
 
 	async insert() {
 
-		const form = this.container.querySelector('form.add-filter');
-
-		if(this.addForm.container.default_type.value != 'offset')
-			this.addForm.container.offset.value = '';
-
-		if(this.addForm.container.default_type.value != 'default_value')
-			this.addForm.container.default_value.value = '';
-
 		const
 			parameters = this.addForm.json,
 			options = {
@@ -2392,6 +2385,7 @@ class ReportsManagerFilters extends Map {
 			};
 
 		parameters.query_id = this.stage.report.query_id;
+		parameters.offset = JSON.stringify(parameters.offset);
 
 		if(this.has(this.addForm.container.placeholder.value)) {
 
@@ -2595,12 +2589,18 @@ class ReportsManagerFilter {
 			`;
 		}
 
+		let default_value = this.default_value;
+
+		if(this.offset && this.offset.length) {
+			default_value = Format.number(this.offset.length) + ' offset rule' + (this.offset > 1 ? 's' : '');
+		}
+
 		row.innerHTML = `
 			<td>${this.id}</td>
 			<td>${this.name}</td>
 			<td>${this.placeholder}</td>
 			<td>${this.type}</td>
-			<td>${this.default_value || (isNaN(parseFloat(this.offset)) ? '' : this.offset)}</td>
+			<td>${default_value || ''}</td>
 			<td>${datasetName}</td>
 			<td class="action ${this.stage.selectedReport.editable ? 'green' : 'grey'}"><i class="far fa-edit"></i></td>
 			<td class="action ${this.stage.selectedReport.deletable ? 'red' : 'grey'}"><i class="far fa-trash-alt"></i></td>
@@ -2635,6 +2635,7 @@ class ReportsManagerFilter {
 		this.container.classList.remove('hidden');
 
 		this.form.container.name.focus();
+		this.form.offsetChange();
 	}
 
 	get container() {
@@ -2700,19 +2701,17 @@ class ReportsManagerFilter {
 
 	async update() {
 
-		if(this.form.container.default_type.value != 'offset')
-			this.form.container.offset.value = '';
+		const
+			options = {
+				method: 'POST',
+			},
+			json = this.form.json;
 
-		if(this.form.container.default_type.value != 'default_value')
-			this.form.container.default_value.value = '';
-
-		const options = {
-			method: 'POST',
-		};
+		json.offset = JSON.stringify(json.offset);
 
 		try {
 
-			await API.call('reports/filters/update', this.form.json, options);
+			await API.call('reports/filters/update', json, options);
 
 			await DataSource.load(true);
 
@@ -2790,7 +2789,7 @@ class ReportsManagerFilter {
 
 		for(const key in json) {
 
-			if(key in this && (this[key] || json[key]) && this[key] != json[key]) {
+			if(key in this && (this[key] || json[key]) && JSON.stringify(this[key]) != JSON.stringify(json[key])) {
 				dirty = key;
 			}
 		}
@@ -8044,11 +8043,13 @@ class ReportVisualizationFilters extends Map {
 
 		this.container.querySelector('.add-filter').classList.remove('hidden');
 
-		for(const filter of this.values())
+		for(const filter of this.values()) {
 			filterList.appendChild(filter.container);
+		}
 
-		if(!this.size)
+		if(!this.size) {
 			filterList.innerHTML = '<div class="NA">No filters added yet!</div>';
+		}
 
 		const optionsList = this.container.querySelector('.add-filter select');
 
@@ -8056,8 +8057,9 @@ class ReportVisualizationFilters extends Map {
 
 		for(const filter of this.stage.report.filters) {
 
-			if(!this.has(filter.filter_id))
+			if(!this.has(filter.filter_id)) {
 				optionsList.insertAdjacentHTML('beforeend', `<option value="${filter.filter_id}">${filter.name}</option>`);
+			}
 		}
 
 		this.container.querySelector('.add-filter').classList.toggle('hidden', this.size == this.stage.report.filters.length);
@@ -8072,7 +8074,6 @@ class ReportVisualizationFilters extends Map {
 		const response = [];
 
 		for(const filter of this.values()) {
-
 			response.push(filter.json);
 		}
 
@@ -8102,8 +8103,9 @@ class ReportVisualizationFilter {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('fieldset');
 
@@ -8116,7 +8118,7 @@ class ReportVisualizationFilter {
 		this.form.container.insertAdjacentHTML('beforeend', `
 
 			<label>
-				<button class="delete" title="Delete"><i class="far fa-trash-alt"></i></button>
+				<button type="button" class="delete" title="Delete"><i class="far fa-trash-alt"></i></button>
 			</label>
 		`);
 
@@ -8127,21 +8129,17 @@ class ReportVisualizationFilter {
 		this.form.container.description.parentElement.classList.add('hidden');
 		this.form.datasetMultiSelect.container.parentElement.classList.add('hidden');
 
-		let default_data;
+		let default_value = this.reportFilter.default_value;
 
-		if(this.reportFilter.default_value) {
-			default_data = `Default Fixed Value: ${this.reportFilter.default_value}`;
+		if(this.reportFilter.offset && this.reportFilter.offset.length) {
+			default_value = Format.number(this.reportFilter.offset.length) + ' offset rule' + (this.reportFilter.offset > 1 ? 's' : '');
 		}
 
-		else if(!isNaN(parseFloat(this.reportFilter.offset))) {
-			default_data = `Default Relative Value: ${this.reportFilter.offset}`;
+		if(default_value) {
+			this.form.container.default_type.insertAdjacentHTML('beforebegin', `<small>From Report: ${default_value}</small>`);
 		}
 
-		if(default_data) {
-			this.form.container.default_type.insertAdjacentHTML('beforebegin', `<small>${default_data}</small>`);
-		}
-
-		container.querySelector('.delete').on('click', () => {
+		container.querySelector('label .delete').on('click', () => {
 
 			this.container.parentElement.removeChild(container);
 

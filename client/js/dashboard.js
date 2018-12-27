@@ -1587,6 +1587,19 @@ class DashboardGlobalFilters extends DataSourceFilters {
 				const globalFilter = Array.from(MetaData.globalFilters.values()).filter(a => a.placeholder.includes(filter.placeholder));
 
 				for (const value of globalFilter) {
+
+					let offset = [];
+
+					if(!isNaN(parseInt(value.offset))) {
+
+						offset = [{
+							value: parseInt(value.offset),
+							unit: value.type == 'month' ? 'month' : 'day',
+							direction: 1,
+							snap: true,
+						}];
+					};
+
 					globalFilters.set(value.placeholder, {
 						name: value.name,
 						placeholder: value.placeholder[0],
@@ -1594,7 +1607,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 						default_value: value.default_value,
 						dataset: value.dataset,
 						multiple: value.multiple,
-						offset: value.offset,
+						offset: offset,
 						order: value.order,
 						type: value.type,
 					});
@@ -1725,7 +1738,6 @@ class DashboardGlobalFilters extends DataSourceFilters {
 			if (found && Array.from(this.page.loadedVisualizations).some(v => v.query == report)) {
 				report.visualizations.selected.load(options);
 			}
-
 			report.visualizations.selected.subReportDialogBox = null;
 			report.container.style.opacity = found ? 1 : 0.4;
 		}
