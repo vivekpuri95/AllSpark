@@ -623,14 +623,7 @@ router.get('/:type(dashboard|report|visualization)/:id?', API.serve(class extend
 			<section class="section" id="list">
 				<h2>${this.request.params.type}</h2>
 
-				<form class="form toolbar">
-
-					<label class="right">
-						<select name="subtitle">
-							<option value="">Everything</option>
-						</select>
-					</label>
-				</form>
+				<form class="form toolbar"></form>
 
 				<table class="block">
 					<thead></thead>

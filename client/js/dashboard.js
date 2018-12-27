@@ -56,11 +56,11 @@ Page.class = class Dashboards extends Page {
 			history.pushState(null, '', window.location.pathname.slice(0, window.location.pathname.lastIndexOf('/')));
 		});
 
-		for(const category of MetaData.categories.values()) {
-			this.listContainer.form.subtitle.insertAdjacentHTML('beforeend', `<option value="${category.category_id}">${category.name}</option>`);
-		}
-
-		this.listContainer.form.subtitle.on('change', () => this.renderList());
+		// for(const category of MetaData.categories.values()) {
+		// 	this.listContainer.form.subtitle.insertAdjacentHTML('beforeend', `<option value="${category.category_id}">${category.name}</option>`);
+		// }
+		//
+		// this.listContainer.form.subtitle.on('change', () => this.renderList());
 
 		window.on('popstate', e => this.load(e.state));
 
@@ -97,6 +97,10 @@ Page.class = class Dashboards extends Page {
 				{
 					key: 'Tags',
 					rowValue: row => row.tags ? row.tags.split(',').map(t => t.trim()) : [],
+				},
+				{
+					key: 'Subtitle',
+					rowValue: row => row.subtitle ? [row.subtitle] : [],
 				}
 			]
 		;
@@ -248,7 +252,13 @@ Page.class = class Dashboards extends Page {
 			</tr>
 		`;
 
-		let visualizations = [];
+		const
+			visualizations = [],
+			currentDashboardFormat = this.list.get(this.currentDashboard) ? this.list.get(this.currentDashboard).format || {} : {},
+			[subtitleFilter] = this.searchBar ? [...this.searchBar.values()].filter(x => x.json.columnName == 'Subtitle') : [],
+			defaultCategoryName = MetaData.categories.has(currentDashboardFormat.category_id) ? MetaData.categories.get(currentDashboardFormat.category_id).name : '',
+			currentSubtitleValue = subtitleFilter ? subtitleFilter.json.query : defaultCategoryName
+		;
 
 		for (const report of [...DataSource.list.values()]) {
 
@@ -257,10 +267,14 @@ Page.class = class Dashboards extends Page {
 				continue;
 			}
 
-			if(this.listContainer.form.subtitle.value && report.subtitle != this.listContainer.form.subtitle.value) {
+			const categoryName = MetaData.categories.has(report.subtitle) ? MetaData.categories.get(report.subtitle).name : '';
+
+			if(currentSubtitleValue && categoryName != currentSubtitleValue) {
 
 				continue;
 			}
+
+			report.visualizations.map(x => x.subtitle = MetaData.categories.has(report.subtitle) ? MetaData.categories.get(report.subtitle).name : '');
 
 			visualizations.push(...report.visualizations);
 		}
@@ -1175,7 +1189,21 @@ class Dashboard {
 
 		if (this.format && this.format.category_id) {
 
-			this.page.listContainer.form.subtitle.value = this.format.category_id;
+			// this.page.listContainer.form.subtitle.value = this.format.category_id;
+
+			this.page.searchBarFilter.container.classList.remove('hidden');
+
+			const tagFilter = new SearchColumnFilter(this.page.searchBarFilter);
+
+			this.page.searchBarFilter.add(tagFilter);
+
+			this.page.searchBarFilter.render();
+
+			tagFilter.json = {
+				searchQuery: MetaData.categories.has(this.format.category_id) ? MetaData.categories.get(this.format.category_id).name : '',
+				searchValue: 'Subtitle',
+				searchType: 'equalto',
+			};
 
 			this.page.renderList();
 
