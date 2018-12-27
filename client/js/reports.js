@@ -14145,7 +14145,10 @@ class DataSourceFilterForm {
 				offsets.insertBefore(this.offset(offset), footer);
 			}
 
-			addOffset.on('click', () => offsets.insertBefore(this.offset(), footer));
+			addOffset.on('click', () => {
+				offsets.insertBefore(this.offset(), footer);
+				this.offsetChange();
+			});
 		}
 
 		container.on('submit', e => {
@@ -14316,7 +14319,10 @@ class DataSourceFilterForm {
 		direction.on('change', () => this.offsetChange());
 		snap.on('change', () => this.offsetChange());
 
-		container.querySelector('.delete').on('click', () => container.remove());
+		container.querySelector('.delete').on('click', () => {
+			container.remove();
+			this.offsetChange();
+		});
 
 		this.offsetChange();
 
