@@ -2527,7 +2527,7 @@ class MultiSelect {
 				this.options.classList.add('hidden');
 			}
 
-			container.querySelector('.modes-drop-down').classList.add('hidden');
+			this.options.querySelector('.modes-drop-down').classList.add('hidden');
 
 			search.value = '';
 		});
@@ -2544,10 +2544,10 @@ class MultiSelect {
 
 		this.mode = this.mode == 'stretch' ? 'collapse' : 'stretch';
 
-		this.container.querySelector('.dual').textContent = this.mode == 'stretch' ? 'Collapse' : 'Stretch';
-		this.container.querySelector('.mode').textContent = this.mode == 'stretch' ? 'Stretch' : 'Collapse';
+		this.options.querySelector('.dual').textContent = this.mode == 'stretch' ? 'Collapse' : 'Stretch';
+		this.options.querySelector('.mode').textContent = this.mode == 'stretch' ? 'Stretch' : 'Collapse';
 		this.container.classList.toggle('stretched', this.mode == 'stretch');
-		this.container.querySelector('.options').classList.toggle('hidden', this.mode == 'collapse');
+		this.options.classList.toggle('hidden', this.mode == 'collapse');
 	}
 
 	expand() {
@@ -2719,6 +2719,7 @@ class MultiSelect {
 
 		options.on('click', e => e.stopPropagation());
 		options.querySelector('header').on('click', e => e.preventDefault());
+		options.querySelector('.modes-drop-down').on('click', e => e.preventDefault());
 
 		options.querySelector('header .all').on('click', () => this.all());
 		options.querySelector('header .clear').on('click', () => this.clear());
@@ -2728,13 +2729,13 @@ class MultiSelect {
 		options.querySelector('.modes-drop-down .dual').on('click', () => {
 
 			this.dualMode();
-			container.querySelector('.modes-drop-down').classList.add('hidden');
+			options.querySelector('.modes-drop-down').classList.add('hidden');
 		});
 
 		options.querySelector('.modes-drop-down .expand').on('click', () => {
 
 			this.expand();
-			container.querySelector('.modes-drop-down').classList.add('hidden');
+			options.querySelector('.modes-drop-down').classList.add('hidden');
 		});
 
 		return options;
@@ -2759,15 +2760,17 @@ class MultiSelect {
 
 		optionList.textContent = null;
 
-		if(!this.datalist || !this.datalist.length)
+		if(!this.datalist || !this.datalist.length) {
+
 			return this.recalculate();
+		}
 
 		if(this.datalist.length != (new Set(this.datalist.map(x => x.value))).size)
 			throw new Error('Invalid datalist format. Datalist values must be unique.');
 
 		this.expandDialog = null;
 
-		this.loadList(this.container.querySelector('.options .list'));
+		this.loadList(this.options.querySelector('.list'));
 	}
 
 	loadList(list, data = this.datalist) {
