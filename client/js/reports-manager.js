@@ -7671,6 +7671,51 @@ ReportTransformation.types.set('custom-column', class ReportTransformationMultip
 	}
 });
 
+ReportTransformation.types.set('row-limit', class RowLimitTransformation extends ReportTransformation {
+
+	get key() {
+
+		return 'row-limit';
+	}
+
+	get container() {
+
+		if(this.containerElement) {
+
+			return this.containerElement;
+		}
+
+		const container = super.container.querySelector('.transformation');
+
+		container.textContent = null;
+
+		container.innerHTML = `
+			<div>
+				<label>
+					<span>Row Limit</span>
+					<input type="number" min="0" name="rowLimit">
+				</label>
+			</div>
+		`;
+
+		this.container.querySelector('input[name=rowLimit]').value = this.options.row_limit || '';
+
+		return super.container;
+	}
+
+	get json() {
+
+		const response = super.json;
+
+		response.options = {
+			row_limit: this.container.querySelector('input[name=rowLimit]').value
+		}
+
+		return response;
+	}
+
+});
+
 class ReportVisualizationDashboards extends Set {
 
 	constructor(stage) {
