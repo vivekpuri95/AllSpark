@@ -1011,7 +1011,7 @@ class BigqueryLegacy {
 
 			else {
 
-				this.reportObj.query = this.reportObj.query.replace((new RegExp(`{{${filter.placeholder}}}`, "g")), `"${filter.value}"`);
+				this.reportObj.query = this.reportObj.query.replace((new RegExp(`{{${filter.placeholder}}}`, "g")), filter.type == 'number' ? `${filter.value}` :  `"${filter.value}"`);
 			}
 		}
 	}
