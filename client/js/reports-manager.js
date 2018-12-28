@@ -7705,13 +7705,10 @@ ReportTransformation.types.set('row-limit', class RowLimitTransformation extends
 
 	get json() {
 
-		const response = super.json;
-
-		response.options = {
+		return {
+			...super.json,
 			row_limit: this.container.querySelector('input[name=rowLimit]').value
-		}
-
-		return response;
+		};
 	}
 
 });

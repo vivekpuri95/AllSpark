@@ -5174,12 +5174,14 @@ DataSourceTransformation.types.set('row-limit', class DataSourceTransformationRo
 
 	async execute(response = []) {
 
-		if(!response.length || !this.options.row_limit) {
+		const limit = this.row_limit || this.options.row_limit;
+
+		if(!response.length || !limit) {
 
 			return response;
 		}
 
-		return response.slice(0, this.options.row_limit);
+		return response.slice(0, limit);
 	}
 })
 
