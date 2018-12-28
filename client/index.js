@@ -304,7 +304,7 @@ router.get('/login', API.serve(class extends HTMLAPI {
 					</label>
 
 					<div>
-						<a href="/login/forgot">Forgot Password?</a>
+						<a href="/login/forgot" class="forgot-password hidden">Forgot Password?</a>
 						<button class="submit">
 							<i class="fas fa-arrow-right"></i>
 							Next

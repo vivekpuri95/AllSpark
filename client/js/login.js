@@ -37,6 +37,7 @@ Page.class = class Login extends Page {
 		}
 
 		document.querySelector('body > header').classList.add('hidden');
+		this.container.querySelector('.forgot-password').classList.toggle('hidden', account.auth_api);
 
 		const logo = this.container.querySelector('.logo img');
 

@@ -36,7 +36,7 @@ class ChangePassword {
 
 		changePassword.classList.remove('hidden');
 
-		const form = this.page.container.querySelector('.change-password .form');
+		const form = changePassword.querySelector('.form');
 
 		form.on('submit', async (e) => {
 
