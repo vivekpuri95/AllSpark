@@ -260,15 +260,18 @@ class PreviewTabsManager extends Array {
 
 		this.container.classList.add('hidden');
 
-		if(!Object.keys(options).length)
+		if(!Object.keys(options).length) {
 			return;
+		}
 
 		if(options.tab == 'current') {
 
-			if(!this.length)
+			if(!this.length) {
 				this.addTab();
-			else
+			}
+			else {
 				this.selected.body.textContent = null;
+			}
 		}
 
 		else if(options.tab == 'new') {
@@ -276,8 +279,9 @@ class PreviewTabsManager extends Array {
 			this.addTab(options.name);
 		}
 
-		if(!DataSource.list.has(options.query_id))
+		if(!DataSource.list.has(options.query_id)) {
 			return this.report = false;
+		}
 
 		this.report = JSON.parse(JSON.stringify(DataSource.list.get(options.query_id)));
 		this.report.visualizations = this.report.visualizations.filter(f => options.visualization ? f.visualization_id == options.visualization.id : f.type == 'table');
@@ -288,14 +292,17 @@ class PreviewTabsManager extends Array {
 			this.report.definitionOverride = true;
 		}
 
-		if(options.visualizationOptions)
+		if(options.visualizationOptions) {
 			this.report.visualizations[0].options = options.visualizationOptions;
+		}
 
-		if(options.visualization && options.visualization.type)
+		if(options.visualization && options.visualization.type) {
 			this.report.visualizations[0].type = options.visualization.type;
+		}
 
-		if(options.visualization && options.visualization.name)
+		if(options.visualization && options.visualization.name) {
 			this.report.visualizations[0].name = options.visualization.name;
+		}
 
 		this.report = new DataSource(this.report);
 
@@ -304,8 +311,9 @@ class PreviewTabsManager extends Array {
 
 		this.selected.body.appendChild(this.report.container);
 
-		if(options.name)
+		if(options.name) {
 			this.selected.header.querySelector('span').innerText = options.name;
+		}
 
 		if(options.valueChanged) {
 
@@ -323,7 +331,8 @@ class PreviewTabsManager extends Array {
 
 		this.container.classList.remove('hidden');
 
-		this.page.container.classList.add('preview-' + this._position);
+		this.page.container.classList.remove('preview-top', 'preview-right', 'preview-bottom', 'preview-left');
+		this.page.container.classList.add('preview-' + (this._position || options.position));
 
 		await this.report.visualizations.selected.load();
 
@@ -1240,6 +1249,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			query_id: this.report.query_id,
 			definition: definition,
 			tab: 'current',
+			position: 'bottom',
 		};
 
 		await this.page.preview.loadTab(options);
@@ -2312,6 +2322,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 					id: this.visualization.visualization_id
 				},
 				tab: 'current',
+				position: 'right',
 			});
 		});
 	}
@@ -2368,6 +2379,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 				id: this.visualization.visualization_id
 			},
 			tab: 'current',
+			position: 'right',
 		});
 
 		await this.loadVisualizationForm();
@@ -3135,7 +3147,7 @@ class VisualizationManager {
 								<span>Visualization Type <span class="red">*</span></span>
 								<select name="type" required></select>
 							</label>
-							
+
 							<label>
 								<span>Tags <span class="right NA">Comma Separated</span></span>
 								<input type="text" name="tags">
