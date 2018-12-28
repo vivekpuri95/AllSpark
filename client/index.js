@@ -1355,6 +1355,7 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 								<th>Name</th>
 								<th>Placeholder</th>
 								<th>Type</th>
+								<th>Order</th>
 								<th>Default Value</th>
 								<th>Multiple</th>
 								<th>Offset</th>
