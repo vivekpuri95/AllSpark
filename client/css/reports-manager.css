@@ -1139,11 +1139,16 @@ main .tabs .tabs-header {
 	main .tabs .tabs-header .icons {
 		padding: 0 12px;
 		white-space: nowrap;
+		display: grid;
+		grid-gap: 12px;
+		grid-auto-flow: column;
 	}
 		main .tabs .tabs-header .icons .add-tab,
 		main .tabs .tabs-header .icons .close-all-tabs {
 			background: transparent;
 			border: none;
+			height: 100%;
+			width: 36px;
 		}
 		main .tabs .tabs-header .icons .add-tab:hover,
 		main .tabs .tabs-header .icons .close-all-tabs:hover {
