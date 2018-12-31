@@ -268,6 +268,26 @@ CREATE TABLE `tb_query_filters` (
 	 UNIQUE KEY `unique_index` (`query_id`,`placeholder`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+CREATE TABLE `tb_query_filters_offset_dump2` (
+	 `filter_id` int(11) NOT NULL AUTO_INCREMENT,
+	 `name` varchar(64) DEFAULT NULL,
+	 `query_id` int(11) DEFAULT NULL,
+	 `placeholder` varchar(64) NOT NULL COMMENT '{{ backend }} , [[ frontend ]]',
+	 `description` varchar(64) DEFAULT NULL,
+	 `order` int(11) DEFAULT '0',
+	 `default_value` varchar(500) DEFAULT NULL COMMENT 'default not null to apply filter',
+	 `offset` int(11) DEFAULT NULL,
+	 `multiple` smallint(6) DEFAULT '0',
+	 `type` enum('number','text','date','month','hidden','column','datetime','literal','time','year') DEFAULT 'text',
+	 `dataset` int(11) DEFAULT NULL,
+	 `is_enabled` int(11) NOT NULL DEFAULT '1',
+	 `is_deleted` int(11) NOT NULL DEFAULT '0',
+	 `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	 `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	 PRIMARY KEY (`filter_id`),
+	 UNIQUE KEY `unique_index` (`query_id`,`placeholder`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
 CREATE TABLE `tb_query_visualizations` (
 	 `visualization_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
 	 `query_id` int(11) NOT NULL,
@@ -396,6 +416,16 @@ CREATE TABLE `tb_visualization_canvas` (
 	 UNIQUE KEY `owner_visualization` (`owner`,`owner_id`,`visualization_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+CREATE TABLE `tb_visualization_dashboard_deleted` (
+	 `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+	 `dashboard_id` int(11) DEFAULT NULL,
+	 `visualization_id` int(11) DEFAULT NULL,
+	 `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+	 `format` json DEFAULT NULL,
+	 PRIMARY KEY (`id`),
+	 UNIQUE KEY `dashboard_id` (`dashboard_id`,`visualization_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
 CREATE TABLE `tb_visualizations` (
 	 `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
 	 `name` varchar(100) NOT NULL DEFAULT '',
@@ -439,17 +469,17 @@ VALUES
 	('Bigquery Legacy','bigquery_legacy','source');
 
 INSERT INTO
-	tb_datasources (name, slug, image)
+	tb_datasources (name, slug)
 VALUES
-	('MySQL','mysql','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/mysql.svg'),
-	('MSSQL','mssql','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/microsoft-sql-server.svg'),
-	('PostgreSQL','pgsql','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/postgresql-elephant.svg'),
-	('Google Bigquery','bigquery','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/icon-bigquery.svg'),
-	('Mongodb','mongo','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/mongodb.svg'),
-	('Oracle','oracle','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/shutterstock-1089009710.svg'),
-	('API','api','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/shutterstock-783027679.svg'),
-	('File','file','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/shutterstock-441483991.svg'),
-	('Google Bigquery Legacy','bigquery_legacy','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/icon-bigquery.svg');
+	('MySQL','mysql'),
+	('MSSQL','mssql'),
+	('PostgreSQL','pgsql'),
+	('Google Bigquery','bigquery'),
+	('Mongodb','mongo'),
+	('Oracle','oracle'),
+	('API','api'),
+	('File','file'),
+	('Google Bigquery Legacy','bigquery_legacy');
 
 INSERT INTO
 	tb_visualizations (name, slug, image)
