@@ -56,12 +56,18 @@ Page.class = class Dashboards extends Page {
 			history.pushState(null, '', window.location.pathname.slice(0, window.location.pathname.lastIndexOf('/')));
 		});
 
+		for(const category of MetaData.categories.values()) {
+			this.listContainer.form.subtitle.insertAdjacentHTML('beforeend', `<option value="${category.category_id}">${category.name}</option>`);
+		}
+
 		const watermarkDiv = document.createElement('div');
 		watermarkDiv.classList.add('hidden', 'pdf-watermark');
 
 		watermarkDiv.textContent = `Downloaded from ${window.location.hostname}`
 
 		this.container.appendChild(watermarkDiv);
+
+		this.listContainer.form.subtitle.on('change', () => this.renderList());
 
 		window.on('popstate', e => this.load(e.state));
 
@@ -1014,6 +1020,8 @@ class Dashboard {
 					currentParameters = {
 						id: current.id,
 						format: JSON.stringify(current.format),
+						owner: 'dashboard',
+						owner_id: this.id
 					},
 					currentOptions = {
 						method: 'POST',
@@ -1025,6 +1033,8 @@ class Dashboard {
 					previousParameters = {
 						id: previous.id,
 						format: JSON.stringify(previous.format),
+						owner: 'dashboard',
+						owner_id: this.id
 					},
 					previousOptions = {
 						method: 'POST',
@@ -1060,6 +1070,8 @@ class Dashboard {
 					currentParameters = {
 						id: current.id,
 						format: JSON.stringify(current.format),
+						owner: 'dashboard',
+						owner_id: this.id
 					},
 					currentOptions = {
 						method: 'POST',
@@ -1071,6 +1083,8 @@ class Dashboard {
 					nextParameters = {
 						id: next.id,
 						format: JSON.stringify(next.format),
+						owner: 'dashboard',
+						owner_id: this.id
 					},
 					nextOptions = {
 						method: 'POST',
@@ -1353,6 +1367,8 @@ class Dashboard {
 		const
 			parameters = {
 				id: id,
+				owner: 'dashboard',
+				owner_id: this.id,
 				format: JSON.stringify(format || this.format),
 			},
 			options = {
