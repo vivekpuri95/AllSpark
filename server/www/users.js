@@ -472,7 +472,7 @@ exports.metadata = class extends API {
 			),
 
 			this.mysql.query(
-				'SELECT * FROM tb_global_filters WHERE account_id = ? AND is_enabled = 1',
+				`SELECT * FROM tb_global_filters WHERE account_id = ? AND is_enabled = 1 AND dashboard_id = ''`,
 				[this.account.account_id]
 			),
 

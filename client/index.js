@@ -1356,6 +1356,7 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 								<th>Placeholder</th>
 								<th>Type</th>
 								<th>Order</th>
+								<th>Dashboard</th>
 								<th>Default Value</th>
 								<th>Multiple</th>
 								<th>Offset</th>
@@ -1392,6 +1393,10 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 						<label>
 							<span>Type <span class="red">*</span></span>
 							<select name="type" required></select>
+						</label>
+
+						<label class="dashboard-ids">
+							<span>Dashboard <span class="right" data-tooltip="Dashboard specific Global Filter">?</span></span>
 						</label>
 
 						<label>

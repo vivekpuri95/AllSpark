@@ -45,14 +45,14 @@ class Dashboard extends API {
 			join
 				tb_dashboards d
 			on
-				d.id = vd.owner_id				
+				d.id = vd.owner_id
 			where
 				d.status = 1
-				and q.is_enabled = 1 
+				and q.is_enabled = 1
 				and q.is_deleted = 0
 				and q.account_id = ?
 				AND vd.owner = 'dashboard'
-			group by 
+			group by
 				vd.owner_id,
 				query_id
 		`,
@@ -67,17 +67,17 @@ class Dashboard extends API {
 			JOIN
 				tb_query_visualizations qv USING(visualization_id)
 			JOIN
-				tb_dashboards d 
-			ON 
-				d.id = vd.owner_id				
+				tb_dashboards d
+			ON
+				d.id = vd.owner_id
 			JOIN
 				tb_query q USING(query_id)
 			WHERE
-				d.status = 1 
-				AND d.account_id = ? 
-				AND q.is_enabled = 1 
+				d.status = 1
+				AND d.account_id = ?
+				AND q.is_enabled = 1
 				AND q.is_deleted = 0
-				AND vd.owner = 'dashboard' 
+				AND vd.owner = 'dashboard'
 			`,
 			[this.account.account_id]
 		);
@@ -90,6 +90,7 @@ class Dashboard extends API {
 		]);
 
 		dashboards = dashboardDetails[0];
+
 		visualizationDashboards = dashboardDetails[1];
 		const visibleQueryList = new Set(dashboardDetails[2].map(x => x.query_id));
 		dashboardQueryList = dashboardDetails[3];
@@ -229,6 +230,32 @@ class Dashboard extends API {
 
 
 			result.push(dashboard);
+		}
+
+		const dashboard_ids = result.map(r => r.id);
+
+		const gblFilters = await this.mysql.query(
+			`
+				SELECT
+					*
+				FROM
+					tb_global_filters
+				WHERE
+					dashboard_id in (?)
+			`,
+			[dashboard_ids]
+		)
+
+		for(const dashboard of result) {
+
+			dashboard.filters = [];
+
+			for(const gblf of gblFilters) {
+
+				if(gblf.dashboard_id == dashboard.id) {
+					dashboard.filters.push(gblf);
+				}
+			}
 		}
 
 		return result.sort((x, y) => x.parent - y.parent || x.order - y.order);
