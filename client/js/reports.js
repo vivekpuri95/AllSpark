@@ -5177,6 +5177,24 @@ DataSourceTransformation.types.set('custom-column', class DataSourceTransformati
 	}
 });
 
+DataSourceTransformation.types.set('row-limit', class DataSourceTransformationRowLimit extends DataSourceTransformation {
+
+	get name() {
+
+		return 'Row Limit';
+	}
+
+	async execute(response = []) {
+
+		if(!response.length || !this.options.row_limit) {
+
+			return response;
+		}
+
+		return response.slice(0, this.options.row_limit);
+	}
+})
+
 DataSourcePostProcessors.processors = new Map;
 
 DataSourcePostProcessors.processors.set('Orignal', class extends DataSourcePostProcessor {
