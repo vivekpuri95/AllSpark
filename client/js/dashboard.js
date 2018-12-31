@@ -56,12 +56,6 @@ Page.class = class Dashboards extends Page {
 			history.pushState(null, '', window.location.pathname.slice(0, window.location.pathname.lastIndexOf('/')));
 		});
 
-		for(const category of MetaData.categories.values()) {
-			this.listContainer.form.subtitle.insertAdjacentHTML('beforeend', `<option value="${category.category_id}">${category.name}</option>`);
-		}
-
-		this.listContainer.form.subtitle.on('change', () => this.renderList());
-
 		window.on('popstate', e => this.load(e.state));
 
 		this.navbar = new Navbar(new Map, this);
@@ -80,59 +74,33 @@ Page.class = class Dashboards extends Page {
 			return this.searchBarFilter;
 		}
 
-		const filters = [
-			{
-				key: 'Report ID',
-				rowValue: row => [row.query_id],
-			},
-			{
-				key: 'Name',
-				rowValue: row => row.name ? [row.name] : [],
-			},
-			{
-				key: 'Description',
-				rowValue: row => row.description ? [row.description] : [],
-			},
-			{
-				key: 'Tags',
-				rowValue: row => row.tags ? row.tags.split(',') : [],
-			},
-			{
-				key: 'Filters Length',
-				rowValue: row => [row.filters.length]
-			},
-			{
-				key: 'Filters Name',
-				rowValue: row => row.filters.map(f => f.name),
-			},
-			{
-				key: 'Visualizations Name',
-				rowValue: row => row.visualizations.map(f => f.name),
-			},
-			{
-				key: 'Visualizations Type',
-				rowValue: row => {
-					return row.visualizations.map(f => f.type)
-						 .map(m => MetaData.visualizations.has(m) ?
-						 (MetaData.visualizations.get(m)).name : []);
+		const
+			filters = [
+				{
+					key: 'Visualization ID',
+					rowValue: row => [row.visualization_id],
 				},
-			},
-			{
-				key: 'Visualizations Length',
-				rowValue: row => [row.visualizations.length],
-			},
-			{
-				key: 'Report Creation',
-				rowValue: row => row.created_at ? [row.created_at] : [],
-			},
-			{
-				key: 'Report Last Updated At',
-				rowValue: row => row.updated_at ? [row.updated_at] : [],
-			}
-		];
+				{
+					key: 'Name',
+					rowValue: row => row.name ? [row.name] : [],
+				},
+				{
+					key: 'Type',
+					rowValue: row => [row.type],
+				},
+				{
+					key: 'Tags',
+					rowValue: row => row.tags ? row.tags.split(',').map(t => t.trim()) : [],
+				},
+				{
+					key: 'Category',
+					rowValue: row => MetaData.categories.has(row.source.subtitle) ? [MetaData.categories.get(row.source.subtitle).name] : [],
+				}
+			]
+		;
 
 		this.searchBarFilter = new SearchColumnFilters({
-			data: Array.from(DataSource.list.values()),
+			data: [],
 			filters: filters,
 			advanceSearch: true,
 			page,
@@ -145,6 +113,8 @@ Page.class = class Dashboards extends Page {
 		this.searchBarFilter.on('change', () => this.renderList());
 
 		this.renderList();
+
+		return this.searchBarFilter;
 	}
 
 	parents(id) {
@@ -262,6 +232,8 @@ Page.class = class Dashboards extends Page {
 
 	renderList() {
 
+		this.listContainer.querySelector('h2').textContent = this.list.has(this.currentDashboard) ? this.list.get(this.currentDashboard).name : 'Dashboard';
+
 		const
 			thead = this.listContainer.querySelector('thead'),
 			tbody = this.listContainer.querySelector('tbody');
@@ -270,40 +242,53 @@ Page.class = class Dashboards extends Page {
 
 		thead.innerHTML = `
 			<tr>
-				<th>ID</th>
 				<th>Title</th>
-				<th>Description</th>
+				<th>Type</th>
 				<th>Tags</th>
-				<th>Category</th>
-				<th>Visualizations</th>
 			</tr>
 		`;
 
-		let reports = [];
+		const
+			visualizations = [],
+			currentDashboardFormat = this.list.get(this.currentDashboard) ? this.list.get(this.currentDashboard).format || {} : {},
+			[subtitleFilter] = [...this.searchBar.values()].filter(x => x.json.columnName == 'Category'),
+			defaultCategoryName = MetaData.categories.has(currentDashboardFormat.category_id) ? MetaData.categories.get(currentDashboardFormat.category_id).name : '',
+			currentSubtitleValue = subtitleFilter ? subtitleFilter.json.query : defaultCategoryName
+		;
 
-		if(this.searchBar) {
-			reports = this.searchBar.filterData;
+		for (const report of [...DataSource.list.values()]) {
+
+			const categoryName = MetaData.categories.has(report.subtitle) ? MetaData.categories.get(report.subtitle).name : '';
+
+			if(currentSubtitleValue && categoryName != currentSubtitleValue) {
+
+				continue;
+			}
+
+			const datasource = new DataSource(report, page);
+
+			if (!(datasource.visualizations && datasource.visualizations.length)) {
+
+				continue;
+			}
+
+			visualizations.push(...datasource.visualizations);
 		}
 
-		for (const report of reports) {
+		this.searchBar.data = visualizations;
 
-			if (!report.is_enabled || report.is_deleted) {
-				continue;
-			}
-
-			if (this.listContainer.form.subtitle.value && report.subtitle != this.listContainer.form.subtitle.value) {
-				continue;
-			}
+		for(const visualization of this.searchBar.filterData) {
 
 			const tr = document.createElement('tr');
 
-			let description = report.description ? report.description.split(' ').slice(0, 20) : [];
+			let
+				description = visualization.description ? visualization.description.split(' ').slice(0, 20) : [],
+				tags = visualization.tags ? visualization.tags.split(',') : [];
 
 			if (description.length === 20) {
+
 				description.push('&hellip;');
 			}
-
-			let tags = report.tags ? report.tags.split(',') : [];
 
 			tags = tags.map(tag => {
 
@@ -317,30 +302,33 @@ Page.class = class Dashboards extends Page {
 			});
 
 			tr.innerHTML = `
-				<td>${report.query_id}</td>
-				<td><a href="/report/${report.query_id}" target="_blank" class="link">${report.name}</a></td>
-				<td>${description.join(' ') || ''}</td>
+				<td>
+					<a href="${visualization.visualization_id ? '/visualization/' + visualization.visualization_id : '/report/' + visualization.source.query_id}" target="_blank" class="link">
+						${visualization.name} <span class="NA">${visualization.visualization_id ? '#' + visualization.visualization_id : ''}</span>
+					</a>
+				</td>
+				<td>${visualization.type}</td>
 				<td class="tags"></td>
-				<td>${MetaData.categories.has(report.subtitle) && MetaData.categories.get(report.subtitle).name || ''}</td>
-				<td><div class="visualisation-display">${report.visualizations.map(v => `<div class="visualization-name">${v.name} `+` <br> <span class="NA"> ${v.type}` + `</span></div>`).join('')}</div></td>
 			`;
 
 			for (const tag of tags) {
+
 				tr.querySelector('.tags').appendChild(tag);
 			}
 
 			tr.querySelector('.link').on('click', e => e.stopPropagation());
 
 			tr.on('click', async () => {
-				this.report(report.query_id);
-				history.pushState({filter: report.query_id}, '', `/report/${report.query_id}`);
+
+				this.report(visualization.visualization_id, true);
+				history.pushState({filter: visualization.visualization_id}, '', `/visualization/${visualization.visualization_id}`);
 			});
 
 			tbody.appendChild(tr);
 		}
 
 		if (!tbody.children.length)
-			tbody.innerHTML = `<tr class="NA no-reports"><td colspan="6">No Reports Found!</td></tr>`;
+			tbody.innerHTML = `<tr class="NA no-reports"><td colspan="6">No Visualizations Found!</td></tr>`;
 	}
 
 	/**
@@ -1195,9 +1183,13 @@ class Dashboard {
 
 	async load() {
 
-		if (this.format && this.format.category_id) {
+		if (this.format && (this.format.category_id || this.format.tags)) {
 
-			this.page.listContainer.form.subtitle.value = this.format.category_id;
+			this.page.searchBarFilter.clear();
+
+			this.getCategoryFilter();
+
+			this.getTagFilters();
 
 			this.page.renderList();
 
@@ -1227,7 +1219,7 @@ class Dashboard {
 
 	async render(resize) {
 
-		if (this.format && this.format.category_id) {
+		if (this.format && (this.format.category_id || this.format.tags)) {
 			return;
 		}
 
@@ -1362,6 +1354,49 @@ class Dashboard {
 
 		await API.call('reports/dashboard/update', parameters, options);
 	}
+
+	getCategoryFilter() {
+
+		if(!this.format.category_id) {
+
+			return;
+		}
+
+		const categoryFilter = new SearchColumnFilter(this.page.searchBarFilter);
+
+		this.page.searchBarFilter.add(categoryFilter);
+
+		this.page.searchBarFilter.render();
+
+		categoryFilter.json = {
+			searchQuery: MetaData.categories.has(this.format.category_id) ? MetaData.categories.get(this.format.category_id).name : '',
+			searchValue: 'Category',
+			searchType: 'equalto',
+		};
+	}
+
+	getTagFilters() {
+
+		if(!this.format.tags || !this.format.tags.length) {
+
+			return;
+		}
+
+		for(const tag of this.format.tags) {
+
+			const tagFilter = new SearchColumnFilter(this.page.searchBarFilter);
+
+			this.page.searchBarFilter.add(tagFilter);
+
+			tagFilter.json = {
+				searchQuery: tag,
+				searchValue: 'Tags',
+				searchType: 'equalto',
+			};
+		}
+
+		this.page.searchBarFilter.render();
+	}
 }
 
 class Navbar {
@@ -1490,7 +1525,7 @@ class Nav {
 
 		container.classList.add('item');
 
-		if (!allVisualizations.length && (!this.dashboard.format || !parseInt(this.dashboard.format.category_id))) {
+		if (!allVisualizations.length && (!this.dashboard.format || (!parseInt(this.dashboard.format.category_id)) && !this.dashboard.format.tags)) {
 			container.classList.add('hidden');
 		}
 
@@ -1520,7 +1555,7 @@ class Nav {
 			}
 
 			this.page.render({
-				dashboardId: this.dashboard.visualizations.length || (this.dashboard.format && this.dashboard.format.category_id) ? this.dashboard.id : 0,
+				dashboardId: this.dashboard.visualizations.length || (this.dashboard.format && (this.dashboard.format.category_id || this.dashboard.format.tags)) ? this.dashboard.id : 0,
 				renderNav: false,
 				updateNav: false
 			});

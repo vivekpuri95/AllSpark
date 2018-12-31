@@ -1290,6 +1290,7 @@ class DataSourceFilters extends Map {
 					name: name + ' Date Range',
 					placeholder: name + '_date_range',
 					placeholders: [],
+					order: filter.order,
 					type: 'daterange',
 					companions: [],
 				}]);
@@ -1298,6 +1299,8 @@ class DataSourceFilters extends Map {
 			const group = filterGroups.get(name);
 
 			group[0].companions.push(filter);
+			filter.order = group[0].order;
+
 			group.push(filter);
 		}
 
@@ -1376,6 +1379,10 @@ class DataSourceFilters extends Map {
 		let maxOrder = null;
 
 		for(const filter of this.values()) {
+
+			if(isNaN(parseFloat(filter.order))) {
+				continue;
+			}
 
 			if(isNaN(parseFloat(maxOrder))) {
 				maxOrder = filter.order;
@@ -1581,6 +1588,7 @@ class DataSourceFilter {
 			let value = this.dateRanges.length - 1;
 
 			// Find the date range that matches the selected date range values for the current filter's companions
+			outer:
 			for(const [index, range] of this.dateRanges.entries()) {
 
 				let match = true;
@@ -1594,6 +1602,7 @@ class DataSourceFilter {
 						today = new Date(new Date().toISOString().substring(0, 10)).getTime();
 
 					if(!date) {
+						match = false;
 						break;
 					}
 
@@ -1733,8 +1742,10 @@ class DataSourceFilter {
 			companion = this.filters.get(companion.placeholder);
 
 			// If the option was the last one. We don't check the name because
-			// the user could have give a custom name in account settings.
+			// the user could have given a custom name in account settings.
 			companion.label.classList.toggle('hidden', select.value != this.dateRanges.length - 1);
+
+			companion.order = this.order;
 
 			const date = companion.name.toLowerCase().includes('start') ? range.start : range.end;
 

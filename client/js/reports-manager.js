@@ -260,15 +260,18 @@ class PreviewTabsManager extends Array {
 
 		this.container.classList.add('hidden');
 
-		if(!Object.keys(options).length)
+		if(!Object.keys(options).length) {
 			return;
+		}
 
 		if(options.tab == 'current') {
 
-			if(!this.length)
+			if(!this.length) {
 				this.addTab();
-			else
+			}
+			else {
 				this.selected.body.textContent = null;
+			}
 		}
 
 		else if(options.tab == 'new') {
@@ -276,8 +279,9 @@ class PreviewTabsManager extends Array {
 			this.addTab(options.name);
 		}
 
-		if(!DataSource.list.has(options.query_id))
+		if(!DataSource.list.has(options.query_id)) {
 			return this.report = false;
+		}
 
 		this.report = JSON.parse(JSON.stringify(DataSource.list.get(options.query_id)));
 		this.report.visualizations = this.report.visualizations.filter(f => options.visualization ? f.visualization_id == options.visualization.id : f.type == 'table');
@@ -288,14 +292,17 @@ class PreviewTabsManager extends Array {
 			this.report.definitionOverride = true;
 		}
 
-		if(options.visualizationOptions)
+		if(options.visualizationOptions) {
 			this.report.visualizations[0].options = options.visualizationOptions;
+		}
 
-		if(options.visualization && options.visualization.type)
+		if(options.visualization && options.visualization.type) {
 			this.report.visualizations[0].type = options.visualization.type;
+		}
 
-		if(options.visualization && options.visualization.name)
+		if(options.visualization && options.visualization.name) {
 			this.report.visualizations[0].name = options.visualization.name;
+		}
 
 		this.report = new DataSource(this.report);
 
@@ -304,8 +311,9 @@ class PreviewTabsManager extends Array {
 
 		this.selected.body.appendChild(this.report.container);
 
-		if(options.name)
+		if(options.name) {
 			this.selected.header.querySelector('span').innerText = options.name;
+		}
 
 		if(options.valueChanged) {
 
@@ -323,7 +331,8 @@ class PreviewTabsManager extends Array {
 
 		this.container.classList.remove('hidden');
 
-		this.page.container.classList.add('preview-' + this._position);
+		this.page.container.classList.remove('preview-top', 'preview-right', 'preview-bottom', 'preview-left');
+		this.page.container.classList.add('preview-' + (this._position || options.position));
 
 		await this.report.visualizations.selected.load();
 
@@ -1240,6 +1249,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			query_id: this.report.query_id,
 			definition: definition,
 			tab: 'current',
+			position: 'bottom',
 		};
 
 		await this.page.preview.loadTab(options);
@@ -2005,6 +2015,37 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 		if(!MetaData.visualizations.size)
 			this.form.innerHTML = `<div class="NA">No visualizations found</div>`;
+
+		const filters = [
+			{
+				key: 'Visualization ID',
+				rowValue: row => [row.visualization_id],
+			},
+			{
+				key: 'Name',
+				rowValue: row => row.name ? [row.name] : [],
+			},
+			{
+				key: 'Type',
+				rowValue: row => [row.type],
+			},
+			{
+				key: 'Tags',
+				rowValue: row => row.tags ? row.tags.split(',').map(t => t.trim()) : [],
+			}
+		];
+
+		this.searchBar = new SearchColumnFilters({
+			data: [],
+			filters: filters,
+			advanceSearch: true,
+			page,
+		});
+
+		this.container.querySelector('#visualization-list').insertBefore(this.searchBar.container, this.container.querySelector('#visualization-list table'));
+		this.container.querySelector('#visualization-list .toolbar').appendChild(this.searchBar.globalSearch.container);
+
+		this.searchBar.on('change', () => this.load());
 	}
 
 	get url() {
@@ -2110,11 +2151,13 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 		if(!this.report)
 			throw new Page.exception('Invalid Report ID');
 
+		this.searchBar.data = this.report.visualizations;
+
 		const tbody = this.container.querySelector('table tbody');
 
 		tbody.textContent = null;
 
-		for(const visualization of this.report.visualizations) {
+		for(const visualization of this.visualizations) {
 
 			if(!visualization.visualization_id)
 				continue;
@@ -2131,10 +2174,26 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 					<span class="NA">#${visualization.visualization_id}</span>
 				</td>
 				<td>${type ? type.name : ''}</td>
+				<td class="tags"></td>
 				<td class="action preview"><i class="fas fa-eye"></i></td>
 				<td title="${!visualization.editable ? 'Not enough privileges' : ''}" class="action edit ${visualization.editable ? 'green': 'grey'}"><i class="fas fa-cog"></i></td>
 				<td title="${!visualization.deletable ? 'Not enough privileges' : ''}" class="action delete ${visualization.deletable ? 'red': 'grey'}"><i class="far fa-trash-alt"></i></td>
 			`;
+
+			const
+				tagsContainer = row.querySelector('.tags'),
+				tags = visualization.tags ? visualization.tags.split(',').map(t => t.trim()).filter(t => t) : [];
+
+			for(const tag of tags) {
+
+				const a = document.createElement('a');
+
+				a.textContent = tag;
+				a.classList.add('tag');
+				a.on('click', e => this.tagSearch(e));
+
+				tagsContainer.appendChild(a);
+			}
 
 			if(this.visualization == visualization)
 				row.classList.add('selected');
@@ -2170,10 +2229,46 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 			tbody.appendChild(row);
 		}
 
-		if(!this.report.visualizations.length)
+		if(!this.visualizations.length)
 			tbody.innerHTML = '<tr class="NA"><td colspan="6">No Visualization Found!</td></tr>';
 
 		await this.page.preview.position('right');
+	}
+
+	tagSearch(e) {
+
+		e.stopPropagation();
+
+		const value = e.currentTarget.textContent;
+
+		for(const filter of this.searchBar.values()) {
+
+			const values = filter.json;
+
+			if(values.functionName == 'equalto' && values.query == value && values.searchValue == 'Tags')
+				return;
+		}
+
+		this.searchBar.container.classList.remove('hidden');
+
+		const tagFilter = new SearchColumnFilter(this.searchBar);
+
+		this.searchBar.add(tagFilter);
+
+		this.searchBar.render();
+
+		tagFilter.json = {
+			searchQuery: value,
+			searchValue: 'Tags',
+			searchType: 'equalto',
+		};
+
+		this.load();
+	}
+
+	get visualizations() {
+
+		return this.searchBar.filterData;
 	}
 });
 
@@ -2227,6 +2322,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 					id: this.visualization.visualization_id
 				},
 				tab: 'current',
+				position: 'right',
 			});
 		});
 	}
@@ -2283,6 +2379,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 				id: this.visualization.visualization_id
 			},
 			tab: 'current',
+			position: 'right',
 		});
 
 		await this.loadVisualizationForm();
@@ -3050,6 +3147,11 @@ class VisualizationManager {
 								<span>Visualization Type <span class="red">*</span></span>
 								<select name="type" required></select>
 							</label>
+
+							<label>
+								<span>Tags <span class="right NA">Comma Separated</span></span>
+								<input type="text" name="tags">
+							</label>
 						</div>
 					</div>
 				</div>
@@ -3110,6 +3212,7 @@ class VisualizationManager {
 
 		this.form.name.value = this.name;
 		this.form.type.value = this.type;
+		this.form.tags.value = this.tags || '';
 
 		(async () => {
 			await this.descriptionEditor.setup();
@@ -3121,6 +3224,8 @@ class VisualizationManager {
 
 		if(e)
 			e.preventDefault();
+
+		this.form.tags.value = this.form.tags.value.split(',').map(t => t.trim()).filter(t => t).join(', ');
 
 		const
 			parameters = {
@@ -3174,6 +3279,7 @@ class VisualizationManager {
 			type: this.form.type.value,
 			name: this.form.name.value,
 			description: this.descriptionEditor.value,
+			tags: this.form.tags.value,
 			options: {
 				...this.optionsForm.json,
 				transformations: this.transformations.json,
