@@ -623,14 +623,7 @@ router.get('/:type(dashboard|report|visualization)/:id?', API.serve(class extend
 			<section class="section" id="list">
 				<h2>${this.request.params.type}</h2>
 
-				<form class="form toolbar">
-
-					<label class="right">
-						<select name="subtitle">
-							<option value="">Everything</option>
-						</select>
-					</label>
-				</form>
+				<div class="form toolbar"></div>
 
 				<table class="block">
 					<thead></thead>
@@ -973,6 +966,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 								<tr>
 									<th>Name</th>
 									<th>Type</th>
+									<th>Tags</th>
 									<th>Preview</th>
 									<th>Edit</th>
 									<th>Delete</th>
@@ -1361,6 +1355,7 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 								<th>Name</th>
 								<th>Placeholder</th>
 								<th>Type</th>
+								<th>Order</th>
 								<th>Default Value</th>
 								<th>Multiple</th>
 								<th>Offset</th>

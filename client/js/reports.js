@@ -1281,14 +1281,16 @@ class DataSourceFilters extends Map {
 			}
 
 			// Remove the 'start', 'end', 'date' and spaces to create a name that would (hopefuly) identify the filter pairs.
-			const name = filter.name.replace(/(start|end|date)/ig, '').trim();
+			const name = filter.name.replace(/(start|end|date|_)/ig, '').trim();
 
 			if(!filterGroups.has(name)) {
+
 				filterGroups.set(name, [{
 					filter_id: Math.random(),
-					name: filter.name.replace(/(start|end|date)/ig, '') + ' Date Range',
+					name: name + ' Date Range',
 					placeholder: name + '_date_range',
 					placeholders: [],
+					order: filter.order,
 					type: 'daterange',
 					companions: [],
 				}]);
@@ -1297,11 +1299,18 @@ class DataSourceFilters extends Map {
 			const group = filterGroups.get(name);
 
 			group[0].companions.push(filter);
+			filter.order = group[0].order;
+
 			group.push(filter);
 		}
 
 		// Remove any groups that don't have a start and end date (only)
-		for(const [name, group] of filterGroups)
+		for(const [name, group] of filterGroups) {
+
+			if(!group.some(f => f.name.toLowerCase().includes('start')) || !group.some(f => f.name.toLowerCase().includes('end'))) {
+				filterGroups.delete(name);
+			}
+		}
 
 		// Go through each filter group and sort by the name to bring start filter before the end.
 		// And also add them to the master global filter list to bring them together.
@@ -1370,6 +1379,10 @@ class DataSourceFilters extends Map {
 		let maxOrder = null;
 
 		for(const filter of this.values()) {
+
+			if(isNaN(parseFloat(filter.order))) {
+				continue;
+			}
 
 			if(isNaN(parseFloat(maxOrder))) {
 				maxOrder = filter.order;
@@ -1533,6 +1546,7 @@ class DataSourceFilter {
 			input = document.createElement('input');
 
 			input.type = MetaData.filterTypes.get(this.type).input_type;
+			input.step = 1;
 			input.name = this.placeholder;
 
 			input.value = this.value;
@@ -1574,6 +1588,7 @@ class DataSourceFilter {
 			let value = this.dateRanges.length - 1;
 
 			// Find the date range that matches the selected date range values for the current filter's companions
+			outer:
 			for(const [index, range] of this.dateRanges.entries()) {
 
 				let match = true;
@@ -1587,6 +1602,7 @@ class DataSourceFilter {
 						today = new Date(new Date().toISOString().substring(0, 10)).getTime();
 
 					if(!date) {
+						match = false;
 						break;
 					}
 
@@ -1613,6 +1629,7 @@ class DataSourceFilter {
 		let value = this.default_value;
 
 		if(
+			this.filters &&
 			this.filters.source &&
 			this.filters.source.visualizations.selected &&
 			this.filters.source.visualizations.selected.options &&
@@ -1622,33 +1639,16 @@ class DataSourceFilter {
 			const [visualization_filter] = this.filters.source.visualizations.selected.options.filters.filter(x => x.filter_id == this.filter_id);
 
 			if(visualization_filter && visualization_filter.default_value) {
-			   return visualization_filter.default_value;
+				return visualization_filter.default_value;
 			}
 
 			else if(visualization_filter && visualization_filter.offset) {
-			   this.offset = visualization_filter.offset;
+				this.offset = visualization_filter.offset;
 			}
-	   }
+		}
 
-		if(!isNaN(parseFloat(this.offset))) {
-
-			const date = new Date();
-
-			if(this.type == 'time') {
-				value = new Date(date.getTime() + (1000 * this.offset)).toTimeString().substring(0, 8);
-			}
-
-			else if(this.type.includes('date')) {
-				value = new Date(Date.nowUTC() + (this.offset * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10);
-			}
-
-			else if(this.type == 'month') {
-				value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + this.offset, 1)).toISOString().substring(0, 7);
-			}
-
-			else if(this.type == 'year') {
-				value = date.getFullYear() + parseFloat(this.offset);
-			}
+		if(this.offset && this.offset.length) {
+			value = DataSourceFilter.parseOffset(this.offset);
 		}
 
 		// If an offset and a default value was provided for the offset then create a new default value
@@ -1742,8 +1742,10 @@ class DataSourceFilter {
 			companion = this.filters.get(companion.placeholder);
 
 			// If the option was the last one. We don't check the name because
-			// the user could have give a custom name in account settings.
+			// the user could have given a custom name in account settings.
 			companion.label.classList.toggle('hidden', select.value != this.dateRanges.length - 1);
+
+			companion.order = this.order;
 
 			const date = companion.name.toLowerCase().includes('start') ? range.start : range.end;
 
@@ -1752,6 +1754,88 @@ class DataSourceFilter {
 			}
 
 			companion.value = new Date(Date.nowUTC() + date * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+		}
+	}
+
+	static parseOffset(offset, base = null) {
+
+		if(Array.isArray(offset)) {
+
+			let value = null;
+
+			for(const entry of offset) {
+
+				value = DataSourceFilter.parseOffset(entry, value);
+			}
+
+			return value;
+		}
+
+		if(base) {
+			base = new Date(base);
+		}
+		else {
+			base = new Date();
+		}
+
+		const offsetValue = offset.value * offset.direction;
+
+		if(offset.unit == 'second') {
+			return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours(), base.getMinutes(), base.getSeconds() + offsetValue)).toISOString().substring(0, 19);
+		}
+
+		else if(offset.unit == 'minute') {
+
+			if(offset.snap) {
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours(), base.getMinutes() + offsetValue, 0)).toISOString().substring(0, 19);
+			} else {
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours(), base.getMinutes() + offsetValue, base.getSeconds())).toISOString().substring(0, 19);
+			}
+		}
+
+		else if(offset.unit == 'hour') {
+
+			if(offset.snap) {
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours() + offsetValue, 0, 0)).toISOString().substring(0, 19);
+			} else {
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours() + offsetValue, base.getMinutes(), base.getSeconds())).toISOString().substring(0, 19);
+			}
+		}
+
+		else if(offset.unit == 'day') {
+
+			if(offset.snap) {
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate() + offsetValue)).toISOString().substring(0, 10);
+			} else {
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate() + offsetValue, base.getHours(), base.getMinutes(), base.getSeconds())).toISOString().substring(0, 19)
+			}
+		}
+
+		else if(offset.unit == 'week') {
+
+			if(offset.snap) {
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate() - base.getDay() + (offsetValue * 7))).toISOString().substring(0, 10);
+			} else {
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate() + (offsetValue * 7))).toISOString().substring(0, 10);
+			}
+		}
+
+		else if(offset.unit == 'month') {
+
+			if(offset.snap) {
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth() + offsetValue, 1)).toISOString().substring(0, 10);
+			} else {
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth() + offsetValue, base.getDate())).toISOString().substring(0, 10);
+			}
+		}
+
+		else if(offset.unit == 'year') {
+
+			if(offset.snap) {
+				return new Date(Date.UTC(base.getFullYear() + offsetValue, 0, 1)).toISOString().substring(0, 10);
+			} else {
+				return new Date(Date.UTC(base.getFullYear() + offsetValue, base.getMonth(), base.getDate())).toISOString().substring(0, 10);
+			}
 		}
 	}
 }
@@ -2300,7 +2384,9 @@ class DataSourceColumn {
 		`;
 
 		if(!this.source.editable) {
+
 			const saveData = form.querySelector('footer .save');
+
 			saveData.disabled = true;
 			saveData.dataset.tooltip = 'Insufficient Privileges';
 			saveData.dataset.tooltipPosition = 'left';
@@ -13932,7 +14018,7 @@ class DataSourceFilterForm {
 
 		const container = this.containerElement = document.createElement('form');
 
-		container.classList.add('form');
+		container.classList.add('form', 'filter-form');
 
 		container.innerHTML = `
 
@@ -13961,7 +14047,19 @@ class DataSourceFilterForm {
 				<input type="number" name="order" value="${this.filter.order || ''}">
 			</label>
 
-			<label>
+			<label class="dataset">
+				<span>Dataset <span class="right" data-tooltip="A set of possible values for this filter.">?</span></span>
+			</label>
+
+			<label class="multiple">
+				<span>Allow Multiple <span class="right" data-tooltip="Can the user pick multiple values.">?</span></span>
+				<select name="multiple">
+					<option value="0">No</option>
+					<option value="1">Yes</option>
+				</select>
+			</label>
+
+			<div class="label">
 
 				<span>Default Value <span class="right" data-tooltip="Calculated and applied on first load\nif a global filter with same placeholder isn't added.">?</span></span>
 
@@ -13973,20 +14071,16 @@ class DataSourceFilterForm {
 
 				<input type="text" name="default_value" value="${this.filter.default_value || ''}">
 
-				<input type="number" name="offset" value="${isNaN(parseFloat(this.filter.offset)) ? '' : this.filter.offset}">
-			</label>
-
-			<label class="dataset">
-				<span>Dataset <span class="right" data-tooltip="A set of possible values for this filter.">?</span></span>
-			</label>
-
-			<label class="multiple">
-				<span>Allow Multiple <span class="right" data-tooltip="Can the user pick multiple values.">?</span></span>
-				<select name="multiple" required>
-					<option value="0">No</option>
-					<option value="1">Yes</option>
-				</select>
-			</label>
+				<div class="offsets">
+					<div class="footer">
+						<span class="result">
+							<span class="key">Final:</span>
+							<span class="value"></span>
+						</span>
+						<button type="button" class="add-offset"><i class="fa fa-plus"></i> Add Offset</button>
+					</div>
+				</div>
+			</div>
 		`;
 
 		for(const type of MetaData.filterTypes.values()) {
@@ -14030,16 +14124,13 @@ class DataSourceFilterForm {
 		}
 
 		{
-
-			const
-				default_value = container.default_value.value,
-				default_value_offset = container.offset.value;
+			const default_value = container.default_value.value;
 
 			if(container.default_value.value) {
 				container.default_type.value = 'default_value';
 			}
 
-			else if(container.offset.value) {
+			else if(this.filter.offset && this.filter.offset.length) {
 				container.default_type.value = 'offset';
 			}
 
@@ -14047,13 +14138,7 @@ class DataSourceFilterForm {
 				container.default_type.value = 'none';
 			}
 
-			container.type.on('change', () => {
-
-				this.changeFilterType();
-
-				container.default_value.value = default_value;
-				container.offset.value = default_value_offset;
-			});
+			container.type.on('change', () => this.changeFilterType());
 
 			container.default_type.on('change', () => this.updateFormFields());
 
@@ -14061,7 +14146,26 @@ class DataSourceFilterForm {
 			this.updateFormFields();
 		}
 
-		container.on('submit', e => e.preventDefault());
+		// Set up offset rows & behavior
+		{
+			const
+				offsets = container.querySelector('.offsets'),
+				footer = container.querySelector('.footer'),
+				addOffset = container.querySelector('.footer .add-offset');
+
+			for(const offset of this.filter.offset || []) {
+				offsets.insertBefore(this.offset(offset), footer);
+			}
+
+			addOffset.on('click', () => {
+				offsets.insertBefore(this.offset(), footer);
+				this.offsetChange();
+			});
+		}
+
+		container.on('submit', e => {
+			e.preventDefault();
+		});
 
 		return container;
 	}
@@ -14078,6 +14182,38 @@ class DataSourceFilterForm {
 		}
 
 		response.multiple = parseInt(response.multiple) || 0;
+
+		response.default_value = '';
+		response.offset = [];
+
+		if(this.container.default_type.value == 'offset') {
+
+			for(const offset of this.container.querySelectorAll('.offset')) {
+
+				const
+					value = offset.querySelector('input[name=value]').value,
+					unit = offset.querySelector('select[name=unit]').value,
+					direction = offset.querySelector('select[name=direction]').value,
+					snap = offset.querySelector('input[name=snap]').checked;
+
+				response.offset.push({
+					value: isNaN(parseInt(value)) ? null : parseInt(value),
+					unit,
+					direction: parseInt(direction),
+					snap,
+				});
+			}
+		}
+
+		else if(this.container.default_type.value == 'default_value') {
+			response.default_value = this.container.default_value.value;
+		}
+
+		if(response.order != '')
+			response.order = parseFloat(response.order);
+
+		if(response.dataset != '')
+			response.dataset = parseFloat(response.dataset);
 
 		return response;
 	}
@@ -14112,9 +14248,97 @@ class DataSourceFilterForm {
 	updateFormFields() {
 
 		this.container.default_value.classList.toggle('hidden', this.container.default_type.value != 'default_value');
-		this.container.offset.classList.toggle('hidden', this.container.default_type.value != 'offset');
+		this.container.querySelector('.offsets').classList.toggle('hidden', this.container.default_type.value != 'offset');
 
 		this.container.querySelector('.multiple').classList.toggle('hidden', !this.datasetMultiSelect.value.length);
+
+		this.offsetChange();
+	}
+
+	offsetChange() {
+
+		clearInterval(this.offsetChangeTimeout);
+
+		let f;
+
+		this.offsetChangeTimeout = setInterval((f = () => {
+
+			const
+				offset = this.json.offset || [],
+				containers = this.container.querySelectorAll('.offsets .offset .result .value'),
+				copy = [];
+
+			for(const [index, entry] of offset.entries()) {
+
+				copy.push(entry);
+				containers[index].innerHTML = DataSourceFilter.parseOffset(copy) || '&mdash;';
+			}
+
+			this.container.querySelector('.offsets > .footer .result .value').innerHTML = DataSourceFilter.parseOffset(offset) || '&mdash;';
+
+			return f;
+		})(), 500);
+	}
+
+	offset(offset = {}) {
+
+		const container = document.createElement('div');
+
+		container.classList.add('offset');
+
+		container.innerHTML = `
+
+			<input type="number" step="1" name="value" value="${isNaN(parseFloat(offset.value)) ? '' : offset.value}" required>
+
+			<select name="unit">
+				<option value="second">Second</option>
+				<option value="minute">Minute</option>
+				<option value="hour">Hour</option>
+				<option value="day">Day</option>
+				<option value="week">Week</option>
+				<option value="month">Month</option>
+				<option value="year">Year</option>
+			</select>
+
+			<select name="direction">
+				<option value="-1">Ago</option>
+				<option value="1">From Now</option>
+			</select>
+
+			<label class="snap" title="Snap to the nearest time unit"><input type="checkbox" name="snap"> Snap</label>
+
+			<span class="delete" title="Remove Offset"><i class="far fa-trash-alt"></i></span>
+
+			<div class="result">
+				<span class="key">Result:</span>
+				<span class="value"></span>
+			</div>
+		`;
+
+		const
+			value = container.querySelector('input[name=value]'),
+			unit = container.querySelector('select[name=unit]'),
+			direction = container.querySelector('select[name=direction]'),
+			snap = container.querySelector('input[name=snap]');
+
+		value.value = isNaN(parseInt(offset.value)) ? '' : offset.value;
+		unit.value = offset.unit || 'second';
+		direction.value = offset.direction || '-1' ;
+		snap.checked = offset.snap;
+
+		value.on('change', () => this.offsetChange());
+		unit.on('change', () => this.offsetChange());
+		direction.on('change', () => this.offsetChange());
+		snap.on('change', () => this.offsetChange());
+
+		container.querySelector('.delete').on('click', () => {
+			container.remove();
+			this.offsetChange();
+		});
+
+		this.offsetChange();
+
+		return container;
 	}
 }
 

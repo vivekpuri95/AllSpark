@@ -2687,7 +2687,7 @@ class MultiSelect {
 		if(!this.optionsContainer) {
 
 			const [first] =  this.datalist.filter(x => x.value == this.selectedValues.values().next().value);
-			search.placeholder = first ? this.selectedValues.size > 1 ? `${first.name} and ${this.selectedValues - 1} more` : first.name : 'Search...';
+			search.placeholder = first ? this.selectedValues.size > 1 ? `${first.name} and ${this.selectedValues.size - 1} more` : first.name : 'Search...';
 
 			return;
 		}
@@ -3456,6 +3456,17 @@ class SearchColumnFilters extends Set {
 
 		if(this.size < 2)
 			filters.innerHTML = '<div class="NA">No Filters Added</div>';
+	}
+
+	clear() {
+
+		for(const filter of this) {
+
+			if(filter != this.globalSearch) {
+
+				this.delete(filter);
+			}
+		}
 	}
 
 	on(event, callback) {

@@ -5,7 +5,9 @@ class ReportsManger extends Page {
 		super(page, key);
 
 		this.stages = new Map;
-		this.preview = new ReportsMangerPreview(this);
+		this.preview = new PreviewTabsManager(this);
+
+		this.container.querySelector('#stages').insertAdjacentElement('afterend', this.preview.container);
 
 		this.setup();
 	}
@@ -203,23 +205,83 @@ window.addEventListener('beforeunload', function (event) {
 		event.returnValue = 'Sure';
 });
 
-class ReportsMangerPreview {
+class PreviewTabsManager extends Array {
 
 	constructor(page) {
 
-		this.page = page;
-		this.container = this.page.container.querySelector('#preview');
+		super();
 
-		this.position('right');
+		this.page = page;
+
+		this.previewCount = 0;
 	}
 
-	async load(options = {}) {
+	get container() {
 
-		this.container.textContent = null;
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('tabs');
+
+		container.innerHTML = `
+			<div class="tabs-header">
+				<div class="headers"></div>
+				<div class="icons">
+					<button type="button" class="add-tab">
+						<i class="fa fa-plus icon"></i>
+					</button>
+					<button type="button" class="close-all-tabs" title="Close All">
+						<i class="fas fa-times-circle icon"></i>
+					</button>
+				</div>
+			</div>
+			<div class="tabs-body"></div>
+		`;
+
+		container.querySelector('.add-tab').on('click', () => this.addTab());
+
+		container.querySelector('.close-all-tabs').on('click', () => {
+
+			if(!this.selected.body.children.length && this.length == 1)
+				return;
+
+			this.length = 0;
+			this.render();
+		});
+
+		this.loadTab();
+
+		return container;
+	}
+
+	async loadTab(options = {}) {
+
 		this.container.classList.add('hidden');
 
-		if(!DataSource.list.has(options.query_id))
+		if(!Object.keys(options).length) {
+			return;
+		}
+
+		if(options.tab == 'current') {
+
+			if(!this.length) {
+				this.addTab();
+			}
+			else {
+				this.selected.body.textContent = null;
+			}
+		}
+
+		else if(options.tab == 'new') {
+
+			this.addTab(options.name);
+		}
+
+		if(!DataSource.list.has(options.query_id)) {
 			return this.report = false;
+		}
 
 		this.report = JSON.parse(JSON.stringify(DataSource.list.get(options.query_id)));
 		this.report.visualizations = this.report.visualizations.filter(f => options.visualization ? f.visualization_id == options.visualization.id : f.type == 'table');
@@ -230,24 +292,47 @@ class ReportsMangerPreview {
 			this.report.definitionOverride = true;
 		}
 
-		if(options.visualizationOptions)
+		if(options.visualizationOptions) {
 			this.report.visualizations[0].options = options.visualizationOptions;
+		}
 
-		if(options.visualization && options.visualization.type)
+		if(options.visualization && options.visualization.type) {
 			this.report.visualizations[0].type = options.visualization.type;
+		}
 
-		if(options.visualization && options.visualization.name)
+		if(options.visualization && options.visualization.name) {
 			this.report.visualizations[0].name = options.visualization.name;
+		}
 
 		this.report = new DataSource(this.report);
 
 		this.report.container;
 		this.report.visualizations.selected.container.classList.toggle('unsaved', this.report.definitionOverride ? 1 : 0);
 
-		this.container.appendChild(this.report.container);
+		this.selected.body.appendChild(this.report.container);
+
+		if(options.name) {
+			this.selected.header.querySelector('span').innerText = options.name;
+		}
+
+		if(options.valueChanged) {
+
+			for(const tab of this) {
+
+				if(tab.header.querySelector('.unsaved-tab')) {
+					tab.header.querySelector('.unsaved-tab').remove();
+					tab.header.title = '';
+				}
+			}
+
+			this.selected.header.querySelector('span').insertAdjacentHTML('afterend','<span class="unsaved-tab"> * </span>');
+			this.selected.header.title = 'Last updated';
+		}
+
 		this.container.classList.remove('hidden');
 
-		this.page.container.classList.add('preview-' + this._position);
+		this.page.container.classList.remove('preview-top', 'preview-right', 'preview-bottom', 'preview-left');
+		this.page.container.classList.add('preview-' + (this._position || options.position));
 
 		await this.report.visualizations.selected.load();
 
@@ -282,6 +367,119 @@ class ReportsMangerPreview {
 
 		if(render)
 			await this.report.visualizations.selected.render({resize: true});
+	}
+
+	addTab(title) {
+
+		if(!title)
+			this.previewCount++;
+
+		this.selected = new PreviewTab(this, title);
+
+		this.container.querySelector('.tabs-header .headers').appendChild(this.selected.header);
+		this.container.querySelector('.tabs-body').appendChild(this.selected.body);
+
+		this.selected.header.querySelector('.tab-header .close').classList.remove('hidden');
+
+		this.push(this.selected);
+
+		this.render();
+
+		this.selected.header.scrollIntoView();
+	}
+
+	render() {
+
+		const
+			tabsHeader = this.container.querySelector('.tabs-header .headers'),
+			tabsBody = this.container.querySelector('.tabs-body');
+
+		tabsHeader.textContent = null;
+		tabsBody.textContent = null;
+
+		for(const [index, tab] of this.entries()) {
+
+			tabsHeader.appendChild(tab.header);
+			tabsBody.appendChild(tab.body);
+
+			tab.body.classList.toggle('hidden', this.selected != tab);
+			tab.header.classList.toggle('fade-header', this.selected != tab);
+			tab.header.classList.toggle('remove-border', this[index + 1] == this.selected);
+
+		}
+
+		if(!this.length)
+			this.addTab();
+	}
+}
+
+class PreviewTab {
+
+	constructor(tab, title) {
+
+		this.tabs = tab;
+
+		this.title = title;
+		this.previewCount = tab.previewCount;
+
+		this.header;
+	}
+
+	get header() {
+
+		if(this.headerContainer)
+			return this.headerContainer;
+
+		const container = this.headerContainer = document.createElement('div');
+		container.classList.add('tab-header');
+
+		container.innerHTML = `
+			<span>${this.title || `Preview ${this.previewCount}`}</span>
+			<span class="close">
+				<i class="fa fa-times close-icon"></i>
+			</span>
+		`;
+
+		container.querySelector('.close').on('click', (e) => {
+
+			e.stopPropagation();
+
+			if(!this.tabs.selected.body.children.length && this.tabs.length == 1)
+				return;
+
+			const tabIndex = this.tabs.indexOf(this);
+
+			if(tabIndex == this.tabs.length - 1)
+				this.tabs.selected = this.tabs[tabIndex - 1];
+			else
+				this.tabs.selected = this.tabs[tabIndex + 1];
+
+			if(tabIndex > -1) {
+				this.tabs.splice(tabIndex, 1);
+			}
+
+			this.tabs.render();
+		});
+
+		container.on('click', () => {
+
+			this.tabs.selected = this;
+			this.tabs.render();
+		});
+
+		return container;
+	}
+
+	get body() {
+
+		if(this.bodyContainer)
+			return this.bodyContainer;
+
+		const container = this.bodyContainer = document.createElement('div');
+
+		container.classList.add('tab-body');
+
+		return container;
 	}
 }
 
@@ -1050,9 +1248,11 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		const options = {
 			query_id: this.report.query_id,
 			definition: definition,
+			tab: 'current',
+			position: 'bottom',
 		};
 
-		await this.page.preview.load(options);
+		await this.page.preview.loadTab(options);
 
 		this.page.preview.hidden = false;
 		this.container.querySelector('#preview-toggle').classList.add('selected');
@@ -1401,12 +1601,18 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 						this.container.querySelector('#preview-toggle').classList.add('selected');
 
-						this.page.preview.load({
+						const options = {
+
 							definition: {
 								query: `SELECT * FROM \`${database.name}\`.\`${table.name}\` LIMIT 100`,
 							},
 							query_id: this.report.query_id,
-						});
+							name: name,
+						}
+
+						options.tab = e.metaKey || e.ctrlKey ? 'new' : 'current';
+
+						this.page.preview.loadTab(options);
 					});
 
 					tables.appendChild(li);
@@ -1809,6 +2015,37 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 		if(!MetaData.visualizations.size)
 			this.form.innerHTML = `<div class="NA">No visualizations found</div>`;
+
+		const filters = [
+			{
+				key: 'Visualization ID',
+				rowValue: row => [row.visualization_id],
+			},
+			{
+				key: 'Name',
+				rowValue: row => row.name ? [row.name] : [],
+			},
+			{
+				key: 'Type',
+				rowValue: row => [row.type],
+			},
+			{
+				key: 'Tags',
+				rowValue: row => row.tags ? row.tags.split(',').map(t => t.trim()) : [],
+			}
+		];
+
+		this.searchBar = new SearchColumnFilters({
+			data: [],
+			filters: filters,
+			advanceSearch: true,
+			page,
+		});
+
+		this.container.querySelector('#visualization-list').insertBefore(this.searchBar.container, this.container.querySelector('#visualization-list table'));
+		this.container.querySelector('#visualization-list .toolbar').appendChild(this.searchBar.globalSearch.container);
+
+		this.searchBar.on('change', () => this.load());
 	}
 
 	get url() {
@@ -1914,11 +2151,13 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 		if(!this.report)
 			throw new Page.exception('Invalid Report ID');
 
+		this.searchBar.data = this.report.visualizations;
+
 		const tbody = this.container.querySelector('table tbody');
 
 		tbody.textContent = null;
 
-		for(const visualization of this.report.visualizations) {
+		for(const visualization of this.visualizations) {
 
 			if(!visualization.visualization_id)
 				continue;
@@ -1935,21 +2174,38 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 					<span class="NA">#${visualization.visualization_id}</span>
 				</td>
 				<td>${type ? type.name : ''}</td>
+				<td class="tags"></td>
 				<td class="action preview"><i class="fas fa-eye"></i></td>
 				<td title="${!visualization.editable ? 'Not enough privileges' : ''}" class="action edit ${visualization.editable ? 'green': 'grey'}"><i class="fas fa-cog"></i></td>
 				<td title="${!visualization.deletable ? 'Not enough privileges' : ''}" class="action delete ${visualization.deletable ? 'red': 'grey'}"><i class="far fa-trash-alt"></i></td>
 			`;
+
+			const
+				tagsContainer = row.querySelector('.tags'),
+				tags = visualization.tags ? visualization.tags.split(',').map(t => t.trim()).filter(t => t) : [];
+
+			for(const tag of tags) {
+
+				const a = document.createElement('a');
+
+				a.textContent = tag;
+				a.classList.add('tag');
+				a.on('click', e => this.tagSearch(e));
+
+				tagsContainer.appendChild(a);
+			}
 
 			if(this.visualization == visualization)
 				row.classList.add('selected');
 
 			row.querySelector('.preview').on('click', () => {
 
-				this.page.preview.load({
+				this.page.preview.loadTab({
 					query_id: this.report.query_id,
 					visualization: {
 						id: visualization.visualization_id
 					},
+					tab: 'current',
 				});
 			});
 
@@ -1973,10 +2229,46 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 			tbody.appendChild(row);
 		}
 
-		if(!this.report.visualizations.length)
+		if(!this.visualizations.length)
 			tbody.innerHTML = '<tr class="NA"><td colspan="6">No Visualization Found!</td></tr>';
 
 		await this.page.preview.position('right');
+	}
+
+	tagSearch(e) {
+
+		e.stopPropagation();
+
+		const value = e.currentTarget.textContent;
+
+		for(const filter of this.searchBar.values()) {
+
+			const values = filter.json;
+
+			if(values.functionName == 'equalto' && values.query == value && values.searchValue == 'Tags')
+				return;
+		}
+
+		this.searchBar.container.classList.remove('hidden');
+
+		const tagFilter = new SearchColumnFilter(this.searchBar);
+
+		this.searchBar.add(tagFilter);
+
+		this.searchBar.render();
+
+		tagFilter.json = {
+			searchQuery: value,
+			searchValue: 'Tags',
+			searchType: 'equalto',
+		};
+
+		this.load();
+	}
+
+	get visualizations() {
+
+		return this.searchBar.filterData;
 	}
 });
 
@@ -2024,11 +2316,13 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			if(historyToggle.classList.contains('selected') && !this.visualizationLogs.size)
 				await this.visualizationLogs.load();
 
-			await this.page.preview.load({
+			await this.page.preview.loadTab({
 				query_id: this.report.query_id,
 				visualization: {
 					id: this.visualization.visualization_id
 				},
+				tab: 'current',
+				position: 'right',
 			});
 		});
 	}
@@ -2079,11 +2373,13 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		if(this.container.querySelector('.configuration-section.dashboards'))
 			this.container.querySelector('.configuration-section.dashboards').remove();
 
-		await this.page.preview.load({
+		await this.page.preview.loadTab({
 			query_id: this.report.query_id,
 			visualization: {
 				id: this.visualization.visualization_id
 			},
+			tab: 'current',
+			position: 'right',
 		});
 
 		await this.loadVisualizationForm();
@@ -2351,8 +2647,9 @@ class ReportsManagerFilters extends Map {
 
 		for(const key in filter) {
 
-			if(key in this.addForm.container.elements)
+			if(key in this.addForm.container.elements) {
 				this.addForm.container.elements[key].value = filter[key];
+			}
 		}
 
 		this.addForm.datasetMultiSelect.value = filter.dataset || [];
@@ -2361,7 +2658,7 @@ class ReportsManagerFilters extends Map {
 			this.addForm.container.default_type.value = 'default_value';
 		}
 
-		else if(this.addForm.container.offset.value) {
+		else if(filter.offset && filter.offset.length) {
 			this.addForm.container.default_type.value = 'offset';
 		}
 
@@ -2377,14 +2674,6 @@ class ReportsManagerFilters extends Map {
 
 	async insert() {
 
-		const form = this.container.querySelector('form.add-filter');
-
-		if(this.addForm.container.default_type.value != 'offset')
-			this.addForm.container.offset.value = '';
-
-		if(this.addForm.container.default_type.value != 'default_value')
-			this.addForm.container.default_value.value = '';
-
 		const
 			parameters = this.addForm.json,
 			options = {
@@ -2392,6 +2681,7 @@ class ReportsManagerFilters extends Map {
 			};
 
 		parameters.query_id = this.stage.report.query_id;
+		parameters.offset = JSON.stringify(parameters.offset);
 
 		if(this.has(this.addForm.container.placeholder.value)) {
 
@@ -2595,12 +2885,18 @@ class ReportsManagerFilter {
 			`;
 		}
 
+		let default_value = this.default_value;
+
+		if(this.offset && this.offset.length) {
+			default_value = Format.number(this.offset.length) + ' offset rule' + (this.offset > 1 ? 's' : '');
+		}
+
 		row.innerHTML = `
 			<td>${this.id}</td>
 			<td>${this.name}</td>
 			<td>${this.placeholder}</td>
 			<td>${this.type}</td>
-			<td>${this.default_value || (isNaN(parseFloat(this.offset)) ? '' : this.offset)}</td>
+			<td>${default_value || ''}</td>
 			<td>${datasetName}</td>
 			<td class="action ${this.stage.selectedReport.editable ? 'green' : 'grey'}"><i class="far fa-edit"></i></td>
 			<td class="action ${this.stage.selectedReport.deletable ? 'red' : 'grey'}"><i class="far fa-trash-alt"></i></td>
@@ -2635,6 +2931,7 @@ class ReportsManagerFilter {
 		this.container.classList.remove('hidden');
 
 		this.form.container.name.focus();
+		this.form.offsetChange();
 	}
 
 	get container() {
@@ -2700,19 +2997,17 @@ class ReportsManagerFilter {
 
 	async update() {
 
-		if(this.form.container.default_type.value != 'offset')
-			this.form.container.offset.value = '';
+		const
+			options = {
+				method: 'POST',
+			},
+			json = this.form.json;
 
-		if(this.form.container.default_type.value != 'default_value')
-			this.form.container.default_value.value = '';
-
-		const options = {
-			method: 'POST',
-		};
+		json.offset = JSON.stringify(json.offset);
 
 		try {
 
-			await API.call('reports/filters/update', this.form.json, options);
+			await API.call('reports/filters/update', json, options);
 
 			await DataSource.load(true);
 
@@ -2790,7 +3085,7 @@ class ReportsManagerFilter {
 
 		for(const key in json) {
 
-			if(key in this && (this[key] || json[key]) && this[key] != json[key]) {
+			if(key in this && (this[key] || json[key]) && JSON.stringify(this[key]) != JSON.stringify(json[key])) {
 				dirty = key;
 			}
 		}
@@ -2852,6 +3147,11 @@ class VisualizationManager {
 								<span>Visualization Type <span class="red">*</span></span>
 								<select name="type" required></select>
 							</label>
+
+							<label>
+								<span>Tags <span class="right NA">Comma Separated</span></span>
+								<input type="text" name="tags">
+							</label>
 						</div>
 					</div>
 				</div>
@@ -2912,6 +3212,7 @@ class VisualizationManager {
 
 		this.form.name.value = this.name;
 		this.form.type.value = this.type;
+		this.form.tags.value = this.tags || '';
 
 		(async () => {
 			await this.descriptionEditor.setup();
@@ -2923,6 +3224,8 @@ class VisualizationManager {
 
 		if(e)
 			e.preventDefault();
+
+		this.form.tags.value = this.form.tags.value.split(',').map(t => t.trim()).filter(t => t).join(', ');
 
 		const
 			parameters = {
@@ -2976,6 +3279,7 @@ class VisualizationManager {
 			type: this.form.type.value,
 			name: this.form.name.value,
 			description: this.descriptionEditor.value,
+			tags: this.form.tags.value,
 			options: {
 				...this.optionsForm.json,
 				transformations: this.transformations.json,
@@ -2986,9 +3290,11 @@ class VisualizationManager {
 
 	async preview() {
 
-		this.stage.page.preview.load({
+		this.stage.page.preview.loadTab({
 			query_id: this.query_id,
 			visualizationOptions: this.json.options,
+			tab: 'current',
+			valueChanged: true,
 			visualization: {
 				id: this.visualization_id,
 				type: this.json.type,
@@ -6180,11 +6486,13 @@ class ReportTransformations extends Set {
 		report.transformationVisualization.options.transformations = this.json;
 		report.transformationVisualization.options.transformationsStopAt = stopAt;
 
-		await this.page.preview.load({
+		await this.page.preview.loadTab({
 			query_id: this.stage.report.query_id,
 			visualization: {
 				id: report.transformationVisualization.visualization_id
 			},
+			tab: 'current',
+			valueChanged: true,
 		});
 
 		this.render();
@@ -8044,11 +8352,13 @@ class ReportVisualizationFilters extends Map {
 
 		this.container.querySelector('.add-filter').classList.remove('hidden');
 
-		for(const filter of this.values())
+		for(const filter of this.values()) {
 			filterList.appendChild(filter.container);
+		}
 
-		if(!this.size)
+		if(!this.size) {
 			filterList.innerHTML = '<div class="NA">No filters added yet!</div>';
+		}
 
 		const optionsList = this.container.querySelector('.add-filter select');
 
@@ -8056,8 +8366,9 @@ class ReportVisualizationFilters extends Map {
 
 		for(const filter of this.stage.report.filters) {
 
-			if(!this.has(filter.filter_id))
+			if(!this.has(filter.filter_id)) {
 				optionsList.insertAdjacentHTML('beforeend', `<option value="${filter.filter_id}">${filter.name}</option>`);
+			}
 		}
 
 		this.container.querySelector('.add-filter').classList.toggle('hidden', this.size == this.stage.report.filters.length);
@@ -8072,7 +8383,6 @@ class ReportVisualizationFilters extends Map {
 		const response = [];
 
 		for(const filter of this.values()) {
-
 			response.push(filter.json);
 		}
 
@@ -8102,8 +8412,9 @@ class ReportVisualizationFilter {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('fieldset');
 
@@ -8116,7 +8427,7 @@ class ReportVisualizationFilter {
 		this.form.container.insertAdjacentHTML('beforeend', `
 
 			<label>
-				<button class="delete" title="Delete"><i class="far fa-trash-alt"></i></button>
+				<button type="button" class="delete" title="Delete"><i class="far fa-trash-alt"></i></button>
 			</label>
 		`);
 
@@ -8127,21 +8438,17 @@ class ReportVisualizationFilter {
 		this.form.container.description.parentElement.classList.add('hidden');
 		this.form.datasetMultiSelect.container.parentElement.classList.add('hidden');
 
-		let default_data;
+		let default_value = this.reportFilter.default_value;
 
-		if(this.reportFilter.default_value) {
-			default_data = `Default Fixed Value: ${this.reportFilter.default_value}`;
+		if(this.reportFilter.offset && this.reportFilter.offset.length) {
+			default_value = Format.number(this.reportFilter.offset.length) + ' offset rule' + (this.reportFilter.offset > 1 ? 's' : '');
 		}
 
-		else if(!isNaN(parseFloat(this.reportFilter.offset))) {
-			default_data = `Default Relative Value: ${this.reportFilter.offset}`;
+		if(default_value) {
+			this.form.container.default_type.insertAdjacentHTML('beforebegin', `<small>From Report: ${default_value}</small>`);
 		}
 
-		if(default_data) {
-			this.form.container.default_type.insertAdjacentHTML('beforebegin', `<small>${default_data}</small>`);
-		}
-
-		container.querySelector('.delete').on('click', () => {
+		container.querySelector('label .delete').on('click', () => {
 
 			this.container.parentElement.removeChild(container);
 
@@ -8254,11 +8561,13 @@ class RelatedVisualizations extends Set {
 
 		if(force) {
 
-			await this.stage.page.preview.load({
+			await this.stage.page.preview.loadTab({
 				query_id: this.stage.report.query_id,
 				visualization: {
-					id: this.stage.visualization.visualization_id
+					id: this.stage.visualization.visualization_id,
 				},
+				tab: 'current',
+				valueChanged: true,
 			});
 		}
 	}

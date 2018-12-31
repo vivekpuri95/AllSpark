@@ -30,7 +30,7 @@ class GlobalFilters extends API {
 			name,
 			placeholder,
 			description,
-			order,
+			order: isNaN(parseInt(order)) ? null : parseInt(order),
 			default_value,
 			multiple,
 			type,
@@ -53,7 +53,8 @@ class GlobalFilters extends API {
 		this.assert(name && placeholder, 'Name or Placeholder cannot be null or empty');
 
 		const params = {
-			name, placeholder, description, order, default_value, multiple, type,
+			name, placeholder, description, default_value, multiple, type,
+			order: isNaN(parseInt(order)) ? null : parseInt(order),
 			offset: isNaN(parseInt(offset)) ? null : parseInt(offset),
 			dataset: parseInt(dataset) || null,
 		};

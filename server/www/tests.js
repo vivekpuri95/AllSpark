@@ -8,3 +8,4 @@ class Tests extends API {
 }
 
 exports.test = Tests;
+exports.changeFilterOffsetFormat = Tests;

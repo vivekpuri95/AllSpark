@@ -46,7 +46,7 @@ exports.list = class extends API {
 				USING(visualization_id)
 			JOIN
 				tb_object_roles o
-			ON 
+			ON
 				o.owner_id = vd.owner_id
 			JOIN
 				tb_dashboards d
@@ -148,7 +148,7 @@ exports.list = class extends API {
 			this.mysql.query(`
 				SELECT
 					qv.*,
-					id, 
+					id,
 					owner,
 					owner_id,
 					vc.visualization_id AS sub_visualization_id,
@@ -157,7 +157,7 @@ exports.list = class extends API {
 					tb_query_visualizations qv
 				JOIN
 					tb_query q
-				ON 	
+				ON
 					qv.query_id = q.query_id
 				LEFT JOIN
 					tb_visualization_canvas vc
@@ -330,6 +330,12 @@ exports.list = class extends API {
 			if (!queryFilterMapping.hasOwnProperty(filter.query_id)) {
 
 				queryFilterMapping[filter.query_id] = [];
+			}
+
+			try {
+				filter.offset = JSON.parse(filter.offset);
+			} catch(e) {
+				filter.offset = {};
 			}
 
 			queryFilterMapping[filter.query_id].push(filter);
@@ -896,7 +902,7 @@ exports.userPrvList = class extends API {
                 		JOIN
                 			tb_user_dashboard ud
                 		ON
-                			vd.owner_id = ud.dashboard_id                			
+                			vd.owner_id = ud.dashboard_id
                 		JOIN
                 			tb_query_visualizations qv
                 			USING(visualization_id)

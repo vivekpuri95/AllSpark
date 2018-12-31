@@ -569,27 +569,32 @@ body {
 		padding: calc(var(--gap) * 2);
 		grid-gap: calc(var(--gap) * 4);
 	}
-		.form label {
+		.form label,
+		.form .label {
 			display: grid;
 			grid-gap: var(--gap);
 			max-width: 200px;
 			white-space: nowrap;
 		}
-			.form label > span {
+			.form label > span,
+			.form .label > span {
 				font-size: 90%;
 				font-weight: bold;
 				letter-spacing: 0.5px;
 				display: flex;
 				align-items: center;
 			}
-				.form label > span span {
+				.form label > span span,
+				.form .label > span span {
 					font-weight: normal;
 					margin-left: var(--gap);
 				}
-				.form label > span .right {
+				.form label > span .right,
+				.form .label > span .right {
 					margin-left: auto;
 				}
-				.form label > span .red {
+				.form label > span .red,
+				.form .label > span .red {
 					color: var(--color-red);
 				}
 
