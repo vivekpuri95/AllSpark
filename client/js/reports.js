@@ -13717,10 +13717,14 @@ class VisualizationsCanvas {
 					currentParameters = {
 						id: current.id,
 						format: JSON.stringify(current.format),
+						owner: 'visualization',
+						owner_id: this.visualizations[0].owner_id
 					},
 					previousParameters = {
 						id: previous.id,
 						format: JSON.stringify(previous.format),
+						owner: 'visualization',
+						owner_id: this.visualizations[0].owner_id
 					},
 					options = {
 						method: 'POST',
@@ -13761,10 +13765,14 @@ class VisualizationsCanvas {
 					currentParameters = {
 						id: current.id,
 						format: JSON.stringify(current.format),
+						owner: 'visualization',
+						owner_id: this.visualizations[0].owner_id
 					},
 					nextParameters = {
 						id: next.id,
 						format: JSON.stringify(next.format),
+						owner: 'visualization',
+						owner_id: this.visualizations[0].owner_id
 					},
 					options = {
 						method: 'POST',
@@ -13900,6 +13908,8 @@ class VisualizationsCanvas {
 					height: report.resize_dimentions.height.value,
 					width: report.resize_dimentions.width.value,
 				}),
+				owner: 'visualization',
+				owner_id: this.visualizations[0].owner_id,
 			},
 			options = {
 				method: 'POST',
@@ -13945,6 +13955,8 @@ class VisualizationsCanvas {
 			const parameters = {
 				id: visualization.id,
 				format: JSON.stringify(visualization.format),
+				owner: 'visualization',
+				owner_id: this.visualizations[0].owner_id
 			};
 
 			promises.push(API.call('reports/dashboard/update', parameters, {method:'POST'}));

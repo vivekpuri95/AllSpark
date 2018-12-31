@@ -1014,6 +1014,8 @@ class Dashboard {
 					currentParameters = {
 						id: current.id,
 						format: JSON.stringify(current.format),
+						owner: 'dashboard',
+						owner_id: this.id
 					},
 					currentOptions = {
 						method: 'POST',
@@ -1025,6 +1027,8 @@ class Dashboard {
 					previousParameters = {
 						id: previous.id,
 						format: JSON.stringify(previous.format),
+						owner: 'dashboard',
+						owner_id: this.id
 					},
 					previousOptions = {
 						method: 'POST',
@@ -1060,6 +1064,8 @@ class Dashboard {
 					currentParameters = {
 						id: current.id,
 						format: JSON.stringify(current.format),
+						owner: 'dashboard',
+						owner_id: this.id
 					},
 					currentOptions = {
 						method: 'POST',
@@ -1071,6 +1077,8 @@ class Dashboard {
 					nextParameters = {
 						id: next.id,
 						format: JSON.stringify(next.format),
+						owner: 'dashboard',
+						owner_id: this.id
 					},
 					nextOptions = {
 						method: 'POST',
@@ -1353,6 +1361,8 @@ class Dashboard {
 		const
 			parameters = {
 				id: id,
+				owner: 'dashboard',
+				owner_id: this.id,
 				format: JSON.stringify(format || this.format),
 			},
 			options = {
