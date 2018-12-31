@@ -7693,7 +7693,7 @@ ReportTransformation.types.set('row-limit', class RowLimitTransformation extends
 			<div>
 				<label>
 					<span>Row Limit</span>
-					<input type="number" min="0" name="rowLimit">
+					<input type="number" name="rowLimit">
 				</label>
 			</div>
 		`;
