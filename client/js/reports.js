@@ -1620,7 +1620,7 @@ class DataSourceFilter {
 				}
 
 				value = index;
-				break
+				break;
 			}
 
 			return value;
