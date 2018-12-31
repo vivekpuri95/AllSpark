@@ -102,7 +102,7 @@ CREATE TABLE `tb_global_filters` (
 	 `name` varchar(64) DEFAULT NULL,
 	 `account_id` int(11) DEFAULT NULL,
 	 `placeholder` varchar(64) NOT NULL DEFAULT '' COMMENT '{{ backend }} , [[ frontend ]]',
-	 `description` varchar(64) DEFAULT NULL,
+	 `description` varchar(200) DEFAULT NULL,
 	 `order` int(11) NOT NULL DEFAULT '0',
 	 `default_value` varchar(500) DEFAULT NULL COMMENT 'default not null to apply filter',
 	 `offset` int(11) DEFAULT NULL,
@@ -231,7 +231,7 @@ CREATE TABLE `tb_query` (
 	 `url` varchar(500) DEFAULT NULL,
 	 `url_options` json DEFAULT NULL,
 	 `subtitle` int(11) NOT NULL COMMENT 'FK',
-	 `description` varchar(1024) DEFAULT NULL,
+	 `description` text,
 	 `added_by` int(100) DEFAULT NULL,
 	 `requested_by` varchar(100) DEFAULT NULL,
 	 `tags` varchar(1024) DEFAULT NULL,
@@ -256,9 +256,9 @@ CREATE TABLE `tb_query_filters` (
 	 `description` varchar(64) DEFAULT NULL,
 	 `order` int(11) DEFAULT '0',
 	 `default_value` varchar(500) DEFAULT NULL COMMENT 'default not null to apply filter',
-	 `offset` int(11) DEFAULT NULL,
+	 `offset` varchar(500) DEFAULT NULL,
 	 `multiple` smallint(6) DEFAULT '0',
-	 `type` enum('number','text','date','month','hidden','column','datetime','literal') DEFAULT 'text',
+	 `type` enum('number','text','date','month','hidden','column','datetime','literal','time','year') DEFAULT 'text',
 	 `dataset` int(11) DEFAULT NULL,
 	 `is_enabled` int(11) NOT NULL DEFAULT '1',
 	 `is_deleted` int(11) NOT NULL DEFAULT '0',
@@ -273,7 +273,8 @@ CREATE TABLE `tb_query_visualizations` (
 	 `query_id` int(11) NOT NULL,
 	 `name` varchar(250) DEFAULT NULL,
 	 `type` enum('table','spatialmap','funnel','cohort','line','bar','area','pie','stacked','livenumber','dualaxisbar','bigtext','scatter','bubble','html','linear','sankey','calendar') NOT NULL DEFAULT 'table',
-	 `description` varchar(1000) DEFAULT NULL,
+	 `description` text,
+	 `tags` varchar(1024) DEFAULT NULL,
 	 `options` json DEFAULT NULL,
 	 `added_by` int(11) DEFAULT NULL,
 	 `is_enabled` tinyint(4) NOT NULL DEFAULT '1',
@@ -395,16 +396,6 @@ CREATE TABLE `tb_visualization_canvas` (
 	 UNIQUE KEY `owner_visualization` (`owner`,`owner_id`,`visualization_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-CREATE TABLE `tb_visualization_dashboard` (
-	 `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-	 `dashboard_id` int(11) DEFAULT NULL,
-	 `visualization_id` int(11) DEFAULT NULL,
-	 `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-	 `format` json DEFAULT NULL,
-	 PRIMARY KEY (`id`),
-	 UNIQUE KEY `dashboard_id` (`dashboard_id`,`visualization_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
 CREATE TABLE `tb_visualizations` (
 	 `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
 	 `name` varchar(100) NOT NULL DEFAULT '',
@@ -416,3 +407,69 @@ CREATE TABLE `tb_visualizations` (
 	 `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	 PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+INSERT INTO
+	tb_features (name, slug, type)
+VALUES
+	('Table','table','visualization'),
+	('Spatial Map','spatialmap','visualization'),
+	('Funnel','funnel','visualization'),
+	('Cohort','cohort','visualization'),
+	('Line','line','visualization'),
+	('Bar','bar','visualization'),
+	('Area','area','visualization'),
+	('Stacked','stacked','visualization'),
+	('Pie','pie','visualization'),
+	('Live Number','livenumber','visualization'),
+	('Dual Axis Bar','dualaxisbar','visualization'),
+	('Bubble','bubble','visualization'),
+	('Big Text','bigtext','visualization'),
+	('Scatter','scatter','visualization'),
+	('Json','json','visualization'),
+	('MySQL','mysql','source'),
+	('API','api','source'),
+	('pgSQL','pgsql','source'),
+	('BigQuery','bigquery','source'),
+	('HTML','html','visualization'),
+	('MongoDB','mongo','source'),
+	('File','file','source'),
+	('Linear','linear','visualization'),
+	('Sankey','sankey','visualization'),
+	('Calendar Heatmap','calendar','visualization'),
+	('Bigquery Legacy','bigquery_legacy','source');
+
+INSERT INTO
+	tb_datasources (name, slug, image)
+VALUES
+	('MySQL','mysql','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/mysql.svg'),
+	('MSSQL','mssql','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/microsoft-sql-server.svg'),
+	('PostgreSQL','pgsql','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/postgresql-elephant.svg'),
+	('Google Bigquery','bigquery','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/icon-bigquery.svg'),
+	('Mongodb','mongo','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/mongodb.svg'),
+	('Oracle','oracle','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/shutterstock-1089009710.svg'),
+	('API','api','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/shutterstock-783027679.svg'),
+	('File','file','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/shutterstock-441483991.svg'),
+	('Google Bigquery Legacy','bigquery_legacy','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/icon-bigquery.svg');
+
+INSERT INTO
+	tb_visualizations (name, slug, image)
+VALUES
+	('Table','table','https://i.imgur.com/t9yW97t.png'),
+	('Spatial Map','spatialmap','https://i.imgur.com/gDxBW8Z.png'),
+	('Funnel','funnel','https://i.imgur.com/bBJIrBo.png'),
+	('Cohort','cohort','https://i.imgur.com/y8Fnq1p.png'),
+	('Line','line','https://i.imgur.com/Rz8MCXI.png'),
+	('Bar','bar','https://i.imgur.com/ItNpKis.png'),
+	('Area','area','https://i.imgur.com/4lVeuw1.png'),
+	('Stacked','stacked','https://i.imgur.com/7PLntjB.png'),
+	('Pie','pie','https://i.imgur.com/9VDKnlz.png'),
+	('Live Number','livenumber','https://i.imgur.com/xxcMnSv.png'),
+	('Dual Axis Bar','dualaxisbar','https://i.imgur.com/5Csusur.png'),
+	('Bubble','bubble','https://i.imgur.com/UtECRk2.png'),
+	('Big Text','bigtext','https://i.imgur.com/zip77tn.png'),
+	('Scatter','scatter','https://i.imgur.com/mBxqW9e.png'),
+	('JSON','json','https://i.imgur.com/ydjKDYl.png'),
+	('HTML','html',''),
+	('Linear','linear','https://i.imgur.com/5Csusur.png'),
+	('Sankey','sankey',''),
+	('Calender','calendar','');
