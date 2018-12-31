@@ -56,18 +56,12 @@ Page.class = class Dashboards extends Page {
 			history.pushState(null, '', window.location.pathname.slice(0, window.location.pathname.lastIndexOf('/')));
 		});
 
-		for(const category of MetaData.categories.values()) {
-			this.listContainer.form.subtitle.insertAdjacentHTML('beforeend', `<option value="${category.category_id}">${category.name}</option>`);
-		}
-
 		const watermarkDiv = document.createElement('div');
 		watermarkDiv.classList.add('hidden', 'pdf-watermark');
 
 		watermarkDiv.textContent = `Downloaded from ${window.location.hostname}`
 
 		this.container.appendChild(watermarkDiv);
-
-		this.listContainer.form.subtitle.on('change', () => this.renderList());
 
 		window.on('popstate', e => this.load(e.state));
 
