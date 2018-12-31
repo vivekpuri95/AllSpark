@@ -1539,6 +1539,7 @@ class DataSourceFilter {
 			input = document.createElement('input');
 
 			input.type = MetaData.filterTypes.get(this.type).input_type;
+			input.step = 1;
 			input.name = this.placeholder;
 
 			input.value = this.value;
@@ -1769,24 +1770,24 @@ class DataSourceFilter {
 		const offsetValue = offset.value * offset.direction;
 
 		if(offset.unit == 'second') {
-			return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours(), base.getMinutes(), base.getSeconds() + offsetValue)).toISOString().substring(0, 19).replace('T', ' ');
+			return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours(), base.getMinutes(), base.getSeconds() + offsetValue)).toISOString().substring(0, 19);
 		}
 
 		else if(offset.unit == 'minute') {
 
 			if(offset.snap) {
-				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours(), base.getMinutes() + offsetValue, 0)).toISOString().substring(0, 19).replace('T', ' ');
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours(), base.getMinutes() + offsetValue, 0)).toISOString().substring(0, 19);
 			} else {
-				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours(), base.getMinutes() + offsetValue, base.getSeconds())).toISOString().substring(0, 19).replace('T', ' ');
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours(), base.getMinutes() + offsetValue, base.getSeconds())).toISOString().substring(0, 19);
 			}
 		}
 
 		else if(offset.unit == 'hour') {
 
 			if(offset.snap) {
-				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours() + offsetValue, 0, 0)).toISOString().substring(0, 19).replace('T', ' ');
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours() + offsetValue, 0, 0)).toISOString().substring(0, 19);
 			} else {
-				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours() + offsetValue, base.getMinutes(), base.getSeconds())).toISOString().substring(0, 19).replace('T', ' ');
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours() + offsetValue, base.getMinutes(), base.getSeconds())).toISOString().substring(0, 19);
 			}
 		}
 
@@ -1795,7 +1796,7 @@ class DataSourceFilter {
 			if(offset.snap) {
 				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate() + offsetValue)).toISOString().substring(0, 10);
 			} else {
-				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate() + offsetValue, base.getHours(), base.getMinutes(), base.getSeconds())).toISOString().substring(0, 19).replace('T', ' ')
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate() + offsetValue, base.getHours(), base.getMinutes(), base.getSeconds())).toISOString().substring(0, 19)
 			}
 		}
 
