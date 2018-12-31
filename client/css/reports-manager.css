@@ -19,7 +19,8 @@ main.preview-bottom {
 	main section .toolbar {
 		padding-top: 0;
 	}
-	main section#stage-pick-report > .toolbar {
+	main section#stage-pick-report > .toolbar,
+	main section#stage-pick-visualization .toolbar {
 		justify-content: space-between;
 	}
 
@@ -195,7 +196,8 @@ main.preview-left #stages {
 		#stage-pick-report table thead tr.search th input {
 			width: 100%;
 		}
-	#stage-pick-report table tbody tr .tag {
+	#stage-pick-report table tbody tr .tag,
+	#stage-pick-visualization table tbody tr .tag {
 		background: var(--color-secondary);
 		color: var(--color-secondary-text);
 		cursor: pointer;

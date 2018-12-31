@@ -1290,6 +1290,7 @@ class DataSourceFilters extends Map {
 					name: name + ' Date Range',
 					placeholder: name + '_date_range',
 					placeholders: [],
+					order: filter.order,
 					type: 'daterange',
 					companions: [],
 				}]);
@@ -1298,6 +1299,8 @@ class DataSourceFilters extends Map {
 			const group = filterGroups.get(name);
 
 			group[0].companions.push(filter);
+			filter.order = group[0].order;
+
 			group.push(filter);
 		}
 
@@ -1376,6 +1379,10 @@ class DataSourceFilters extends Map {
 		let maxOrder = null;
 
 		for(const filter of this.values()) {
+
+			if(isNaN(parseFloat(filter.order))) {
+				continue;
+			}
 
 			if(isNaN(parseFloat(maxOrder))) {
 				maxOrder = filter.order;
@@ -1539,6 +1546,7 @@ class DataSourceFilter {
 			input = document.createElement('input');
 
 			input.type = MetaData.filterTypes.get(this.type).input_type;
+			input.step = 1;
 			input.name = this.placeholder;
 
 			input.value = this.value;
@@ -1580,6 +1588,7 @@ class DataSourceFilter {
 			let value = this.dateRanges.length - 1;
 
 			// Find the date range that matches the selected date range values for the current filter's companions
+			outer:
 			for(const [index, range] of this.dateRanges.entries()) {
 
 				let match = true;
@@ -1593,6 +1602,7 @@ class DataSourceFilter {
 						today = new Date(new Date().toISOString().substring(0, 10)).getTime();
 
 					if(!date) {
+						match = false;
 						break;
 					}
 
@@ -1610,7 +1620,7 @@ class DataSourceFilter {
 				}
 
 				value = index;
-				break
+				break;
 			}
 
 			return value;
@@ -1732,8 +1742,10 @@ class DataSourceFilter {
 			companion = this.filters.get(companion.placeholder);
 
 			// If the option was the last one. We don't check the name because
-			// the user could have give a custom name in account settings.
+			// the user could have given a custom name in account settings.
 			companion.label.classList.toggle('hidden', select.value != this.dateRanges.length - 1);
+
+			companion.order = this.order;
 
 			const date = companion.name.toLowerCase().includes('start') ? range.start : range.end;
 
@@ -1769,24 +1781,24 @@ class DataSourceFilter {
 		const offsetValue = offset.value * offset.direction;
 
 		if(offset.unit == 'second') {
-			return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours(), base.getMinutes(), base.getSeconds() + offsetValue)).toISOString().substring(0, 19).replace('T', ' ');
+			return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours(), base.getMinutes(), base.getSeconds() + offsetValue)).toISOString().substring(0, 19);
 		}
 
 		else if(offset.unit == 'minute') {
 
 			if(offset.snap) {
-				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours(), base.getMinutes() + offsetValue, 0)).toISOString().substring(0, 19).replace('T', ' ');
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours(), base.getMinutes() + offsetValue, 0)).toISOString().substring(0, 19);
 			} else {
-				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours(), base.getMinutes() + offsetValue, base.getSeconds())).toISOString().substring(0, 19).replace('T', ' ');
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours(), base.getMinutes() + offsetValue, base.getSeconds())).toISOString().substring(0, 19);
 			}
 		}
 
 		else if(offset.unit == 'hour') {
 
 			if(offset.snap) {
-				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours() + offsetValue, 0, 0)).toISOString().substring(0, 19).replace('T', ' ');
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours() + offsetValue, 0, 0)).toISOString().substring(0, 19);
 			} else {
-				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours() + offsetValue, base.getMinutes(), base.getSeconds())).toISOString().substring(0, 19).replace('T', ' ');
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours() + offsetValue, base.getMinutes(), base.getSeconds())).toISOString().substring(0, 19);
 			}
 		}
 
@@ -1795,7 +1807,7 @@ class DataSourceFilter {
 			if(offset.snap) {
 				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate() + offsetValue)).toISOString().substring(0, 10);
 			} else {
-				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate() + offsetValue, base.getHours(), base.getMinutes(), base.getSeconds())).toISOString().substring(0, 19).replace('T', ' ')
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate() + offsetValue, base.getHours(), base.getMinutes(), base.getSeconds())).toISOString().substring(0, 19)
 			}
 		}
 
@@ -5164,6 +5176,24 @@ DataSourceTransformation.types.set('custom-column', class DataSourceTransformati
 		return newResponse;
 	}
 });
+
+DataSourceTransformation.types.set('row-limit', class DataSourceTransformationRowLimit extends DataSourceTransformation {
+
+	get name() {
+
+		return 'Row Limit';
+	}
+
+	async execute(response = []) {
+
+		if(!response.length || !this.options.row_limit) {
+
+			return response;
+		}
+
+		return response.slice(0, this.options.row_limit);
+	}
+})
 
 DataSourcePostProcessors.processors = new Map;
 
@@ -13687,10 +13717,14 @@ class VisualizationsCanvas {
 					currentParameters = {
 						id: current.id,
 						format: JSON.stringify(current.format),
+						owner: 'visualization',
+						owner_id: this.visualizations[0].owner_id
 					},
 					previousParameters = {
 						id: previous.id,
 						format: JSON.stringify(previous.format),
+						owner: 'visualization',
+						owner_id: this.visualizations[0].owner_id
 					},
 					options = {
 						method: 'POST',
@@ -13731,10 +13765,14 @@ class VisualizationsCanvas {
 					currentParameters = {
 						id: current.id,
 						format: JSON.stringify(current.format),
+						owner: 'visualization',
+						owner_id: this.visualizations[0].owner_id
 					},
 					nextParameters = {
 						id: next.id,
 						format: JSON.stringify(next.format),
+						owner: 'visualization',
+						owner_id: this.visualizations[0].owner_id
 					},
 					options = {
 						method: 'POST',
@@ -13870,6 +13908,8 @@ class VisualizationsCanvas {
 					height: report.resize_dimentions.height.value,
 					width: report.resize_dimentions.width.value,
 				}),
+				owner: 'visualization',
+				owner_id: this.visualizations[0].owner_id,
 			},
 			options = {
 				method: 'POST',
@@ -13915,6 +13955,8 @@ class VisualizationsCanvas {
 			const parameters = {
 				id: visualization.id,
 				format: JSON.stringify(visualization.format),
+				owner: 'visualization',
+				owner_id: this.visualizations[0].owner_id
 			};
 
 			promises.push(API.call('reports/dashboard/update', parameters, {method:'POST'}));

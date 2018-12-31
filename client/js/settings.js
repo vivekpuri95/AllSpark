@@ -1386,6 +1386,7 @@ class GlobalFilter {
 			<td>${this.name}</td>
 			<td>${this.placeholder}</td>
 			<td>${this.type}</td>
+			<td>${isNaN(parseFloat(this.order)) ? '' : this.order}</td>
 			<td>${this.default_value}</td>
 			<td>${this.multiple ? 'Yes' : 'No'}</td>
 			<td>${isNaN(parseInt(this.offset)) ? '' : this.offset}</td>
@@ -1406,7 +1407,7 @@ class GlobalFilter {
 
 		for(const element of this.globalFilters.form.elements) {
 
-			if(this[element.name]) {
+			if(element.name in this) {
 				element.value = this[element.name];
 			}
 		}

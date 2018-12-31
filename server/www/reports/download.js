@@ -18,6 +18,8 @@ exports.pdf = class DownloadPdf extends API {
 			{waitUntil: ['networkidle2', 'load']}
 		);
 
+		await page.emulateMedia('print');
+
 		await page.setViewport({width: 1600, height: 1080});
 
 		// Check Directory exists and if not then make dir.
@@ -33,7 +35,11 @@ exports.pdf = class DownloadPdf extends API {
 
 		if(this.request.query.type == 'pdf') {
 
-			await page.pdf({path: `/tmp/Allspark/${fileName}`, format: 'A4', scale: 0.5, displayHeaderFooter: true});
+			await page.pdf({
+				path: `/tmp/Allspark/${fileName}`,
+				format: 'A4',
+				scale: 0.5,
+			});
 		}
 		else if(this.request.query.type == 'png') {
 
