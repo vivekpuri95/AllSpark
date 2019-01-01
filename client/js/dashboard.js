@@ -279,7 +279,7 @@ Page.class = class Dashboards extends Page {
 				continue;
 			}
 
-			visualizations.push(...datasource.visualizations);
+			visualizations.push(...datasource.visualizations.filter(x => x.visualization_id));
 		}
 
 		this.searchBar.data = visualizations;
