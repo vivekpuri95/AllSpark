@@ -1288,7 +1288,7 @@ class DataSourceFilters extends Map {
 				filterGroups.set(name, [{
 					filter_id: Math.random(),
 					name: name + ' Date Range',
-					placeholder: '_date_range',
+					placeholder: filter.placeholder + '_date_range',
 					placeholders: [],
 					order: filter.order,
 					type: 'daterange',
