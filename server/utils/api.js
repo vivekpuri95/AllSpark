@@ -177,8 +177,14 @@ class API {
 
 					checksums.push(
 						crypto.createHash('md5').update(JSON.stringify(obj.account)).digest('hex'),
-						crypto.createHash('md5').update(JSON.stringify([...obj.account.settings.entries()])).digest('hex'),
-						crypto.createHash('md5').update(JSON.stringify(obj.user ? obj.user.json.settings || '' : '')).digest('hex')
+						crypto.createHash('md5').update(JSON.stringify([...obj.account.settings.entries()])).digest('hex')
+					);
+				}
+
+				if(obj.user) {
+
+					checksums.push(
+						crypto.createHash('md5').update(JSON.stringify(obj.user.json.settings || '')).digest('hex')
 					);
 				}
 
@@ -192,7 +198,8 @@ class API {
 
 				if ((!userDetails || userDetails.error) &&
 					!constants.publicEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length &&
-					!constants.nonAccountEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length) {
+					!constants.nonAccountEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length
+				) {
 
 					throw new API.Exception(401, 'User Not Authenticated!');
 				}

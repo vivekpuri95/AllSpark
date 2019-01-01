@@ -1,10 +1,15 @@
 const API = require('../utils/api');
 const config = require('config');
 const commonFun = require('../utils/commonFunctions');
+const Account = require('../onServerStart');
 
 class Setup extends API {
 
 	async run({account, user} = {}) {
+
+		const existingAccounts = await this.mysql.query('SELECT * from tb_accounts',[]);
+
+		this.assert(!existingAccounts.length, 'Account already exists');
 
 		if(!(account && user)) {
 
@@ -68,11 +73,13 @@ class Setup extends API {
 				"write"
 			),
 			this.mysql.query(
-				'INSERT INTO tb_settings (account_id, owner, owner_id, profile, value) VALUES (?, "account", ?, "main", NULL)',
+				'INSERT INTO tb_settings (account_id, owner, owner_id, profile, value) VALUES (?, "account", ?, "main", "[]")',
 				[setupAccount.insertId, setupAccount.insertId],
 				"write"
 			),
 		]);
+
+		this.assert(category.insertId && roles.insertId && privilege.insertId && accountFeatures.insertId && settings.insertId, 'Error in adding account categories or roles');
 
 		const [userPrivilege, userRole] = await Promise.all([
 			this.mysql.query(
@@ -87,15 +94,15 @@ class Setup extends API {
 			)
 		]);
 
+		this.assert(userPrivilege.insertId && userRole.insertId, 'Error in inserting user roles or privileges');
+
 		await this.mysql.query('UPDATE tb_object_roles SET group_id = id where id = ?', [userRole.insertId], 'write');
 
+		await Account.loadAccounts();
+
 		return {
-			status: 200,
-			messgae: 'Account Setup Complete',
-			data: {
-				account: setupAccount.insertId,
-				user:setupUser.insertId
-			}
+			account: setupAccount.insertId,
+			user:setupUser.insertId
 		}
 	}
 }
