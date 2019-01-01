@@ -310,7 +310,7 @@ Page.class = class Dashboards extends Page {
 
 			tr.innerHTML = `
 				<td>
-					<a href="${visualization.visualization_id ? '/visualization/' + visualization.visualization_id : '/report/' + visualization.source.query_id}" target="_blank" class="link">
+					<a href="/visualization/${visualization.visualization_id}" target="_blank" class="link">
 						${visualization.name} <span class="NA">${visualization.visualization_id ? '#' + visualization.visualization_id : ''}</span>
 					</a>
 				</td>
