@@ -109,8 +109,7 @@ Page.class = class Dashboards extends Page {
 		this.searchBarFilter = new SearchColumnFilters({
 			data: [],
 			filters: filters,
-			advanceSearch: true,
-			page,
+			advancedSearch: true,
 		});
 
 		this.container.querySelector('.section#list').insertBefore(this.searchBarFilter.container, this.container.querySelector('.section#list .block'));

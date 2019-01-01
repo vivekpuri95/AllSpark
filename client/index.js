@@ -991,7 +991,13 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 
 					<div class="toolbar">
 						<button type="button" id="configure-visualization-back"><i class="fa fa-arrow-left"></i> Back</button>
-						<button type="submit" form="configure-visualization-form" class="right"><i class="far fa-save"></i> Save</button>
+						<div id="save-container">
+							<button type="submit" form="configure-visualization-form" class="right"><i class="far fa-save"></i> Save</button>
+							<button id="save-more"><i class="fa fa-angle-down"></i></button>
+							<div id="save-menu" class="hidden">
+								<button id="fork"><i class="fas fa-code-branch"></i> Fork</button>
+							</div>
+						</div>
 						<button type="button" id="preview-configure-visualization"><i class="fa fa-eye"></i> Preview</button>
 						<button type="button" id="history-configure-visualization"><i class="fa fa-history"></i> History</button>
 					</div>

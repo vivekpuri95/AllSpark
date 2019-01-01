@@ -3744,6 +3744,696 @@ class NotificationBar {
 	}
 }
 
+class ForkData {
+
+	constructor(name, forkedData, type) {
+
+		this.name = name;
+		this.forkedData = forkedData;
+		this.type = type;
+
+		let dialogBox = this.forkDialogBox;
+
+		if(!dialogBox) {
+
+			dialogBox = this.forkDialogBox = new DialogBox();
+			dialogBox.body.classList.add('fork-report');
+		}
+
+		dialogBox.heading = `<i class="fas fa-code-branch"></i> &nbsp; Fork ${this.name}`;
+	}
+
+	get container() {
+
+		if(this.containerElement) {
+
+			this.forkDialogBox.show();
+			return this.containerElement;
+		}
+
+		const container = this.containerElement = document.createElement('form');
+		container.classList.add('form');
+
+		container.innerHTML = `
+
+			<div class="options"></div>
+
+			<label class="switch-to-new">
+				<input type="checkbox" name="switchToNew" checked>
+				<span class="switch-new">Switch to the new ${this.type}</span>
+			</label>
+
+			<div class="footer">
+
+				<div class="progress hidden">
+					<span class="NA"></span>
+					<progress></progress>
+				</div>
+
+				<button type="button" class="export">
+					<i class="fas fa-file-export"></i>
+					Export
+				</button>
+
+				<button type="submit" class="selected">
+					<i class="fas fa-code-branch"></i>
+					<span class="fork-name">Fork ${this.type}</span>
+					<i class="fas fa-arrow-right"></i>
+				</button>
+			</div>
+		`;
+
+		this.openDialogBox();
+
+		container.querySelector('.footer .export').on('click', () => this.export());
+
+		container.on('submit', async e => {
+
+			if(this.forkInProgress) {
+				return;
+			}
+
+			this.forkInProgress = true;
+
+			e.preventDefault();
+
+			try {
+				await this.fork();
+			}
+			catch(e) {
+
+				new SnackBar({
+					message: 'Failed to fork!',
+					subtitle: e.message,
+					type: 'error',
+				});
+
+				this.forkInProgress = false;
+				throw e;
+			}
+
+			this.forkInProgress = false;
+		});
+
+		return container;
+	}
+
+	openDialogBox() {
+
+		const container = this.container;
+
+		for(const [key, option] of this.forkedData.entries()) {
+
+			if(option.type == 'input') {
+
+				container.querySelector('.options').insertAdjacentHTML('beforeend',
+					`
+						<label>
+							<span>${option.title}<span class="red">*</span></span>
+							<input type="text" name="${key}" value="${option.value}" required>
+						</label>
+					`
+				);
+			}
+			else {
+
+				if(!option.value.size) {
+
+					continue;
+				}
+
+				option.multiSelect = new MultiSelect({multiple: true, expand: true});
+
+				const dataList = [];
+
+				for(const data of option.value.values() || []) {
+
+					dataList.push({
+						name: data.name,
+						value: data.value,
+						subtitle: data.subtitle,
+					});
+				}
+
+				option.multiSelect.datalist = dataList;
+				option.multiSelect.render();
+
+				if(!option.selected) {
+
+					option.multiSelect.all();
+				}
+
+				else if(!option.selected.length) {
+
+					option.multiSelect.clear();
+				}
+
+				else if(option.selected.length) {
+
+					option.multiSelect.value = option.selected;
+
+					option.multiSelect.on('change', () => {
+
+						this.forkDialogBox.body.querySelector('form .switch-to-new').classList.toggle('hidden', option.multiSelect.value.length > 1)
+
+						if(option.multiSelect.value.length > 1) {
+							this.forkDialogBox.body.querySelector('form').switchToNew.checked = false;
+						}
+						else {
+							this.forkDialogBox.body.querySelector('form').switchToNew.checked = true;
+						}
+					});
+				}
+
+				container.querySelector('.options').insertAdjacentHTML('beforeend',
+					`
+						<label>
+							<span>${option.title}</span>
+						</label>
+					`
+				);
+				container.querySelector('.options').appendChild(option.multiSelect.container);
+			}
+		}
+
+		this.forkDialogBox.show();
+	}
+
+	get json() {
+
+		const
+			options = {},
+			form = this.forkDialogBox.body.querySelector('form'),
+			formData = new FormData(form);
+
+		for(const pair of formData.entries()) {
+
+			if(this.forkedData.has(pair[0])) {
+
+				options[pair[0]] = pair[1];
+			}
+
+		}
+
+		for(const [key, value] of this.forkedData.entries()) {
+
+			if(value.multiSelect) {
+
+				options[key] = value.multiSelect.value;
+			}
+		}
+
+		return options;
+	}
+}
+
+class ForkReport extends ForkData {
+
+	constructor({report, type, name, page} = {}) {
+
+		const
+			filters = new Set(),
+			visualizations = new Set(),
+			forkedData = new Map();
+
+		for(const filter of report.filters) {
+
+			filters.add({
+				name: filter.name,
+				value: filter.filter_id,
+				subtitle: `#${filter.filter_id} &middot; ${filter.type}`,
+			});
+		}
+
+		for(const visualization of report.visualizations) {
+
+			visualizations.add({
+				name: visualization.name,
+				value: visualization.visualization_id,
+				subtitle: `#${visualization.visualization_id} &middot; ${MetaData.visualizations.get(visualization.type).name}`,
+			});
+		}
+
+		forkedData.set('reportHeading', {title: `New Report's Name`, value: name, type: 'input', selected: []});
+		forkedData.set('filters', {title: 'Filters', value: filters, type: 'multiselect'});
+		forkedData.set('visualizations', {title: 'Visualizations', value: visualizations, type: 'multiselect'});
+
+		super(name, forkedData, type);
+
+		this.report = report;
+		this.page = page;
+	}
+
+	get json() {
+
+		const
+			customJson = super.json,
+			filters = customJson.filters || [],
+			visualizations = customJson.visualizations || [],
+			reportJson = new DataSource(this.report, this.page).json;
+
+		reportJson.filters = filters.length ? reportJson.filters.filter(f => filters.includes(f.filter_id.toString())) : reportJson.filters;
+		reportJson.visualizations = visualizations.length ? reportJson.visualizations.filter(v => visualizations.includes(v.visualization_id.toString())) : reportJson.visualizations;
+
+		return reportJson;
+	}
+
+	export() {
+
+		const
+			customJson = super.json,
+			json = this.json,
+			a = document.createElement('a');
+
+		a.download = `${customJson.reportHeading} - ${Format.dateTime(new Date())}.json`;
+		a.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(json));
+
+		a.click();
+	}
+
+	async fork() {
+
+		const
+			form = this.forkDialogBox.body.querySelector('form'),
+			progress = this.forkDialogBox.body.querySelector('.progress progress'),
+			customJson = super.json,
+			json = this.json,
+			filters = json.filters,
+			visualizations = json.visualizations;
+
+		progress.container = this.forkDialogBox.body.querySelector('.progress'),
+		progress.span = this.forkDialogBox.body.querySelector('.progress span');
+
+		function updateProgress({reset = false, max = 0, value = null} = {}) {
+
+			progress.container.classList.remove('hidden');
+
+			if(reset) {
+
+				progress.span.textContent = null;
+				progress.max = max;
+				progress.value = 0;
+
+				progress.span.innerHTML = value;
+
+				return;
+			}
+
+			progress.value++;
+			progress.span.innerHTML = value;
+		}
+
+		updateProgress({
+			reset: true,
+			max: filters.length + visualizations.length + 1,
+		});
+
+		let newReportId = null;
+
+		{
+
+			updateProgress({value: `Adding new report: <em>${customJson.reportHeading}</em>`});
+
+			const options = {
+				method: 'POST',
+				form: new FormData(),
+			};
+
+			for(const key in json) {
+				options.form.set(key, json[key]);
+			}
+
+			options.form.set('name', customJson.reportHeading);
+			options.form.set('format', json.format);
+			options.form.set('definition', json.definition);
+
+			const response = await API.call('reports/report/insert', {}, options);
+
+			newReportId = response.insertId;
+		}
+
+		if(!newReportId)
+			return updateProgress({reset: true, value: 'Could not insert new report!'});
+
+		for(const filter of json.filters) {
+
+			updateProgress({
+
+				value: `
+					Adding new filter:
+					<em>${filter.name} (${filter.type})</em>
+				`,
+			});
+
+			const options = {
+				method: 'POST',
+				form: new FormData(),
+			};
+
+			for(const key in filter) {
+				options.form.set(key, filter[key]);
+			}
+
+			options.form.set('query_id', newReportId);
+
+			await API.call('reports/filters/insert', {}, options);
+		}
+
+		for(const visualization of json.visualizations) {
+
+			updateProgress({
+
+				value: `
+					Adding new visualization:
+					<em>${visualization.name} (${MetaData.visualizations.get(visualization.type).name})</em>
+				`,
+			});
+
+			const options = {
+				method: 'POST',
+				form: new FormData(),
+			};
+
+			for(const key in visualization) {
+
+				if(typeof visualization[key] != 'object') {
+					options.form.set(key, visualization[key]);
+				}
+			}
+
+			options.form.set('options', visualization.options);
+			options.form.set('query_id', newReportId);
+
+			await API.call('reports/visualizations/insert', {}, options);
+		}
+
+		if(!form.switchToNew.checked) {
+
+			await DataSource.load(true);
+			this.forkDialogBox.hide();
+
+			return;
+		}
+
+		updateProgress({value: 'Report Forking Complete! Taking you to the new report.'});
+
+		window.location = `/reports/define-report/${newReportId}`;
+	}
+}
+
+class ForkVisualization extends ForkData {
+
+	constructor({reportList, stage, type, name} = {}) {
+
+		const
+			reports = new Set(),
+			filters = new Set(),
+			relatedVisualizations = new Set(),
+			transformations = new Set(),
+			dashboards = new Set(),
+			forkedData = new Map();
+
+		for(const report of reportList) {
+
+			reports.add({
+				name: report.name,
+				value: report.query_id,
+				subtitle: `#${report.query_id} &middot; ${report.name}`,
+			});
+		}
+
+		for(const filter of stage.visualizationManager.options.filters) {
+
+			filters.add({
+				name: filter.name,
+				value: filter.filter_id,
+				subtitle: `#${filter.filter_id} &middot; ${filter.type}`,
+			});
+		}
+
+		for(const report of reportList) {
+
+			for(const related_visualization of stage.visualization.related_visualizations) {
+
+				for(const visualization of report.visualizations) {
+
+					if(related_visualization.visualization_id == visualization.visualization_id) {
+
+						relatedVisualizations.add({
+							name: visualization.name,
+							value: visualization.visualization_id,
+							subtitle: `#${visualization.visualization_id} &middot; ${visualization.type}`
+						});
+					}
+				}
+			}
+		}
+
+		for(const dashboard of stage.dashboards.values()) {
+
+			dashboards.add({
+				name: dashboard.name,
+				value: dashboard.id,
+				subtitle: `#${dashboard.id} &middot; ${dashboard.name}`,
+			})
+		}
+
+		forkedData.set('visualizationHeading', {title: `New Visualizations's Name`, value: name, type: 'input', selected: []});
+		forkedData.set('reports', {title: 'Reports', value: reports, type: 'multiselect', selected: [stage.report.query_id]});
+		forkedData.set('filters', {title: 'Filters', value: filters, type: 'multiselect'});
+		forkedData.set('relatedVisualizations', {title: 'Related Visualizations', value: relatedVisualizations, type: 'multiselect'});
+		forkedData.set('dashboards', {title: 'Dashboards', value: dashboards, type: 'multiselect', selected: []});
+
+		super(name, forkedData, type);
+
+		this.report = stage.report;
+		this.page = stage.page;
+		this.stage = stage;
+	}
+
+	get json() {
+
+		const
+			customJson = super.json,
+			filters = customJson.filters || [],
+			visualizations = [this.stage.visualization.visualization_id.toString()],
+			reportJson = new DataSource(this.report, this.page).json;
+
+		reportJson.filters = filters.length ? reportJson.filters.filter(f => filters.includes(f.filter_id.toString())) : reportJson.filters;
+		reportJson.visualizations = visualizations.length ? reportJson.visualizations.filter(v => visualizations.includes(v.visualization_id.toString())) : reportJson.visualizations;
+
+		return reportJson;
+	}
+
+	export() {
+
+		const
+			customJson = super.json,
+			json = this.json,
+			a = document.createElement('a');
+
+		a.download = `${customJson.visualizationHeading} - ${Format.dateTime(new Date())}.json`;
+		a.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(json));
+
+		a.click();
+	}
+
+	async fork() {
+
+		const
+			form = this.forkDialogBox.body.querySelector('form'),
+			progress = this.forkDialogBox.body.querySelector('.progress progress'),
+			// transformations = this.forkDialogBox.multiSelect.transformations.value,
+			customJson = super.json,
+			json = this.json,
+			filters = json.filters || [],
+			relatedVisualizations = customJson.relatedVisualizations || [],
+			reports = customJson.reports || [],
+			dashboards = customJson.dashboards || [];
+
+		progress.container = this.forkDialogBox.body.querySelector('.progress'),
+		progress.span = this.forkDialogBox.body.querySelector('.progress span');
+
+		function updateProgress({reset = false, max = 0, value = null} = {}) {
+
+			progress.container.classList.remove('hidden');
+
+			if(reset) {
+
+				progress.span.textContent = null;
+				progress.max = max;
+				progress.value = 0;
+
+				progress.span.innerHTML = value;
+
+				return;
+			}
+
+			progress.value++;
+			progress.span.innerHTML = value;
+		}
+
+		updateProgress({
+			reset: true,
+			max: reports.length + dashboards.length + relatedVisualizations.length + filters.length + 1,
+		});
+
+		let newVisualizationId = null;
+
+		if(!reports.length) {
+
+			return new SnackBar({
+				message: 'Please select atleast one report !',
+				type: 'error',
+			});
+		}
+
+		for(const query_id of reports) {
+
+			updateProgress({
+
+				value: `
+					Adding new visualization:
+					<em>${customJson.visualizationHeading} (${MetaData.visualizations.get(this.stage.visualization.type).name})</em>
+				`,
+			});
+
+			const options = {
+				method: 'POST',
+				form: new FormData(),
+			};
+
+			try {
+
+				this.stage.visualization.options = JSON.parse(this.stage.visualization.options);
+
+				const selectedFilters = [];
+
+				for(const filter of filters) {
+
+					if(!customJson.filters.includes(filter.filter_id.toString())) {
+						continue;
+					}
+
+					updateProgress({
+
+						value: `
+							Adding new filter:
+							<em>${filter.name} (${filter.type})</em>
+						`,
+					});
+
+					selectedFilters.push(filter);
+				}
+
+				this.stage.visualization.options.filters = selectedFilters;
+				this.stage.visualization.options = JSON.stringify(this.stage.visualization.options);
+			}
+			catch(e){}
+
+			for(const key in this.stage.visualization) {
+
+				if(typeof this.stage.visualization[key] != 'object') {
+					options.form.set(key, this.stage.visualization[key]);
+				}
+			}
+
+			options.form.set('options', this.stage.visualization.options);
+			options.form.set('name', customJson.visualizationHeading);
+			options.form.set('query_id', query_id);
+
+			const response = await API.call('reports/visualizations/insert', {}, options);
+			newVisualizationId = response.insertId;
+
+			if(!newVisualizationId) {
+				return updateProgress({reset: true, value: 'Could not insert new report!'});
+			}
+
+			for(const visualization of this.stage.visualization.related_visualizations) {
+
+				if(!relatedVisualizations.includes(JSON.stringify(visualization.visualization_id))) {
+					continue;
+				}
+
+				const related_visualization = relatedVisualizations.find(x => x == visualization.visualization_id);
+
+				updateProgress({
+
+					value: `
+						Adding new related visualization:
+						<em>${related_visualization.name}</em>
+					`,
+				});
+
+				try {
+					visualization.format = JSON.parse(visualization.format);
+				}
+				catch(e){}
+
+				const
+					option = {
+						method: 'POST',
+					},
+					parameters = {
+						owner: 'visualization',
+						owner_id: newVisualizationId,
+						visualization_id: visualization.visualization_id,
+						format: JSON.stringify({
+							position: parseInt(visualization.format.position) || 1,
+							width: parseInt(visualization.format.width) || 32,
+							height: parseInt(visualization.format.height) || 10
+						}),
+					};
+
+				await API.call('reports/dashboard/insert', parameters, option);
+			}
+
+			for(const dashboard of this.stage.dashboards.values()) {
+
+				if(!dashboards.includes(JSON.stringify(dashboard.id)))
+					continue;
+
+				updateProgress({
+
+					value: `
+						Adding new dashboard:
+						<em>${dashboard.name}</em>
+					`,
+				});
+
+				const
+					option = {
+						method: 'POST',
+					},
+					parameters = {
+						owner: 'dashboard',
+						owner_id: dashboard.id,
+						visualization_id: newVisualizationId,
+						format: JSON.stringify({
+							position: dashboard.format.position,
+							width: dashboard.format.width,
+							height: dashboard.format.height,
+						}),
+					};
+
+				await API.call('reports/dashboard/insert', parameters, option);
+			}
+		}
+
+		if(!form.switchToNew.checked) {
+
+			await DataSource.load(true);
+			this.forkDialogBox.hide();
+
+			return;
+		}
+
+		updateProgress({value: 'Report Forking Complete! Taking you to the new report.'});
+
+		window.location = `/reports/configure-visualization/${newVisualizationId}`;
+	}
+}
+
 class FormatSQL {
 
 	constructor(query) {
