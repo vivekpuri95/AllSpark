@@ -25,7 +25,18 @@ class ChangePassword {
 
 	render() {
 
-		const form = this.page.container.querySelector('.change-password .form');
+		const changePassword = this.page.container.querySelector('.change-password');
+
+		if(account.auth_api) {
+
+			changePassword.remove();
+
+			return;
+		}
+
+		changePassword.classList.remove('hidden');
+
+		const form = changePassword.querySelector('.form');
 
 		form.on('submit', async (e) => {
 

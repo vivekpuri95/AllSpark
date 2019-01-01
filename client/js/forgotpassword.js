@@ -97,6 +97,12 @@ Page.class = class ForgotPassword extends Page {
 
 	async sendLink(account) {
 
+		if(account.auth_api) {
+
+			this.message.classList.add('warning');
+			return this.message.textContent = 'Invalid request.';
+		}
+
 		const
 			parameters = {
 				account_id: account.account_id,
