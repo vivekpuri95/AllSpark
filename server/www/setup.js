@@ -26,7 +26,7 @@ class Setup extends API {
 					tb_accounts (name, url, icon, logo)
 				VALUES (?, ?, ?, ?)
 				`,
-				[account.name, account.url, account.icon, account.logo],
+				[account.name, account.url, account.icon || '', account.logo || ''],
 				'write'
 			);
 
