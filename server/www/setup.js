@@ -1,5 +1,6 @@
 const API = require('../utils/api');
 const config = require('config');
+const commonFun = require('../utils/commonFunctions');
 
 class Setup extends API {
 
@@ -16,6 +17,9 @@ class Setup extends API {
 			user = config.get("setup").user;
 		}
 
+		this.assert(account.url && account.name, 'Insufficient account details');
+		this.assert(user.email && user.password && user.first_name, 'Insufficient user details');
+
 		const
 			setupAccount = await this.mysql.query(
 				`INSERT INTO 
@@ -24,16 +28,75 @@ class Setup extends API {
 				`,
 				[account.name, account.url, account.icon, account.logo],
 				'write'
-			),
+			);
+
+		this.assert(setupAccount.insertId, 'Account not inserted!');
+
+		const
+			password = await commonFun.makeBcryptHash(user.password),
 			setupUser = await this.mysql.query(
 				`INSERT INTO 
 					tb_users (account_id, first_name, middle_name,last_name, phone, email, password)
-				VALUES (?, ?, ?, ?, ?, ?)
+				VALUES (?, ?, ?, ?, ?, ?, ?)
 				`,
-				[setupAccount.insertId, user.first_name, user.middle_name, user.last_name, user.phone, user.email, user.password],
+				[setupAccount.insertId, user.first_name, user.middle_name || '', user.last_name || '', user.phone || null, user.email, password],
 				'write'
 			)
 		;
+
+		this.assert(setupUser.insertId, 'User not inserted!');
+
+		const [category, roles, privilege, accountFeatures, settings] = await Promise.all([
+			this.mysql.query(
+				'INSERT INTO tb_categories (account_id, name, slug, is_admin) VALUES (?, "Everybody", "everybody", 1)',
+				[setupAccount.insertId],
+				'write'
+			),
+			this.mysql.query(
+				'INSERT INTO tb_roles (account_id, name, is_admin) VALUES (?, "Admin", 1)',
+				[setupAccount.insertId],
+				'write'
+			),
+			this.mysql.query(
+				'INSERT INTO tb_privileges (account_id, name, is_admin) VALUES (?, "Admin", 1)',
+				[setupAccount.insertId],
+				'write'
+			),
+			this.mysql.query(
+				'INSERT INTO tb_account_features (account_id, feature_id) SELECT ? AS account_id, feature_id FROM tb_features',
+				[setupAccount.insertId],
+				"write"
+			),
+			this.mysql.query(
+				'INSERT INTO tb_settings (account_id, owner, owner_id, profile, value) VALUES (?, "account", ?, "main", NULL)',
+				[setupAccount.insertId, setupAccount.insertId],
+				"write"
+			),
+		]);
+
+		const [userPrivilege, userRole] = await Promise.all([
+			this.mysql.query(
+				'INSERT INTO tb_user_privilege (user_id, category_id, privilege_id) VALUES (?, ?, ?)',
+				[setupUser.insertId, category.insertId, privilege.insertId],
+				'write'
+			),
+			this.mysql.query(
+				'INSERT INTO tb_object_roles (account_id, owner_id, owner, target_id, target, category_id, added_by) VALUES (?, ?, "user", ?, "role", ?, ?)',
+				[setupAccount.insertId, setupUser.insertId, roles.insertId, category.insertId, setupUser.insertId],
+				'write'
+			)
+		]);
+
+		await this.mysql.query('UPDATE tb_object_roles SET group_id = id where id = ?', [userRole.insertId], 'write');
+
+		return {
+			status: 200,
+			messgae: 'Account Setup Complete',
+			data: {
+				account: setupAccount.insertId,
+				user:setupUser.insertId
+			}
+		}
 	}
 }
 
