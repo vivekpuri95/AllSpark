@@ -232,31 +232,35 @@ class Dashboard extends API {
 			result.push(dashboard);
 		}
 
-		const dashboard_ids = result.map(r => r.id);
+		if(result.length) {
 
-		const gblFilters = await this.mysql.query(
-			`
-				SELECT
-					*
-				FROM
-					tb_global_filters
-				WHERE
-					dashboard_id in (?)
-			`,
-			[dashboard_ids]
-		)
+			const dashboard_ids = result.map(r => r.id);
 
-		for(const dashboard of result) {
+			const gblFilters = await this.mysql.query(
+				`
+					SELECT
+						*
+					FROM
+						tb_global_filters
+					WHERE
+						dashboard_id in (?)
+				`,
+				[dashboard_ids]
+			)
 
-			dashboard.filters = [];
+			for(const dashboard of result) {
 
-			for(const gblf of gblFilters) {
+				dashboard.filters = [];
 
-				if(gblf.dashboard_id == dashboard.id) {
-					dashboard.filters.push(gblf);
+				for(const gblf of gblFilters) {
+
+					if(gblf.dashboard_id == dashboard.id) {
+						dashboard.filters.push(gblf);
+					}
 				}
 			}
 		}
+
 
 		return result.sort((x, y) => x.parent - y.parent || x.order - y.order);
 	}

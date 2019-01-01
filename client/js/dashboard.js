@@ -1779,7 +1779,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 		this.container.querySelector('.close').remove();
 
-		if(Dashboard.gblfSubmitListener) {
+		if(window.gblfSubmitListener) {
 			this.container.removeEventListener('submit', Dashboard.gblfSubmitListener);
 		}
 
