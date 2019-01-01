@@ -217,8 +217,6 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 
 		const container = this.container.querySelector('#global-filters-list table tbody');
 
-		const datalist = this.dashboardList.map(d => {return {name: d.name, value: d.id}});
-
 		container.textContent = null;
 
 		if(!this.list.size) {
@@ -1290,7 +1288,7 @@ class GlobalFilter {
 
 		const container = globalFilters.container.querySelector('#global-filters-form .dashboard-ids');
 
-		const datalist = globalFilters.dashboardList.map(d => {return {name: d.name, value: d.id}});
+		const datalist = globalFilters.dashboardList.map(d => {return {name: d.name, value: d.id, subtitle: `#${d.id}`}});
 
 		globalFilters.dashboardMultiselect = new MultiSelect({datalist, multiple: false});
 
@@ -1446,7 +1444,7 @@ class GlobalFilter {
 
 		const container = this.globalFilters.container.querySelector('#global-filters-form .dashboard-ids');
 
-		const datalist = this.globalFilters.dashboardList.map(d => {return {name: d.name, value: d.id}});
+		const datalist = this.globalFilters.dashboardList.map(d => {return {name: d.name, value: d.id, subtitle: `#${d.id}`}});
 
 		this.dashboardMultiselect = new MultiSelect({datalist, multiple: false});
 

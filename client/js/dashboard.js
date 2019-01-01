@@ -1669,7 +1669,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 		if(!Dashboard.filtersAppliedByUser && dashboard.filters.length) {
 
-			for(const [key, filter] of globalFilters) {
+			for(const [key, globalFilter] of globalFilters) {
 
 				const dashboardFilter = dashboard.filters.filter(f => key.includes(f.placeholder))[0];
 
@@ -1689,13 +1689,13 @@ class DashboardGlobalFilters extends DataSourceFilters {
 					}];
 				};
 
-				filter.default_value = dashboardFilter.default_value;
-				filter.dataset = dashboardFilter.dataset;
-				filter.multiple = dashboardFilter.multiple;
-				filter.offset = offset;
-				filter.order = dashboardFilter.order;
-				filter.type = dashboardFilter.type;
-				filter.name = dashboardFilter.name;
+				globalFilter.default_value = dashboardFilter.default_value;
+				globalFilter.dataset = dashboardFilter.dataset;
+				globalFilter.multiple = dashboardFilter.multiple;
+				globalFilter.offset = offset;
+				globalFilter.order = dashboardFilter.order;
+				globalFilter.type = dashboardFilter.type;
+				globalFilter.name = dashboardFilter.name;
 			}
 		}
 
