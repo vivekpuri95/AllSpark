@@ -4327,7 +4327,6 @@ class ForkVisualization extends ForkData {
 				}
 
 				this.stage.visualization.options.filters = selectedFilters;
-				this.stage.visualization.options = JSON.stringify(this.stage.visualization.options);
 			}
 			catch(e){}
 
@@ -4338,7 +4337,7 @@ class ForkVisualization extends ForkData {
 				}
 			}
 
-			options.form.set('options', this.stage.visualization.options);
+			options.form.set('options', JSON.stringify(this.stage.visualization.options));
 			options.form.set('name', customJson.visualizationHeading);
 			options.form.set('query_id', query_id);
 
