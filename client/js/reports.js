@@ -11035,9 +11035,16 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 				const value = this.dates.get(this.right.date).get(this.options.valueColumn);
 
-				const _value = ((value - this.center.value) / value) * 100;
+				let _value;
 
-				this.right.percentage = _value > 0 ? _value * -1 : _value;
+				if(this.center.offset > value) {
+					_value = value - this.center.value;
+				}
+				else {
+					_value = this.center.value - value;
+				}
+
+				this.right.percentage = _value * 100;
 				this.right.value = value;
 			}
 		}
@@ -11053,9 +11060,16 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 				const value = this.dates.get(this.left.date).get(this.options.valueColumn);
 
-				const _value = ((value - this.center.value) / value) * 100;
+				let _value;
 
-				this.left.percentage = _value > 0 ? _value * -1 : _value ;
+				if(this.center.offset > value) {
+					_value = value - this.center.value;
+				}
+				else {
+					_value = this.center.value - value;
+				}
+
+				this.left.percentage = _value * 100;
 				this.left.value = value;
 			}
 		}
