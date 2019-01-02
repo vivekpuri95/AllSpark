@@ -2,6 +2,7 @@ const API = require('../utils/api');
 const config = require('config');
 const commonFun = require('../utils/commonFunctions');
 const Account = require('../onServerStart');
+const child_process = require('child_process');
 
 class Setup extends API {
 
@@ -105,6 +106,37 @@ class Setup extends API {
 			user:setupUser.insertId
 		}
 	}
+
+	async databaseImport() {
+
+		if(!config.has("sql_db") || !config.get("sql_db").write) {
+
+			return 'No MySQL connections present.';
+		}
+
+		const
+			existingDatabases = await this.mysql.query('SHOW DATABASES'),
+			env_name = this.environment.name;
+
+		if(existingDatabases.filter(x => [`${env_name}_allspark`, `${env_name}_allspark_logs`].includes(x["Database"])).length) {
+
+			return 'Database already present.';
+		}
+
+		const createDb = await Promise.all([
+			this.mysql.query(`CREATE DATABASE ${env_name}_allspark`, [], 'write'),
+			this.mysql.query(`CREATE DATABASE ${env_name}_allspark_logs`, [], 'write'),
+		]);
+
+		const
+			importAllspark = child_process.execSync(`mysql -u${config.get("sql_db").write.user} -p${config.get("sql_db").write.password} -h${config.get("sql_db").write.host} ${env_name}_allspark < ./db-schema/allspark.sql`).toString().trim(),
+			importAllsparkLogs = child_process.execSync(`mysql -u${config.get("sql_db").write.user} -p${config.get("sql_db").write.password} -h${config.get("sql_db").write.host} ${env_name}_allspark_logs < ./db-schema/allspark_logs.sql`).toString().trim();
+
+		return {
+			importAllspark, importAllsparkLogs
+		};
+	}
 }
 
 exports.run = Setup;
+exports.databaseImport = Setup;
