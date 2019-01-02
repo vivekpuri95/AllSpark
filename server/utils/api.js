@@ -156,14 +156,14 @@ class API {
 				const checksums = [environment.gitChecksum];
 				let host = request.headers.host.split(':')[0];
 
-				for(const account of global.accounts) {
+				for(const account of global.accounts || []) {
 
 					if(userDetails && account.account_id == userDetails.account_id)
 						obj.account = account;
 				}
 
 				if(!obj.account) {
-					for(const account of global.accounts) {
+					for(const account of global.accounts || []) {
 
 						if(account.url.includes(host)) {
 

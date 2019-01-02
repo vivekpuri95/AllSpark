@@ -9,10 +9,21 @@ const postgres = require("../utils/pgsql");
 const mongo = require("../utils/mongo");
 const oracle = require("../utils/oracle");
 let syncServer = require("../utils/sync-server");
+const config = require('config');
 
 (async () => {
 
 	syncServer = new syncServer();
+
+	const existingAccounts = await mysql.MySQL.query(
+		"SELECT * FROM information_schema.tables WHERE TABLE_NAME = 'tb_accounts' AND TABLE_SCHEMA = ?",
+		[config.has('sql_db') && config.get('sql_db').read ? config.get('sql_db').read.database : '']
+	);
+
+	if(!existingAccounts.length) {
+
+		return;
+	}
 
 	await account.loadAccounts();
 	await account.loadBigquery();

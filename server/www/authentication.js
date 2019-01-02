@@ -376,7 +376,7 @@ exports.refresh = class extends cycleDetection {
 
 		this.assert(!userDetail.error, "Token not correct", 401);
 
-		if (this.account.auth_api && this.request.body.external_parameters) {
+		if (this.account && this.account.auth_api && this.request.body.external_parameters) {
 
 			this.possibleAccounts = [this.account];
 
