@@ -662,6 +662,11 @@ router.get('/:type(dashboard|report|visualization)/:id?', API.serve(class extend
 						Share
 					</button>
 
+					<button id="fork">
+						<i class="fas fa-code-branch"></i>
+						Fork
+					</button>
+
 					<div class="download">
 						<button>
 							<i class="fas fa-download"></i>

@@ -522,6 +522,18 @@ Page.class = class Dashboards extends Page {
 			return await this.report(currentId, true);
 		}
 
+		let dashboard;
+
+		if(this.list.has(this.currentDashboard)) {
+			dashboard = this.list.get(this.currentDashboard);
+		}
+
+		this.forkDashboard = new ForkDashboard({
+			currentDashboard: dashboard,
+			type: 'dashboard',
+			name: dashboard.name,
+		});
+
 		return this.render({dashboardId: currentId, renderNav: true, updateNav: false, searchParam: location.search});
 	}
 
@@ -767,6 +779,12 @@ class Dashboard {
 			dialougeBox.show();
 
 			dialougeBox.body.querySelector('.share-url input').select();
+		});
+
+		const fork = page.container.querySelector('#fork');
+
+		fork.on('click', () => {
+			page.forkDashboard.forkDialogBox.body.appendChild(page.forkDashboard.container)
 		});
 
 		const

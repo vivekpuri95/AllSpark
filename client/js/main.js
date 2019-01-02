@@ -3855,6 +3855,7 @@ class ForkData {
 					`
 				);
 			}
+
 			else {
 
 				if(!option.value.size) {
@@ -3891,6 +3892,11 @@ class ForkData {
 				else if(option.selected.length) {
 
 					option.multiSelect.value = option.selected;
+
+					if(this.type != 'visualization') {
+
+						continue;
+					}
 
 					option.multiSelect.on('change', () => {
 
@@ -4431,6 +4437,268 @@ class ForkVisualization extends ForkData {
 
 		window.location = `/reports/configure-visualization/${newVisualizationId}`;
 	}
+}
+
+class ForkDashboard extends ForkData {
+
+	constructor({currentDashboard, type, name} = {}) {
+
+		const
+			visualizations = new Set(),
+			forkedData = new Map();
+
+		for(const visualization of currentDashboard.visualizations) {
+
+			for(const visibleVisuliaztion of currentDashboard.visibleVisuliaztions.values()) {
+
+				if(visibleVisuliaztion.selectedVisualization.visualization_id != visualization.visualization_id) {
+					continue;
+				}
+
+				visualizations.add({
+					name: visibleVisuliaztion.selectedVisualization.name,
+					value: visualization.visualization_id,
+					subtitle: `#${visualization.visualization_id} &middot; ${MetaData.visualizations.get(visibleVisuliaztion.selectedVisualization.type).name}`,
+				});
+			}
+		}
+
+		forkedData.set('dashboardHeading', {title: `New Dashboard's Name`, value: name, type: 'input', selected: []});
+		forkedData.set('visualizations', {title: 'Visualizations', value: visualizations, type: 'multiselect'});
+
+		super(name, forkedData, type);
+
+		this.dashboard = currentDashboard;
+	}
+
+	get json() {
+
+		const
+			customJson = super.json,
+			dashboardJson = {}
+			dashboardJson.visualizations = [];
+
+			for(const visualization of this.dashboard.visualizations) {
+
+				if(!customJson.visualizations.includes(visualization.visualization_id.toString())) {
+
+					continue;
+				}
+
+				dashboardJson.title = customJson.dashboardHeading;
+
+				dashboardJson.visualizations.push({
+					visualization_id: visualization.visualization_id,
+					height: visualization.format.height,
+					width: visualization.format.width,
+					position: visualization.format.position,
+				});
+			}
+
+		return dashboardJson;
+	}
+
+	export() {
+
+		const
+			customJson = super.json,
+			json = this.json,
+			a = document.createElement('a');
+
+		a.download = `${customJson.dashboardHeading} - ${Format.dateTime(new Date())}.json`;
+		a.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(json));
+
+		a.click();
+	}
+
+	// async fork() {
+
+	// 	const
+	// 		form = this.forkDialogBox.body.querySelector('form'),
+	// 		progress = this.forkDialogBox.body.querySelector('.progress progress'),
+	// 		customJson = super.json,
+	// 		json = this.json;
+
+	// 	progress.container = this.forkDialogBox.body.querySelector('.progress'),
+	// 	progress.span = this.forkDialogBox.body.querySelector('.progress span');
+
+	// 	function updateProgress({reset = false, max = 0, value = null} = {}) {
+
+	// 		progress.container.classList.remove('hidden');
+
+	// 		if(reset) {
+
+	// 			progress.span.textContent = null;
+	// 			progress.max = max;
+	// 			progress.value = 0;
+
+	// 			progress.span.innerHTML = value;
+
+	// 			return;
+	// 		}
+
+	// 		progress.value++;
+	// 		progress.span.innerHTML = value;
+	// 	}
+
+	// 	updateProgress({
+	// 		reset: true,
+	// 		max: reports.length + dashboards.length + relatedVisualizations.length + filters.length + 1,
+	// 	});
+
+	// 	let newVisualizationId = null;
+
+	// 	if(!reports.length) {
+
+	// 		return new SnackBar({
+	// 			message: 'Please select atleast one report !',
+	// 			type: 'error',
+	// 		});
+	// 	}
+
+	// 	for(const query_id of reports) {
+
+	// 		updateProgress({
+
+	// 			value: `
+	// 				Adding new visualization:
+	// 				<em>${customJson.visualizationHeading} (${MetaData.visualizations.get(this.stage.visualization.type).name})</em>
+	// 			`,
+	// 		});
+
+	// 		const options = {
+	// 			method: 'POST',
+	// 			form: new FormData(),
+	// 		};
+
+	// 		try {
+
+	// 			this.stage.visualization.options = JSON.parse(this.stage.visualization.options);
+
+	// 			const selectedFilters = [];
+
+	// 			for(const filter of filters) {
+
+	// 				if(!customJson.filters.includes(filter.filter_id.toString())) {
+	// 					continue;
+	// 				}
+
+	// 				updateProgress({
+
+	// 					value: `
+	// 						Adding new filter:
+	// 						<em>${filter.name} (${filter.type})</em>
+	// 					`,
+	// 				});
+
+	// 				selectedFilters.push(filter);
+	// 			}
+
+	// 			this.stage.visualization.options.filters = selectedFilters;
+	// 		}
+	// 		catch(e){}
+
+	// 		for(const key in this.stage.visualization) {
+
+	// 			if(typeof this.stage.visualization[key] != 'object') {
+	// 				options.form.set(key, this.stage.visualization[key]);
+	// 			}
+	// 		}
+
+	// 		options.form.set('options', JSON.stringify(this.stage.visualization.options));
+	// 		options.form.set('name', customJson.visualizationHeading);
+	// 		options.form.set('query_id', query_id);
+
+	// 		const response = await API.call('reports/visualizations/insert', {}, options);
+	// 		newVisualizationId = response.insertId;
+
+	// 		if(!newVisualizationId) {
+	// 			return updateProgress({reset: true, value: 'Could not insert new report!'});
+	// 		}
+
+	// 		for(const visualization of this.stage.visualization.related_visualizations) {
+
+	// 			if(!relatedVisualizations.includes(JSON.stringify(visualization.visualization_id))) {
+	// 				continue;
+	// 			}
+
+	// 			const related_visualization = relatedVisualizations.find(x => x == visualization.visualization_id);
+
+	// 			updateProgress({
+
+	// 				value: `
+	// 					Adding new related visualization:
+	// 					<em>${related_visualization.name}</em>
+	// 				`,
+	// 			});
+
+	// 			try {
+	// 				visualization.format = JSON.parse(visualization.format);
+	// 			}
+	// 			catch(e){}
+
+	// 			const
+	// 				option = {
+	// 					method: 'POST',
+	// 				},
+	// 				parameters = {
+	// 					owner: 'visualization',
+	// 					owner_id: newVisualizationId,
+	// 					visualization_id: visualization.visualization_id,
+	// 					format: JSON.stringify({
+	// 						position: parseInt(visualization.format.position) || 1,
+	// 						width: parseInt(visualization.format.width) || 32,
+	// 						height: parseInt(visualization.format.height) || 10
+	// 					}),
+	// 				};
+
+	// 			await API.call('reports/dashboard/insert', parameters, option);
+	// 		}
+
+	// 		for(const dashboard of this.stage.dashboards.values()) {
+
+	// 			if(!dashboards.includes(JSON.stringify(dashboard.id)))
+	// 				continue;
+
+	// 			updateProgress({
+
+	// 				value: `
+	// 					Adding new dashboard:
+	// 					<em>${dashboard.name}</em>
+	// 				`,
+	// 			});
+
+	// 			const
+	// 				option = {
+	// 					method: 'POST',
+	// 				},
+	// 				parameters = {
+	// 					owner: 'dashboard',
+	// 					owner_id: dashboard.id,
+	// 					visualization_id: newVisualizationId,
+	// 					format: JSON.stringify({
+	// 						position: dashboard.format.position,
+	// 						width: dashboard.format.width,
+	// 						height: dashboard.format.height,
+	// 					}),
+	// 				};
+
+	// 			await API.call('reports/dashboard/insert', parameters, option);
+	// 		}
+	// 	}
+
+	// 	if(!form.switchToNew.checked) {
+
+	// 		await DataSource.load(true);
+	// 		this.forkDialogBox.hide();
+
+	// 		return;
+	// 	}
+
+	// 	updateProgress({value: 'Report Forking Complete! Taking you to the new report.'});
+
+	// 	window.location = `/reports/configure-visualization/${newVisualizationId}`;
+	// }
 }
 
 class FormatSQL {
