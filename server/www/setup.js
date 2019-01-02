@@ -129,8 +129,8 @@ class Setup extends API {
 		]);
 
 		const
-			importAllspark = child_process.execSync(`mysql -u${config.get("sql_db").write.user} -p${config.get("sql_db").write.password} -h${config.get("sql_db").write.host} allspark < /Users/admin/Documents/AllSpark/db-schema/allspark.sql`).toString().trim(),
-			importAllsparkLogs = child_process.execSync(`mysql -u${config.get("sql_db").write.user} -p${config.get("sql_db").write.password} -h${config.get("sql_db").write.host} allspark_logs < /Users/admin/Documents/AllSpark/db-schema/allspark_logs.sql`).toString().trim();
+			importAllspark = child_process.execSync(`mysql -u${config.get("sql_db").write.user} -p${config.get("sql_db").write.password} -h${config.get("sql_db").write.host} ${env_name}_allspark < ./db-schema/allspark.sql`).toString().trim(),
+			importAllsparkLogs = child_process.execSync(`mysql -u${config.get("sql_db").write.user} -p${config.get("sql_db").write.password} -h${config.get("sql_db").write.host} ${env_name}_allspark_logs < ./db-schema/allspark_logs.sql`).toString().trim();
 
 		return {
 			importAllspark, importAllsparkLogs
