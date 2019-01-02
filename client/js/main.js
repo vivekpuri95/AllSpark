@@ -4511,194 +4511,156 @@ class ForkDashboard extends ForkData {
 		a.click();
 	}
 
-	// async fork() {
+	async fork() {
 
-	// 	const
-	// 		form = this.forkDialogBox.body.querySelector('form'),
-	// 		progress = this.forkDialogBox.body.querySelector('.progress progress'),
-	// 		customJson = super.json,
-	// 		json = this.json;
+		const
+			form = this.forkDialogBox.body.querySelector('form'),
+			progress = this.forkDialogBox.body.querySelector('.progress progress'),
+			customJson = super.json,
+			visualizations = customJson.visualizations;
+			json = this.json;
 
-	// 	progress.container = this.forkDialogBox.body.querySelector('.progress'),
-	// 	progress.span = this.forkDialogBox.body.querySelector('.progress span');
+		progress.container = this.forkDialogBox.body.querySelector('.progress'),
+		progress.span = this.forkDialogBox.body.querySelector('.progress span');
 
-	// 	function updateProgress({reset = false, max = 0, value = null} = {}) {
+		function updateProgress({reset = false, max = 0, value = null} = {}) {
 
-	// 		progress.container.classList.remove('hidden');
+			progress.container.classList.remove('hidden');
 
-	// 		if(reset) {
+			if(reset) {
 
-	// 			progress.span.textContent = null;
-	// 			progress.max = max;
-	// 			progress.value = 0;
+				progress.span.textContent = null;
+				progress.max = max;
+				progress.value = 0;
 
-	// 			progress.span.innerHTML = value;
+				progress.span.innerHTML = value;
 
-	// 			return;
-	// 		}
+				return;
+			}
 
-	// 		progress.value++;
-	// 		progress.span.innerHTML = value;
-	// 	}
+			progress.value++;
+			progress.span.innerHTML = value;
+		}
 
-	// 	updateProgress({
-	// 		reset: true,
-	// 		max: reports.length + dashboards.length + relatedVisualizations.length + filters.length + 1,
-	// 	});
+		updateProgress({
+			reset: true,
+			max: visualizations.length + 1,
+		});
 
-	// 	let newVisualizationId = null;
+		let newDashboardId = null;
 
-	// 	if(!reports.length) {
+		if(!visualizations.length) {
 
-	// 		return new SnackBar({
-	// 			message: 'Please select atleast one report !',
-	// 			type: 'error',
-	// 		});
-	// 	}
+			return new SnackBar({
+				message: 'Please select atleast one visualization !',
+				type: 'error',
+			});
+		}
 
-	// 	for(const query_id of reports) {
+		for(const query_id of reports) {
 
-	// 		updateProgress({
+			updateProgress({
 
-	// 			value: `
-	// 				Adding new visualization:
-	// 				<em>${customJson.visualizationHeading} (${MetaData.visualizations.get(this.stage.visualization.type).name})</em>
-	// 			`,
-	// 		});
+				value: `
+					Adding new dashboard
+					<em>${customJson.dashboardHeading}</em>
+				`,
+			});
 
-	// 		const options = {
-	// 			method: 'POST',
-	// 			form: new FormData(),
-	// 		};
+			const options = {
+				method: 'POST',
+				form: new FormData(),
+			};
 
-	// 		try {
+			try {
 
-	// 			this.stage.visualization.options = JSON.parse(this.stage.visualization.options);
+				this.stage.visualization.options = JSON.parse(this.stage.visualization.options);
 
-	// 			const selectedFilters = [];
+				const selectedFilters = [];
 
-	// 			for(const filter of filters) {
+				for(const filter of filters) {
 
-	// 				if(!customJson.filters.includes(filter.filter_id.toString())) {
-	// 					continue;
-	// 				}
+					if(!customJson.filters.includes(filter.filter_id.toString())) {
+						continue;
+					}
 
-	// 				updateProgress({
+					updateProgress({
 
-	// 					value: `
-	// 						Adding new filter:
-	// 						<em>${filter.name} (${filter.type})</em>
-	// 					`,
-	// 				});
+						value: `
+							Adding new filter:
+							<em>${filter.name} (${filter.type})</em>
+						`,
+					});
 
-	// 				selectedFilters.push(filter);
-	// 			}
+					selectedFilters.push(filter);
+				}
 
-	// 			this.stage.visualization.options.filters = selectedFilters;
-	// 		}
-	// 		catch(e){}
+				this.stage.visualization.options.filters = selectedFilters;
+			}
+			catch(e){}
 
-	// 		for(const key in this.stage.visualization) {
+			for(const key in this.stage.visualization) {
 
-	// 			if(typeof this.stage.visualization[key] != 'object') {
-	// 				options.form.set(key, this.stage.visualization[key]);
-	// 			}
-	// 		}
+				if(typeof this.stage.visualization[key] != 'object') {
+					options.form.set(key, this.stage.visualization[key]);
+				}
+			}
 
-	// 		options.form.set('options', JSON.stringify(this.stage.visualization.options));
-	// 		options.form.set('name', customJson.visualizationHeading);
-	// 		options.form.set('query_id', query_id);
+			options.form.set('options', JSON.stringify(this.stage.visualization.options));
+			options.form.set('name', customJson.visualizationHeading);
+			options.form.set('query_id', query_id);
 
-	// 		const response = await API.call('reports/visualizations/insert', {}, options);
-	// 		newVisualizationId = response.insertId;
+			const response = await API.call('reports/visualizations/insert', {}, options);
+			newVisualizationId = response.insertId;
 
-	// 		if(!newVisualizationId) {
-	// 			return updateProgress({reset: true, value: 'Could not insert new report!'});
-	// 		}
+			if(!newDashboardId) {
+				return updateProgress({reset: true, value: 'Could not insert new dashboard!'});
+			}
 
-	// 		for(const visualization of this.stage.visualization.related_visualizations) {
+			for(const dashboard of this.stage.dashboards.values()) {
 
-	// 			if(!relatedVisualizations.includes(JSON.stringify(visualization.visualization_id))) {
-	// 				continue;
-	// 			}
+				if(!dashboards.includes(JSON.stringify(dashboard.id)))
+					continue;
 
-	// 			const related_visualization = relatedVisualizations.find(x => x == visualization.visualization_id);
+				updateProgress({
 
-	// 			updateProgress({
+					value: `
+						Adding new dashboard:
+						<em>${dashboard.name}</em>
+					`,
+				});
 
-	// 				value: `
-	// 					Adding new related visualization:
-	// 					<em>${related_visualization.name}</em>
-	// 				`,
-	// 			});
+				const
+					option = {
+						method: 'POST',
+					},
+					parameters = {
+						owner: 'dashboard',
+						owner_id: dashboard.id,
+						visualization_id: newVisualizationId,
+						format: JSON.stringify({
+							position: dashboard.format.position,
+							width: dashboard.format.width,
+							height: dashboard.format.height,
+						}),
+					};
 
-	// 			try {
-	// 				visualization.format = JSON.parse(visualization.format);
-	// 			}
-	// 			catch(e){}
+				await API.call('reports/dashboard/insert', parameters, option);
+			}
+		}
 
-	// 			const
-	// 				option = {
-	// 					method: 'POST',
-	// 				},
-	// 				parameters = {
-	// 					owner: 'visualization',
-	// 					owner_id: newVisualizationId,
-	// 					visualization_id: visualization.visualization_id,
-	// 					format: JSON.stringify({
-	// 						position: parseInt(visualization.format.position) || 1,
-	// 						width: parseInt(visualization.format.width) || 32,
-	// 						height: parseInt(visualization.format.height) || 10
-	// 					}),
-	// 				};
+		if(!form.switchToNew.checked) {
 
-	// 			await API.call('reports/dashboard/insert', parameters, option);
-	// 		}
+			await DataSource.load(true);
+			this.forkDialogBox.hide();
 
-	// 		for(const dashboard of this.stage.dashboards.values()) {
+			return;
+		}
 
-	// 			if(!dashboards.includes(JSON.stringify(dashboard.id)))
-	// 				continue;
+		updateProgress({value: 'Report Forking Complete! Taking you to the new report.'});
 
-	// 			updateProgress({
-
-	// 				value: `
-	// 					Adding new dashboard:
-	// 					<em>${dashboard.name}</em>
-	// 				`,
-	// 			});
-
-	// 			const
-	// 				option = {
-	// 					method: 'POST',
-	// 				},
-	// 				parameters = {
-	// 					owner: 'dashboard',
-	// 					owner_id: dashboard.id,
-	// 					visualization_id: newVisualizationId,
-	// 					format: JSON.stringify({
-	// 						position: dashboard.format.position,
-	// 						width: dashboard.format.width,
-	// 						height: dashboard.format.height,
-	// 					}),
-	// 				};
-
-	// 			await API.call('reports/dashboard/insert', parameters, option);
-	// 		}
-	// 	}
-
-	// 	if(!form.switchToNew.checked) {
-
-	// 		await DataSource.load(true);
-	// 		this.forkDialogBox.hide();
-
-	// 		return;
-	// 	}
-
-	// 	updateProgress({value: 'Report Forking Complete! Taking you to the new report.'});
-
-	// 	window.location = `/reports/configure-visualization/${newVisualizationId}`;
-	// }
+		window.location = `/reports/configure-visualization/${newVisualizationId}`;
+	}
 }
 
 class FormatSQL {

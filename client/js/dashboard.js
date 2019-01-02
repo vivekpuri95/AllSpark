@@ -522,17 +522,11 @@ Page.class = class Dashboards extends Page {
 			return await this.report(currentId, true);
 		}
 
-		let dashboard;
+		// let dashboard;
 
-		if(this.list.has(this.currentDashboard)) {
-			dashboard = this.list.get(this.currentDashboard);
-		}
-
-		this.forkDashboard = new ForkDashboard({
-			currentDashboard: dashboard,
-			type: 'dashboard',
-			name: dashboard.name,
-		});
+		// if(this.list.has(this.currentDashboard)) {
+		// 	dashboard = this.list.get(this.currentDashboard);
+		// }
 
 		return this.render({dashboardId: currentId, renderNav: true, updateNav: false, searchParam: location.search});
 	}
@@ -665,6 +659,12 @@ class Dashboard {
 
 			dataSource.container.appendChild(dataSource.selectedVisualization.container);
 		}
+
+		this.forkDashboard = new ForkDashboard({
+			currentDashboard: this,
+			type: 'dashboard',
+			name: this.name,
+		});
 	}
 
 	static setup(page) {
@@ -784,7 +784,8 @@ class Dashboard {
 		const fork = page.container.querySelector('#fork');
 
 		fork.on('click', () => {
-			page.forkDashboard.forkDialogBox.body.appendChild(page.forkDashboard.container)
+
+			this.forkDashboard.forkDialogBox.body.appendChild(this.forkDashboard.container);
 		});
 
 		const
