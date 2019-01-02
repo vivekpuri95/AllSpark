@@ -11020,9 +11020,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			date: Date.parse(new Date(new Date(today - ((this.options.centerOffset || 0) * 24 * 60 * 60 * 1000))).toISOString().substring(0, 10)),
 		};
 
-		if(this.dates.has(this.center.date)) {
-			this.center.value = this.dates.get(this.center.date).get(this.options.valueColumn);
-		}
+		this.center.value = this.dates.has(this.center.date) ? this.dates.get(this.center.date).get(this.options.valueColumn) : null;
 
 		if(this.options.rightOffset != '') {
 
@@ -11035,16 +11033,22 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 				const value = this.dates.get(this.right.date).get(this.options.valueColumn);
 
-				let _value;
+				if(this.center.value || this.center.value == 0) {
 
-				if(this.center.offset > value) {
-					_value = value - this.center.value;
-				}
-				else {
-					_value = this.center.value - value;
+					let _value;
+
+					if((this.center.value >= 0 && value >= 0) || (this.center.value < 0 && value > 0)) {
+
+						_value = this.center.value - value;
+					}
+					else if((this.center.value <= 0 && value <= 0) || (this.center.value >= 0 && value <= 0)) {
+
+						_value = value - this.center.value;
+					}
+
+					this.right.percentage = _value / value * 100;
 				}
 
-				this.right.percentage = _value * 100;
 				this.right.value = value;
 			}
 		}
@@ -11060,16 +11064,22 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 				const value = this.dates.get(this.left.date).get(this.options.valueColumn);
 
-				let _value;
+				if(this.center.value || this.center.value == 0) {
 
-				if(this.center.offset > value) {
-					_value = value - this.center.value;
-				}
-				else {
-					_value = this.center.value - value;
+					let _value;
+
+					if((this.center.value >= 0 && value >= 0) || (this.center.value < 0 && value > 0)) {
+
+						_value = this.center.value - value;
+					}
+					else if((this.center.value <= 0 && value <= 0) || (this.center.value >= 0 && value <= 0)) {
+
+						_value = value - this.center.value;
+					}
+
+					this.left.percentage = _value / value * 100;
 				}
 
-				this.left.percentage = _value * 100;
 				this.left.value = value;
 			}
 		}
