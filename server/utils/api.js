@@ -153,7 +153,7 @@ class API {
 					}
 				}
 
-
+				const checksums = [environment.gitChecksum];
 				let host = request.headers.host.split(':')[0];
 
 				for(const account of global.accounts) {
@@ -173,16 +173,20 @@ class API {
 					}
 				}
 
-				if (!obj.account) {
-					throw new API.Exception(400, 'Account not found!');
+				if (obj.account) {
+
+					checksums.push(
+						crypto.createHash('md5').update(JSON.stringify(obj.account)).digest('hex'),
+						crypto.createHash('md5').update(JSON.stringify([...obj.account.settings.entries()])).digest('hex')
+					);
 				}
 
-				const checksums = [
-					environment.gitChecksum,
-					crypto.createHash('md5').update(JSON.stringify(obj.account)).digest('hex'),
-					crypto.createHash('md5').update(JSON.stringify([...obj.account.settings.entries()])).digest('hex'),
-					crypto.createHash('md5').update(JSON.stringify(obj.user ? obj.user.json.settings || '' : '')).digest('hex'),
-				];
+				if(obj.user) {
+
+					checksums.push(
+						crypto.createHash('md5').update(JSON.stringify(obj.user.json.settings || '')).digest('hex')
+					);
+				}
 
 				obj.checksum = crypto.createHash('md5').update(checksums.join()).digest('hex').substring(0, 10);
 				obj.environment = environment;
@@ -192,7 +196,10 @@ class API {
 					return response.send(obj.originalResult);
 				}
 
-				if ((!userDetails || userDetails.error) && !constants.publicEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length) {
+				if ((!userDetails || userDetails.error) &&
+					!constants.publicEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length &&
+					!constants.nonAccountEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length
+				) {
 
 					throw new API.Exception(401, 'User Not Authenticated!');
 				}

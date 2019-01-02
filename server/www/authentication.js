@@ -19,6 +19,11 @@ exports.resetlink = class extends API {
 
 	async resetlink() {
 
+		if(this.account.auth_api) {
+
+			throw new Error('Invalid Request.');
+		}
+
 		let user = await this.mysql.query(
 			`SELECT user_id, first_name, last_name FROM tb_users WHERE email = ? AND account_id = ?`,
 			[this.request.body.email, this.request.body.account_id]
@@ -102,7 +107,7 @@ exports.reset = class extends API {
 
 	async reset() {
 
-		if (!this.request.body.password || !this.request.body.reset_token)
+		if (!this.request.body.password || !this.request.body.reset_token || this.account.auth_api)
 			return false;
 
 		const query = `

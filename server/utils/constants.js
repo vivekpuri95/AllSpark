@@ -53,6 +53,10 @@ exports.publicEndpoints = [
 	'/v2/scheduler/jobs/run',
 ];
 
+exports.nonAccountEndpoints = [
+	'/v2/setup/run',
+]
+
 exports.filterPrefix = "param_";
 
 exports.external_parameter_prefix = "ext_";
