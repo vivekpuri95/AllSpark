@@ -32,14 +32,12 @@ class GlobalFilters extends API {
 				tb_global_filters
 			WHERE
 				account_id = ?
-				AND
-				placeholder = ?
-				AND
-				dashboard_id = ?`,
+				AND placeholder = ?
+				AND dashboard_id = ?`,
 			[this.account.account_id, placeholder, dashboard_id]
 		);
 
-		this.assert(list.length, `Duplicate entry found for account_id: ${this.account.account_id} & placeholder: ${placeholder} & dashboard_id: ${dashboard_id || 'null'}`)
+		this.assert(list.length, 'Duplicate entry found.')
 
 		const params = {
 			account_id: this.account.account_id,
@@ -76,14 +74,12 @@ class GlobalFilters extends API {
 				tb_global_filters
 			WHERE
 				account_id = ?
-				AND
-				placeholder = ?
-				AND
-				dashboard_id = ?`,
+				AND placeholder = ?
+				AND dashboard_id = ?`,
 			[this.account.account_id, placeholder, dashboard_id]
 		);
 
-		this.assert(list.length, `Duplicate entry found for account_id: ${this.account.account_id} & placeholder: ${placeholder} & dashboard_id: ${dashboard_id || 'null'}`)
+		this.assert(list.length, 'Duplicate entry found.')
 
 
 		const params = {

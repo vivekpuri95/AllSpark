@@ -236,7 +236,7 @@ class Dashboard extends API {
 
 			const dashboard_ids = result.map(r => r.id);
 
-			const gblFilters = await this.mysql.query(
+			const globalFilters = await this.mysql.query(
 				`
 					SELECT
 						*
@@ -248,16 +248,19 @@ class Dashboard extends API {
 				[dashboard_ids]
 			)
 
-			for(const dashboard of result) {
+			let dashboardFilters = new Map();
 
-				dashboard.filters = [];
+			for(const globalfilter of globalFilters) {
 
-				for(const gblf of gblFilters) {
-
-					if(gblf.dashboard_id == dashboard.id) {
-						dashboard.filters.push(gblf);
-					}
+				if(!dashboardFilters.has(globalfilter.dashboard_id)) {
+					dashboardFilters.set(globalfilter.dashboard_id, []);
 				}
+
+				dashboardFilters.get(globalfilter.dashboard_id).push(globalfilter);
+			}
+
+			for(const dashboard of result) {
+				dashboard.filters = dashboardFilters.has(dashboard.id) ? dashboardFilters.get(dashboard.id) : [];
 			}
 		}
 
