@@ -1292,8 +1292,9 @@ class GlobalFilter {
 
 		globalFilters.dashboardMultiselect = new MultiSelect({datalist, multiple: false});
 
-		if(container.querySelector('.multi-select'))
+		if(container.querySelector('.multi-select')) {
 			container.querySelector('.multi-select').remove();
+		}
 
 		container.appendChild(globalFilters.dashboardMultiselect.container);
 
@@ -1401,11 +1402,7 @@ class GlobalFilter {
 
 		this.container = document.createElement('tr');
 
-		const dashboard = this.globalFilters.dashboardList.filter(d => d.id == this.dashboard_id);
-		let dashboardName = '';
-
-		if(dashboard.length)
-			dashboardName = dashboard[0].name;
+		const [dashboard] = this.globalFilters.dashboardList.filter(d => d.id == this.dashboard_id);
 
 		this.container.innerHTML = `
 			<td>${this.id}</td>
@@ -1413,7 +1410,7 @@ class GlobalFilter {
 			<td>${this.placeholder}</td>
 			<td>${this.type}</td>
 			<td>${isNaN(parseFloat(this.order)) ? '' : this.order}</td>
-			<td>${dashboardName || ''}</td>
+			<td>${dashboard ? dashboard.name : ''}</td>
 			<td>${this.default_value}</td>
 			<td>${this.multiple ? 'Yes' : 'No'}</td>
 			<td>${isNaN(parseInt(this.offset)) ? '' : this.offset}</td>

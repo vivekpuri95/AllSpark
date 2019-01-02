@@ -1732,7 +1732,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 		if(Dashboard.filtersAppliedByUser && Dashboard.selectedValues.size) {
 
-			for(const [key,value] of Dashboard.selectedValues) {
+			for(const [key, value] of Dashboard.selectedValues) {
 
 				if(this.has(key)) {
 					this.get(key).value = value;
@@ -1779,8 +1779,8 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 		this.container.querySelector('.close').remove();
 
-		if(window.gblfSubmitListener) {
-			this.container.removeEventListener('submit', Dashboard.gblfSubmitListener);
+		if(window.globalFilterSubmitListener) {
+			this.container.removeEventListener('submit', Dashboard.globalFilterSubmitListener);
 		}
 
 		this.container.on('submit', (e) => {
