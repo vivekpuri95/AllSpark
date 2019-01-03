@@ -1757,7 +1757,15 @@ class DataSourceFilter {
 		if(!this.multiSelect.datalist || !this.multiSelect.datalist.length) {
 			this.multiSelect.datalist = values;
 			this.multiSelect.multiple = this.multiple;
-			this.multiSelect.all();
+
+			try{
+
+				this.multiSelect.value = JSON.parse(this.default_value);
+			}
+			catch(e) {
+
+				this.multiSelect.all();
+			}
 		}
 
 		return values;
@@ -14485,27 +14493,26 @@ class DataSourceFilterForm {
 
 		this.defaultValueMultiSelect.datalist = datasource.originalResponse.data;
 		this.defaultValueMultiSelect.multiple = parseInt(this.container.multiple.value) ? true : false;
+		this.defaultValueMultiSelect.render();
 
 		if(parseInt(this.datasetMultiSelect.value[0]) == this.filter.dataset) {
 
 			if(this.filter.default_value == 'VALUES:ALL') {
 
-				this.datasetMultiSelect.all();
+				this.defaultValueMultiSelect.all();
 			}
 			else {
 
 				try{
 
-					this.datasetMultiSelect.value = JSON.parse(this.filter.default_value);
+					this.defaultValueMultiSelect.value = JSON.parse(this.filter.default_value);
 				}
 				catch(e) {
 
-					this.datasetMultiSelect.value = [];
+					this.defaultValueMultiSelect.value = [];
 				}
 			}
 		}
-
-		this.defaultValueMultiSelect.render();
 	}
 
 	updateFormFields() {
