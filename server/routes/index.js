@@ -10,17 +10,35 @@ const mongo = require("../utils/mongo");
 const oracle = require("../utils/oracle");
 let syncServer = require("../utils/sync-server");
 const config = require('config');
+const MySQL = require('mysql');
 
 (async () => {
 
 	syncServer = new syncServer();
 
-	const existingAccounts = await mysql.MySQL.query(
-		"SELECT * FROM information_schema.tables WHERE TABLE_NAME = 'tb_accounts' AND TABLE_SCHEMA = ?",
-		[config.has('sql_db') && config.get('sql_db').read ? config.get('sql_db').read.database : '']
-	);
+	const
+		connectionObj = {
+			host: config.get('sql_db').write.host,
+			user: config.get('sql_db').write.user,
+			password: config.get('sql_db').write.password
+		},
+		conn = MySQL.createConnection(connectionObj),
+		useDb = await new Promise((resolve, reject) => {
 
-	if(!existingAccounts.length) {
+			conn.connect(function (err) {
+
+				if (err) resolve([{'status': 0}]);
+
+				return conn.query('USE ??', [config.get('sql_db').write.database], (err, result) => {
+
+					if (err) return resolve({'error': true});
+
+					return resolve(result);
+				});
+			});
+		});
+
+	if(useDb.error) {
 
 		return;
 	}

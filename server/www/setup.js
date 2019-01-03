@@ -3,25 +3,80 @@ const config = require('config');
 const commonFun = require('../utils/commonFunctions');
 const Account = require('../onServerStart');
 const child_process = require('child_process');
+const mysql = require('mysql');
 
 class Setup extends API {
 
-	async run({account, user} = {}) {
+	async run() {
 
-		const existingAccounts = await this.mysql.query('SELECT * from tb_accounts',[]);
+		if(!config.has("sql_db") || !config.get("sql_db").write) {
 
-		this.assert(!existingAccounts.length, 'Account already exists');
-
-		if(!(account && user)) {
-
-			if(!config.has("setup")) {
-
-				return 'Configuration property not set';
-			}
-
-			account = config.get("setup").account;
-			user = config.get("setup").user;
+			return 'No MySQL connections present.';
 		}
+
+		const
+			writeSQlConn = config.get('sql_db').write,
+			connectionObj = {
+				host: writeSQlConn.host,
+				user: writeSQlConn.user,
+				password: writeSQlConn.password
+			},
+			conn = mysql.createConnection(connectionObj),
+			existingDatabases = await new Promise((resolve, reject) => {
+
+				conn.connect(function (err) {
+
+					if (err) resolve([{'status': 0}]);
+
+					return conn.query('SHOW DATABASES', [], (err, result) => {
+
+						if (err) return resolve([{'status': 0}]);
+
+						return resolve(result);
+					});
+				});
+			}),
+			env_name = this.environment.name;
+
+		if(existingDatabases.filter(x => [`${env_name}_allspark`, `${env_name}_allspark_logs`].includes(x["Database"])).length) {
+
+			return 'Database already present.';
+		}
+
+		const createDb = await Promise.all([
+			new Promise((resolve, reject) => {
+
+				conn.query(`CREATE DATABASE ${env_name}_allspark`, [], (error, response) => {
+
+					if (error) return reject(error);
+
+					return resolve(response);
+				})
+			}),
+			new Promise((resolve, reject) => {
+
+				conn.query(`CREATE DATABASE ${env_name}_allspark_logs`, [], (error, response) => {
+
+					if (error) return reject(error);
+
+					return resolve(response);
+				})
+			}),
+		]);
+
+		const
+			importAllspark = child_process.execSync(`mysql -u${writeSQlConn.user} -p${writeSQlConn.password} -h${writeSQlConn.host} ${env_name}_allspark < ./db-schema/allspark.sql`).toString().trim(),
+			importAllsparkLogs = child_process.execSync(`mysql -u${writeSQlConn.user} -p${writeSQlConn.password} -h${writeSQlConn.host} ${env_name}_allspark_logs < ./db-schema/allspark_logs.sql`).toString().trim();
+
+
+		if(!config.has("setup")) {
+
+			return 'Configuration property not set';
+		}
+
+		const
+			account = config.get("setup").account,
+			user = config.get("setup").user;
 
 		this.assert(account.url && account.name, 'Insufficient account details');
 		this.assert(user.email && user.password && user.first_name, 'Insufficient user details');
@@ -105,38 +160,8 @@ class Setup extends API {
 			account: setupAccount.insertId,
 			user:setupUser.insertId
 		}
-	}
 
-	async databaseImport() {
-
-		if(!config.has("sql_db") || !config.get("sql_db").write) {
-
-			return 'No MySQL connections present.';
-		}
-
-		const
-			existingDatabases = await this.mysql.query('SHOW DATABASES'),
-			env_name = this.environment.name;
-
-		if(existingDatabases.filter(x => [`${env_name}_allspark`, `${env_name}_allspark_logs`].includes(x["Database"])).length) {
-
-			return 'Database already present.';
-		}
-
-		const createDb = await Promise.all([
-			this.mysql.query(`CREATE DATABASE ${env_name}_allspark`, [], 'write'),
-			this.mysql.query(`CREATE DATABASE ${env_name}_allspark_logs`, [], 'write'),
-		]);
-
-		const
-			importAllspark = child_process.execSync(`mysql -u${config.get("sql_db").write.user} -p${config.get("sql_db").write.password} -h${config.get("sql_db").write.host} ${env_name}_allspark < ./db-schema/allspark.sql`).toString().trim(),
-			importAllsparkLogs = child_process.execSync(`mysql -u${config.get("sql_db").write.user} -p${config.get("sql_db").write.password} -h${config.get("sql_db").write.host} ${env_name}_allspark_logs < ./db-schema/allspark_logs.sql`).toString().trim();
-
-		return {
-			importAllspark, importAllsparkLogs
-		};
 	}
 }
 
 exports.run = Setup;
-exports.databaseImport = Setup;
