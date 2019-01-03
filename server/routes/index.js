@@ -9,10 +9,39 @@ const postgres = require("../utils/pgsql");
 const mongo = require("../utils/mongo");
 const oracle = require("../utils/oracle");
 let syncServer = require("../utils/sync-server");
+const config = require('config');
+const MySQL = require('mysql');
 
 (async () => {
 
 	syncServer = new syncServer();
+
+	const
+		connectionObj = {
+			host: config.get('sql_db').write.host,
+			user: config.get('sql_db').write.user,
+			password: config.get('sql_db').write.password
+		},
+		conn = MySQL.createConnection(connectionObj),
+		useDb = await new Promise((resolve, reject) => {
+
+			conn.connect((err) => {
+
+				if (err) resolve({'error': true});
+
+				return conn.query('USE ??', [config.get('sql_db').write.database], (err, result) => {
+
+					if (err) return resolve({'error': true});
+
+					return resolve(result);
+				});
+			});
+		});
+
+	if(useDb.error) {
+
+		return;
+	}
 
 	await account.loadAccounts();
 	await account.loadBigquery();
