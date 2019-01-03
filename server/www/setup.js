@@ -24,19 +24,21 @@ class Setup extends API {
 			conn = mysql.createConnection(connectionObj),
 			existingDatabases = await new Promise((resolve, reject) => {
 
-				conn.connect(function (err) {
+				conn.connect((err) => {
 
-					if (err) resolve([{'status': 0}]);
+					if (err) resolve({'error': true});
 
 					return conn.query('SHOW DATABASES', [], (err, result) => {
 
-						if (err) return resolve([{'status': 0}]);
+						if (err) return resolve({'error': true});
 
 						return resolve(result);
 					});
 				});
 			}),
 			env_name = this.environment.name;
+
+		this.assert(!existingDatabases.error, 'Error in creating a MYSQL connection.')
 
 		if(existingDatabases.filter(x => [`${env_name}_allspark`, `${env_name}_allspark_logs`].includes(x["Database"])).length) {
 

@@ -25,9 +25,9 @@ const MySQL = require('mysql');
 		conn = MySQL.createConnection(connectionObj),
 		useDb = await new Promise((resolve, reject) => {
 
-			conn.connect(function (err) {
+			conn.connect((err) => {
 
-				if (err) resolve([{'status': 0}]);
+				if (err) resolve({'error': true});
 
 				return conn.query('USE ??', [config.get('sql_db').write.database], (err, result) => {
 
