@@ -100,7 +100,7 @@ class SettingsManager {
 				<footer>
 					<form class="form">
 						<label>
-							<input type="text" name="profile"  maxLength="30" placeholder="New Profile Name" required>
+							<input type="text" name="profile"  maxLength="30" placeholder="New Profile's Name" required>
 						</label>
 
 						<label>

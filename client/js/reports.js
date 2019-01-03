@@ -1395,15 +1395,37 @@ class DataSourceFilters extends Map {
 
 		container.insertAdjacentHTML('beforeend', `
 
-			<label style="order: ${maxOrder + 1};">
+			<label style="order: ${maxOrder + 2};" class="reset-toggle">
 				<span>&nbsp;</span>
-				<button type="submit" class="apply">
+				<button type="button"><i class="far fa-check-square"></i> All</button>
+			</label>
+
+			<label style="order: ${maxOrder + 1};" class="apply">
+				<span>&nbsp;</span>
+				<button type="submit">
 					<i class="fas fa-paper-plane"></i> Apply
 				</button>
 			</label>
 
 			<div class="close">&times;</div>
 		`);
+
+		const resetButton = container.querySelector('.reset-toggle button');
+
+		resetButton.on('click', () => {
+
+			if(resetButton.textContent.trim() == 'Clear') {
+
+				this.all();
+				resetButton.innerHTML = '<i class="far fa-check-square"></i> All';
+			}
+
+			else {
+
+				this.clear();
+				resetButton.innerHTML = '<i class="far fa-square"></i> Clear';
+			}
+		});
 
 		container.querySelector('.close').on('click', () => this.source.container.querySelector('.filters-toggle').click());
 
@@ -1426,6 +1448,26 @@ class DataSourceFilters extends Map {
 
 		if(toggle) {
 			toggle.click();
+		}
+	}
+
+	clear() {
+
+		for (const filter of this.values()) {
+
+			if (filter.multiSelect) {
+				filter.multiSelect.clear();
+			}
+		}
+	}
+
+	all() {
+
+		for (const filter of this.values()) {
+
+			if (filter.multiSelect) {
+				filter.multiSelect.all();
+			}
 		}
 	}
 }
