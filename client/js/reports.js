@@ -1281,15 +1281,17 @@ class DataSourceFilters extends Map {
 			}
 
 			// Remove the 'start', 'end', 'date' and spaces to create a name that would (hopefuly) identify the filter pairs.
-			const name = filter.name.replace(/(start|end|date|_)/ig, '').trim();
+			const
+				name = filter.name.replace(/(start|end|date|_)/ig, '').trim(),
+				placeholder = filter.placeholder.replace(/(start|end|date)/ig, '').trim();
 
 			if(!filterGroups.has(name)) {
 
 				filterGroups.set(name, [{
 					filter_id: Math.random(),
 					name: name + ' Date Range',
-					placeholder: filter.placeholder + '_date_range',
-					placeholders: [],
+					placeholder: placeholder + '_date_range',
+					placeholders: [placeholder + '_date_range'],
 					order: filter.order,
 					type: 'daterange',
 					companions: [],

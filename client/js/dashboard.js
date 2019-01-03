@@ -1673,7 +1673,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 				const dashboardFilter = dashboard.filters.filter(f => key.includes(f.placeholder))[0];
 
-				if(!dashboardFilter){
+				if(!dashboardFilter) {
 					continue;
 				}
 
@@ -1687,7 +1687,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 						direction: 1,
 						snap: true,
 					}];
-				};
+				}
 
 				globalFilter.default_value = dashboardFilter.default_value;
 				globalFilter.dataset = dashboardFilter.dataset;
