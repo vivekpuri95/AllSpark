@@ -19,15 +19,50 @@ class GlobalFilters extends API {
 		return result;
 	};
 
-	async insert({name, placeholder, description = '', order = null, default_value = '', multiple = null, type = null, offset, dataset} = {}) {
+	async insert({name, placeholder, dashboard_id = null, description = '', order = null, default_value = '', multiple = null, type = null, offset, dataset} = {}) {
 
 		this.user.privilege.needs('administrator', 'ignore');
 
 		this.assert(name && placeholder, 'Name or Placeholder is missing');
 
+		if(dashboard_id) {
+
+			const list = await this.mysql.query(`
+				SELECT
+					*
+				FROM
+					tb_global_filters
+				WHERE
+					account_id = ?
+					AND placeholder = ?
+					AND dashboard_id = ?
+					`,
+				[this.account.account_id, placeholder, dashboard_id]
+			);
+
+			this.assert(!list.length, 'Duplicate entry found.');
+		}
+		else {
+
+			const list = await this.mysql.query(`
+				SELECT
+					*
+				FROM
+					tb_global_filters
+				WHERE
+					account_id = ?
+					AND placeholder = ?
+					AND isNull(dashboard_id)`,
+				[this.account.account_id, placeholder]
+			);
+
+			this.assert(!list.length, 'Duplicate entry found.')
+		}
+
 		const params = {
 			account_id: this.account.account_id,
 			name,
+			dashboard_id: !dashboard_id ? null : parseInt(dashboard_id),
 			placeholder,
 			description,
 			order: isNaN(parseInt(order)) ? null : parseInt(order),
@@ -45,15 +80,53 @@ class GlobalFilters extends API {
 		);
 	}
 
-	async update({id, name, placeholder, description = '', order = null, default_value = '', multiple = null, type = null, offset, dataset} = {}) {
+	async update({id, name, placeholder, dashboard_id = null, description = '', order = null, default_value = '', multiple = null, type = null, offset, dataset} = {}) {
 
 		this.user.privilege.needs('administrator', 'ignore');
 
 		this.assert(id, 'Global filter id is required');
 		this.assert(name && placeholder, 'Name or Placeholder cannot be null or empty');
 
+		if(dashboard_id) {
+
+			const list = await this.mysql.query(`
+				SELECT
+					*
+				FROM
+					tb_global_filters
+				WHERE
+					account_id = ?
+					AND placeholder = ?
+					AND dashboard_id = ?
+					AND id != ?
+					`,
+				[this.account.account_id, placeholder, dashboard_id, id]
+			);
+
+			this.assert(!list.length, 'Duplicate entry found.');
+		}
+		else {
+
+			const list = await this.mysql.query(`
+				SELECT
+					*
+				FROM
+					tb_global_filters
+				WHERE
+					account_id = ?
+					AND placeholder = ?
+					AND isNull(dashboard_id)
+					AND id != ?
+					`,
+				[this.account.account_id, placeholder, id]
+			);
+
+			this.assert(!list.length, 'Duplicate entry found.');
+		}
+
 		const params = {
 			name, placeholder, description, default_value, multiple, type,
+			dashboard_id: !dashboard_id ? null : parseInt(dashboard_id),
 			order: isNaN(parseInt(order)) ? null : parseInt(order),
 			offset: isNaN(parseInt(offset)) ? null : parseInt(offset),
 			dataset: parseInt(dataset) || null,
