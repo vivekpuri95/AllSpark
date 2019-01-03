@@ -1667,6 +1667,38 @@ class DashboardGlobalFilters extends DataSourceFilters {
 			}
 		}
 
+		if(!Dashboard.filtersAppliedByUser && dashboard.filters.length) {
+
+			for(const [key, globalFilter] of globalFilters) {
+
+				const dashboardFilter = dashboard.filters.filter(f => key.includes(f.placeholder))[0];
+
+				if(!dashboardFilter) {
+					continue;
+				}
+
+				let offset = [];
+
+				if(!isNaN(parseInt(dashboardFilter.offset))) {
+
+					offset = [{
+						value: parseInt(dashboardFilter.offset),
+						unit: dashboardFilter.type == 'month' ? 'month' : 'day',
+						direction: 1,
+						snap: true,
+					}];
+				}
+
+				globalFilter.default_value = dashboardFilter.default_value;
+				globalFilter.dataset = dashboardFilter.dataset;
+				globalFilter.multiple = dashboardFilter.multiple;
+				globalFilter.offset = offset;
+				globalFilter.order = dashboardFilter.order;
+				globalFilter.type = dashboardFilter.type;
+				globalFilter.name = dashboardFilter.name;
+			}
+		}
+
 		super(Array.from(globalFilters.values()));
 
 		this.dashboard = dashboard;
@@ -1695,6 +1727,16 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 				this.validGlobalFilters = true;
 				filter.value = this.page.urlSearchParameters.get(key)
+			}
+		}
+
+		if(Dashboard.filtersAppliedByUser && Dashboard.selectedValues.size) {
+
+			for(const [key, value] of Dashboard.selectedValues) {
+
+				if(this.has(key)) {
+					this.get(key).value = value;
+				}
 			}
 		}
 	}
@@ -1737,6 +1779,24 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 		this.container.querySelector('.close').remove();
 
+		if(window.globalFilterSubmitListener) {
+			this.container.removeEventListener('submit', Dashboard.globalFilterSubmitListener);
+		}
+
+		this.container.on('submit', (e) => {
+
+			e.preventDefault();
+
+			Dashboard.filtersAppliedByUser = true;
+
+			this.apply();
+
+			if(this.source) {
+				this.source.container.querySelector('.filters-toggle').click()
+			}
+
+		});
+
 		container.appendChild(this.container);
 
 		const searchInput = container.querySelector('.global-filter-search');
@@ -1757,7 +1817,9 @@ class DashboardGlobalFilters extends DataSourceFilters {
 			container.querySelector('.no-results').classList.toggle('hidden', shown.length > 1);
 		});
 
-		container.querySelector('button.reload').on('click', () => this.apply({cached: 0}));
+		container.querySelector('button.reload').on('click', () => {
+			this.apply({cached: 0})
+		});
 
 		const input = container.querySelector('.head input[type=checkbox]');
 
@@ -1765,6 +1827,8 @@ class DashboardGlobalFilters extends DataSourceFilters {
 	}
 
 	async apply(options = {}) {
+
+		let filterFound = false;
 
 		for (const report of this.dashboard.visibleVisuliaztions) {
 
@@ -1777,6 +1841,8 @@ class DashboardGlobalFilters extends DataSourceFilters {
 				if (!matchingFilter) {
 					continue;
 				}
+
+				filterFound = true;
 
 				filter.value = matchingFilter.value;
 
@@ -1794,12 +1860,15 @@ class DashboardGlobalFilters extends DataSourceFilters {
 			report.container.style.opacity = found ? 1 : 0.4;
 		}
 
-		Dashboard.selectedValues.clear();
+		if(Dashboard.filtersAppliedByUser && filterFound) {
 
-		// Save the value of each filter for use on other dashboards
-		for (const [placeholder, filter] of this) {
-			Dashboard.selectedValues.set(placeholder, filter.value);
+			// Save the value of each filter for use on other dashboards
+			for (const [placeholder, filter] of this) {
+
+				Dashboard.selectedValues.set(placeholder, filter.value);
+			}
 		}
+
 	}
 
 	clear() {

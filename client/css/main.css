@@ -116,6 +116,7 @@ button > i {
 	margin-right: calc(var(--gap) * 1);
 }
 
+button[type=submit],
 input[type=submit] {
 	background: var(--color-secondary);
 	color: var(--color-secondary-text);

@@ -206,6 +206,10 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 			this.list.set(data.id, new GlobalFilter(data, this));
 		}
 
+		if(!this.dashboardList) {
+			this.dashboardList = await API.call('dashboards/list');
+		}
+
 		await this.render();
 	}
 
@@ -1282,6 +1286,18 @@ class GlobalFilter {
 
 		globalFilters.datasetsMultiselect.clear();
 
+		const container = globalFilters.container.querySelector('#global-filters-form .dashboard-ids');
+
+		const datalist = globalFilters.dashboardList.map(d => {return {name: d.name, value: d.id, subtitle: `#${d.id}`}});
+
+		globalFilters.dashboardMultiselect = new MultiSelect({datalist, multiple: false});
+
+		if(container.querySelector('.multi-select')) {
+			container.querySelector('.multi-select').remove();
+		}
+
+		container.appendChild(globalFilters.dashboardMultiselect.container);
+
 		globalFilters.container.querySelector('#global-filters-form h1').textContent = 'Add new Global Filter';
 		globalFilters.form.reset();
 
@@ -1339,14 +1355,19 @@ class GlobalFilter {
 			globalFilters.form.default_value.value = '';
 		}
 
-		const options = {
-			method: 'POST',
-			form: new FormData(globalFilters.form),
-		};
+		const
+			parameters = {
+				dataset: globalFilters.datasetsMultiselect.value,
+				dashboard_id: globalFilters.dashboardMultiselect.value[0] || '',
+			},
+			options = {
+				method: 'POST',
+				form: new FormData(globalFilters.form),
+			};
 
 		try {
 
-			const response = await API.call('global-filters/insert', {dataset: globalFilters.datasetsMultiselect.value}, options);
+			const response = await API.call('global-filters/insert', parameters, options);
 
 			await globalFilters.load();
 
@@ -1381,12 +1402,15 @@ class GlobalFilter {
 
 		this.container = document.createElement('tr');
 
+		const [dashboard] = this.globalFilters.dashboardList.filter(d => d.id == this.dashboard_id);
+
 		this.container.innerHTML = `
 			<td>${this.id}</td>
 			<td>${this.name}</td>
 			<td>${this.placeholder}</td>
 			<td>${this.type}</td>
 			<td>${isNaN(parseFloat(this.order)) ? '' : this.order}</td>
+			<td>${dashboard ? dashboard.name : ''}</td>
 			<td>${this.default_value}</td>
 			<td>${this.multiple ? 'Yes' : 'No'}</td>
 			<td>${isNaN(parseInt(this.offset)) ? '' : this.offset}</td>
@@ -1414,6 +1438,19 @@ class GlobalFilter {
 
 		this.globalFilters.form.offset.value = isNaN(parseInt(this.offset)) ? '' : this.offset;
 		this.globalFilters.datasetsMultiselect.value = this.dataset;
+
+		const container = this.globalFilters.container.querySelector('#global-filters-form .dashboard-ids');
+
+		const datalist = this.globalFilters.dashboardList.map(d => {return {name: d.name, value: d.id, subtitle: `#${d.id}`}});
+
+		this.dashboardMultiselect = new MultiSelect({datalist, multiple: false});
+
+		if(container.querySelector('.multi-select'))
+			container.querySelector('.multi-select').remove();
+
+		container.appendChild(this.dashboardMultiselect.container);
+
+		this.dashboardMultiselect.value = this.dashboard_id;
 
 		this.globalFilters.container.querySelector('#global-filters-form h1').textContent = 'Edit ' + this.name;
 
@@ -1473,6 +1510,7 @@ class GlobalFilter {
 			parameter = {
 				id: this.id,
 				dataset: this.globalFilters.datasetsMultiselect.value,
+				dashboard_id: this.dashboardMultiselect.value[0] || '',
 			},
 			options = {
 				method: 'POST',
