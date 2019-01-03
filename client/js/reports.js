@@ -11016,11 +11016,12 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		today = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), today.getHours(), today.getMinutes(), today.getSeconds()));
 
 		this.center = {
-			value: 0,
+			value: null,
 			date: Date.parse(new Date(new Date(today - ((this.options.centerOffset || 0) * 24 * 60 * 60 * 1000))).toISOString().substring(0, 10)),
 		};
 
-		this.center.value = this.dates.has(this.center.date) ? this.dates.get(this.center.date).get(this.options.valueColumn) : null;
+		if(this.dates.has(this.center.date))
+			this.center.value = this.dates.get(this.center.date).get(this.options.valueColumn);
 
 		if(this.options.rightOffset != '') {
 
@@ -11033,7 +11034,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 				const value = this.dates.get(this.right.date).get(this.options.valueColumn);
 
-				if(this.center.value || this.center.value == 0) {
+				if(!isNaN(parseFloat(this.center.value))) {
 
 					let _value;
 
@@ -11066,7 +11067,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 				const value = this.dates.get(this.left.date).get(this.options.valueColumn);
 
-				if(this.center.value || this.center.value == 0) {
+				if(!isNaN(parseFloat(this.center.value))) {
 
 					let _value;
 
@@ -11202,12 +11203,12 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 				.x(d => x(d.date))
 				.y(d => y(d.value));
 
-		dates.sort((a,b) =>  Date.parse(a.get('time')) - Date.parse(b.get('time')));
+		dates.sort((a, b) => Date.parse(a.get(this.options.timingColumn)) - Date.parse(b.get(this.options.timingColumn)));
 
 		for(const row of dates) {
 			data.push({
-				date: Format.date(row.get('time')),
-				value: row.get('value'),
+				date: Format.date(row.get(this.options.timingColumn)),
+				value: row.get(this.options.valueColumn),
 			});
 		}
 
