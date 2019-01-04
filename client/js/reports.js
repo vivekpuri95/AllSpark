@@ -901,9 +901,16 @@ class DataSource {
 			return await this.excelSheetDownloader(response, obj);
 		}
 
-		else if(what.mode == 'filtered-csv') {
+		else if(what.mode == 'filtered-csv' || what.mode == 'csv') {
 
-			const response = await this.response();
+			let response;
+
+			if(what.mode == 'csv') {
+				response = await this.response(true);
+			}
+			else {
+				response = await this.response();
+			}
 
 			for(const row of response) {
 
@@ -918,7 +925,9 @@ class DataSource {
 
 			str = Array.from(response[0].keys()).join() + '\r\n' + str.join('\r\n');
 
-			what.mode = 'csv';
+			if(what.mode == 'filtered-csv') {
+				what.mode = 'csv';
+			}
 		}
 
 		else if(what.mode == 'filtered-json') {
@@ -940,24 +949,6 @@ class DataSource {
 			}
 
 			what.mode = 'json';
-		}
-
-		else {
-
-			const response = await this.response(true);
-
-			for(const row of response) {
-
-				const line = [];
-
-				for(const value of row.values()) {
-					line.push(JSON.stringify(String(value === null ? '' : value).replace(/"/g,"'")));
-				}
-
-				str.push(line.join());
-			}
-
-			str = Array.from(response[0].keys()).join() + '\r\n' + str.join('\r\n');
 		}
 
 		const
