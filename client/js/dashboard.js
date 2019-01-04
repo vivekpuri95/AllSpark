@@ -1608,8 +1608,8 @@ class Nav {
 	}
 
 	childrenVisualizations(dashboard) {
-		let visibleVisuliaztions = [];
 
+		let visibleVisuliaztions = [];
 
 		function getChildrenVisualizations(dashboard) {
 

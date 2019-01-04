@@ -1395,7 +1395,7 @@ class DataSourceFilters extends Map {
 
 		container.insertAdjacentHTML('beforeend', `
 
-			<label style="order: ${maxOrder + 2};" class="reset-toggle">
+			<label style="order: ${maxOrder + 2};" class="reset-toggle hidden">
 				<span>&nbsp;</span>
 				<button type="button"><i class="far fa-check-square"></i> All</button>
 			</label>
@@ -1410,22 +1410,32 @@ class DataSourceFilters extends Map {
 			<div class="close">&times;</div>
 		`);
 
-		const resetButton = container.querySelector('.reset-toggle button');
+		{
+			const resetButton = container.querySelector('.reset-toggle button');
 
-		resetButton.on('click', () => {
+			resetButton.on('click', () => {
 
-			if(resetButton.textContent.trim() == 'Clear') {
+				if(resetButton.textContent.trim() == 'Clear') {
 
-				this.all();
-				resetButton.innerHTML = '<i class="far fa-check-square"></i> All';
+					this.clear();
+					resetButton.innerHTML = '<i class="far fa-check-square"></i> All';
+				}
+
+				else {
+
+					this.all();
+					resetButton.innerHTML = '<i class="far fa-square"></i> Clear';
+				}
+			});
+
+			for(const filter of this.values()) {
+
+				if(filter.dataset) {
+					resetButton.parentElement.classList.remove('hidden');
+					break;
+				}
 			}
-
-			else {
-
-				this.clear();
-				resetButton.innerHTML = '<i class="far fa-square"></i> Clear';
-			}
-		});
+		}
 
 		container.querySelector('.close').on('click', () => this.source.container.querySelector('.filters-toggle').click());
 
