@@ -967,7 +967,7 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 		this.report = this.selectedReport;
 
-		this.form.save.disabled = (!this.report && !user.privileges.has('report.insert')) || !this.selectedReport.editable;
+		this.form.save.disabled = (!this.report && !user.privileges.has('report.insert')) || (this.selectedReport && !this.selectedReport.editable);
 
 		this.report ? this.edit() : this.add();
 	}
