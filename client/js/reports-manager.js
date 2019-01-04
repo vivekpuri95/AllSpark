@@ -946,6 +946,7 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 	async load() {
 
+
 		if(!this.form.connection_name.children.length) {
 
 			for(const connection of this.page.connections.values()) {
@@ -965,6 +966,8 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 		}
 
 		this.report = this.selectedReport;
+
+		this.from.save.disabled = (!this.report && !user.privileges.has('report.insert')) || !this.selectedReport.editable
 
 		this.report ? this.edit() : this.add();
 	}
@@ -1280,6 +1283,9 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		if(!this.report.editable) {
 			this.container.querySelector('#save-container > button').disabled = true;
+		}
+
+		if(!user.privileges.has('report.insert')) {
 			this.container.querySelector('#save-container #save-more').disabled = true;
 		}
 
