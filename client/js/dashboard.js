@@ -656,10 +656,17 @@ class Dashboard {
 			dataSource.container.appendChild(dataSource.selectedVisualization.container);
 		}
 
-		this.forkDashboard = new ForkDashboard({
+		this.forkPartialDashboard = new ForkPartialDashboard({
 			currentDashboard: this,
 			dashboards: page.dashboardList,
-			type: 'dashboard',
+			type: 'Partial Dashboard',
+			name: this.name,
+		});
+
+		this.forkCompleteDashboard = new ForkCompleteDashboard({
+			currentDashboard: this,
+			dashboards: page.dashboardList,
+			type: 'Complete Dashboard',
 			name: this.name,
 		});
 	}
@@ -778,12 +785,20 @@ class Dashboard {
 			dialougeBox.body.querySelector('.share-url input').select();
 		});
 
-		const fork = page.container.querySelector('#fork');
+		const partiallyFork = page.container.querySelector('#partially-fork');
 
-		fork.on('click', () => {
+		partiallyFork.on('click', () => {
 
 			const dashboard = page.list.get(page.currentDashboard);
-			dashboard.forkDashboard.forkDialogBox.body.appendChild(dashboard.forkDashboard.container);
+			dashboard.forkCompleteDashboard.forkDialogBox.body.appendChild(dashboard.forkCompleteDashboard.container);
+		});
+
+		const completeFork = page.container.querySelector('#complete-fork');
+
+		completeFork.on('click', () => {
+
+			const dashboard = page.list.get(page.currentDashboard);
+			dashboard.forkPartialDashboard.forkDialogBox.body.appendChild(dashboard.forkPartialDashboard.container);
 		});
 
 		const

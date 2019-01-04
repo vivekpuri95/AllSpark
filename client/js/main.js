@@ -4444,7 +4444,211 @@ class ForkVisualization extends ForkData {
 	}
 }
 
-class ForkDashboard extends ForkData {
+class ForkPartialDashboard extends ForkData {
+
+	constructor({currentDashboard, type, dashboards, name} = {}) {
+
+		const
+			visualizations = new Set(),
+			dashboardList = new Set(),
+			forkedData = new Map();
+
+		for(const visualization of currentDashboard.visualizations) {
+
+			for(const visibleVisuliaztion of currentDashboard.visibleVisuliaztions.values()) {
+
+				if(visibleVisuliaztion.selectedVisualization.visualization_id != visualization.visualization_id) {
+					continue;
+				}
+
+				visualizations.add({
+					name: visibleVisuliaztion.selectedVisualization.name,
+					value: visualization.visualization_id,
+					subtitle: `#${visualization.visualization_id} &middot; ${MetaData.visualizations.get(visibleVisuliaztion.selectedVisualization.type).name}`,
+				});
+			}
+		}
+
+		for(const dashboard of dashboards) {
+
+			dashboardList.add({
+				name: dashboard.name,
+				value: dashboard.id,
+				subtitle: `#${dashboard.id} &middot; ${dashboard.visibilityReason}`,
+			});
+		}
+
+		forkedData.set('dashboardHeading', {title: `New Dashboard's Name`, value: name, type: 'input', selected: []});
+		forkedData.set('visualizations', {title: 'Visualizations', value: visualizations, type: 'multiselect'});
+		forkedData.set('parent', {title: 'Parent', value: dashboardList, type: 'select', selected: currentDashboard.parent ? [currentDashboard.parent] : []});
+
+		super(name, forkedData, type);
+
+		this.dashboard = currentDashboard;
+	}
+
+	get json() {
+
+		const
+			customJson = super.json,
+			dashboardJson = {}
+			dashboardJson.visualizations = [];
+
+			for(const visualization of this.dashboard.visualizations) {
+
+				if(!customJson.visualizations.includes(visualization.visualization_id.toString())) {
+
+					continue;
+				}
+
+				for(const visibleVisuliaztion of this.dashboard.visibleVisuliaztions.values()) {
+
+					if(visibleVisuliaztion.selectedVisualization.visualization_id != visualization.visualization_id) {
+
+						continue;
+					}
+
+					dashboardJson.title = customJson.dashboardHeading;
+
+					dashboardJson.visualizations.push({
+						visualization_id: visualization.visualization_id,
+						height: visualization.format.height,
+						width: visualization.format.width,
+						position: visualization.format.position,
+						name: visibleVisuliaztion.selectedVisualization.name,
+					});
+				}
+			}
+
+		return dashboardJson;
+	}
+
+	export() {
+
+		const
+			customJson = super.json,
+			json = this.json,
+			a = document.createElement('a');
+
+		a.download = `${customJson.dashboardHeading} - ${Format.dateTime(new Date())}.json`;
+		a.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(json));
+
+		a.click();
+	}
+
+	async fork() {
+
+		const
+			form = this.forkDialogBox.body.querySelector('form'),
+			progress = this.forkDialogBox.body.querySelector('.progress progress'),
+			customJson = super.json,
+			visualizations = customJson.visualizations,
+			json = this.json;
+
+		progress.container = this.forkDialogBox.body.querySelector('.progress'),
+		progress.span = this.forkDialogBox.body.querySelector('.progress span');
+
+		function updateProgress({reset = false, max = 0, value = null} = {}) {
+
+			progress.container.classList.remove('hidden');
+
+			if(reset) {
+
+				progress.span.textContent = null;
+				progress.max = max;
+				progress.value = 0;
+
+				progress.span.innerHTML = value;
+
+				return;
+			}
+
+			progress.value++;
+			progress.span.innerHTML = value;
+		}
+
+		updateProgress({
+			reset: true,
+			max: visualizations.length + 1,
+		});
+
+		let newDashboardId = null;
+
+		if(!visualizations.length) {
+
+			return new SnackBar({
+				message: 'Please select atleast one visualization !',
+				type: 'error',
+			});
+		}
+
+		const options = {
+			method: 'POST',
+		};
+
+		const parameters = {
+			name: customJson.dashboardHeading,
+			icon: this.dashboard.icon,
+			order: this.dashboard.order,
+			format: JSON.stringify(this.dashboard.format),
+			parent: customJson.parent || '',
+		};
+
+		const response = await API.call('dashboards/insert', parameters, options);
+
+		newDashboardId = response.insertId;
+
+		if(!newDashboardId) {
+			return updateProgress({reset: true, value: 'Could not insert new dashboard!'});
+		}
+
+		for(const visualization of json.visualizations) {
+
+			if(!visualizations.includes(JSON.stringify(visualization.visualization_id))) {
+				continue;
+			}
+
+			updateProgress({
+
+				value: `
+					Adding new visualization:
+					<em>${visualization.name}</em>
+				`,
+			});
+
+			const
+				option = {
+					method: 'POST',
+				},
+				parameters = {
+					owner: 'dashboard',
+					owner_id: newDashboardId,
+					visualization_id: visualization.visualization_id,
+					format: JSON.stringify({
+						position: visualization.position,
+						width: visualization.width,
+						height: visualization.height,
+					}),
+				};
+
+			await API.call('reports/dashboard/insert', parameters, option);
+		}
+
+		if(!form.switchToNew.checked) {
+
+			await page.load();
+			this.forkDialogBox.hide();
+
+			return;
+		}
+
+		updateProgress({value: 'Dashboard Forking Complete! Taking you to the new dashboard.'});
+
+		window.location = `/dashboard/${newDashboardId}`;
+	}
+}
+
+class ForkCompleteDashboard extends ForkData {
 
 	constructor({currentDashboard, type, dashboards, name} = {}) {
 
