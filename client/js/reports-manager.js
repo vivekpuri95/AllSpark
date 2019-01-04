@@ -701,6 +701,8 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 			const row = document.createElement('tr');
 
+			const hasReportPrv = report.editable || user.privileges.has('report.insert');
+
 			row.innerHTML = `
 				<td>${report.query_id}</td>
 				<td>
@@ -717,8 +719,8 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 					${report.visualizations.length}
 				</td>
 				<td>${report.is_enabled ? 'Yes' : 'No'}</td>
-				<td title="${!report.editable ? 'Not enough privileges' : ''}" class="action configure ${!report.editable ? 'grey' : 'green'}">Configure</td>
-				<td title="${!report.editable ? 'Not enough privileges' : ''}" class="action define ${!report.editable ? 'grey' : 'green'}">Define</td>
+				<td title="${!hasReportPrv ? 'Not enough privileges' : ''}" class="action configure ${!hasReportPrv ? 'grey' : 'green'}">Configure</td>
+				<td title="${!hasReportPrv ? 'Not enough privileges' : ''}" class="action define ${!hasReportPrv ? 'grey' : 'green'}">Define</td>
 				<td title="${!report.deletable ? 'Not enough privileges' : ''}" class="action delete ${!report.deletable ? 'grey' : 'red'}">Delete</td>
 			`;
 

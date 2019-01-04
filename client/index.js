@@ -856,7 +856,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 				<section class="section" id="stage-configure-report">
 
 					<header class="toolbar">
-						<button type="submit" form="configure-report-form"><i class="far fa-save"></i> Save</button>
+						<button type="submit" form="configure-report-form" class="save-configure-stage"><i class="far fa-save"></i> Save</button>
 						<small id="added-by"></small>
 					</header>
 
