@@ -713,7 +713,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				<td title="${report.filters.map(f => f.name).join(', ')}" >
 					${report.filters.length}
 				</td>
-				<td class="action visualizations green ${report.visualizations.length && report.visualizations.some(rv => rv.editable) ? 'clickable' : 'disabled'}" title="${report.visualizations.map(f => f.name).join(', ')}" >
+				<td class="action visualizations green ${user.privileges.has('visualization.insert') || (report.visualizations.length && report.visualizations.some(rv => rv.editable)) ? 'clickable' : 'disabled'}" title="${report.visualizations.map(f => f.name).join(', ')}" >
 					${report.visualizations.length}
 				</td>
 				<td>${report.is_enabled ? 'Yes' : 'No'}</td>
