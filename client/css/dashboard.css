@@ -390,20 +390,6 @@ main #reports > .global-filters.top.scrolled {
 		display: flex;
 		flex-wrap: wrap;
 	}
-		main #reports > .global-filters .apply {
-			background: var(--color-secondary);
-			color: var(--color-secondary-text);
-			border-color: var(--color-secondary);
-			letter-spacing: 1px;
-			transition: background var(--transition-duration),
-						box-shadow var(--transition-duration),
-						color var(--transition-duration);
-		}
-		main #reports > .global-filters .apply:hover {
-			background: var(--color-secondary);
-			color: var(--color-secondary-text);
-			cursor: pointer;
-		}
 	main #reports > .global-filters.right .filters {
 		flex-direction: column;
 		padding-top: 0;
@@ -416,7 +402,8 @@ main #reports > .global-filters.top.scrolled {
 			position: sticky;
 			bottom: 0;
 		}
-			main #reports > .global-filters.right .filters > label:last-child > span {
+			main #reports > .global-filters.right .filters .apply > span,
+			main #reports > .global-filters.right .filters .reset-toggle > span {
 				display: none;
 			}
 		main #reports > .global-filters.right .filters .apply {
