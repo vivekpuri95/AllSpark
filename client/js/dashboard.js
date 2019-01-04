@@ -1091,6 +1091,10 @@ class Dashboard {
 
 			header.querySelector('.remove').on('click', async () => {
 
+				if(!confirm('Are you sure?')) {
+					return;
+				}
+
 				const
 					parameters = {
 						id: this.visualizations.filter(r => r.visualization_id == report.visualizations.selected.visualization_id)[0].id,
@@ -1604,8 +1608,8 @@ class Nav {
 	}
 
 	childrenVisualizations(dashboard) {
-		let visibleVisuliaztions = [];
 
+		let visibleVisuliaztions = [];
 
 		function getChildrenVisualizations(dashboard) {
 
@@ -1771,7 +1775,6 @@ class DashboardGlobalFilters extends DataSourceFilters {
 				<input type="search" placeholder="Global Filters" class="global-filter-search">
 			</div>
 			<div class="head">
-				<label><input type="checkbox" checked> Select All</label>
 				<button class="reload icon" title="Fore Refresh"><i class="fas fa-sync"></i></button>
 			</div>
 			<div class="NA no-results hidden">No filters found!</div>
@@ -1820,10 +1823,6 @@ class DashboardGlobalFilters extends DataSourceFilters {
 		container.querySelector('button.reload').on('click', () => {
 			this.apply({cached: 0})
 		});
-
-		const input = container.querySelector('.head input[type=checkbox]');
-
-		input.on('change', () => input.checked ? this.all() : this.clear());
 	}
 
 	async apply(options = {}) {
@@ -1869,26 +1868,6 @@ class DashboardGlobalFilters extends DataSourceFilters {
 			}
 		}
 
-	}
-
-	clear() {
-
-		for (const filter of this.values()) {
-
-			if (filter.multiSelect) {
-				filter.multiSelect.clear();
-			}
-		}
-	}
-
-	all() {
-
-		for (const filter of this.values()) {
-
-			if (filter.multiSelect) {
-				filter.multiSelect.all();
-			}
-		}
 	}
 }
 
