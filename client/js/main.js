@@ -4698,6 +4698,13 @@ class ForkCompleteDashboard extends ForkData {
 			dashboardJson = {}
 			dashboardJson.visualizations = [];
 
+			// visualizations = customJson.visualizations || [],
+			// reportJson = new DataSource(this.report, this.page).json;
+
+			// reportJson.filters = filters.length ? reportJson.filters.filter(f => filters.includes(f.filter_id.toString())) : reportJson.filters;
+			// reportJson.visualizations = visualizations.length ? reportJson.visualizations.filter(v => visualizations.includes(v.visualization_id.toString())) : reportJson.visualizations;
+
+
 			for(const visualization of this.dashboard.visualizations) {
 
 				if(!customJson.visualizations.includes(visualization.visualization_id.toString())) {
