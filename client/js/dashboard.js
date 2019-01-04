@@ -442,6 +442,8 @@ Page.class = class Dashboards extends Page {
 			]),
 			currentId = state ? state.filter : parseInt(window.location.pathname.split('/').pop());
 
+		this.dashboardList = dashboardList;
+
 		for (const dashboard of dashboardList) {
 
 			dashboard.children = new Set;
@@ -521,12 +523,6 @@ Page.class = class Dashboards extends Page {
 		if(window.location.pathname.split('/').some(x => x == 'visualization')) {
 			return await this.report(currentId, true);
 		}
-
-		// let dashboard;
-
-		// if(this.list.has(this.currentDashboard)) {
-		// 	dashboard = this.list.get(this.currentDashboard);
-		// }
 
 		return this.render({dashboardId: currentId, renderNav: true, updateNav: false, searchParam: location.search});
 	}
@@ -662,6 +658,7 @@ class Dashboard {
 
 		this.forkDashboard = new ForkDashboard({
 			currentDashboard: this,
+			dashboards: page.dashboardList,
 			type: 'dashboard',
 			name: this.name,
 		});
@@ -785,7 +782,8 @@ class Dashboard {
 
 		fork.on('click', () => {
 
-			this.forkDashboard.forkDialogBox.body.appendChild(this.forkDashboard.container);
+			const dashboard = page.list.get(page.currentDashboard);
+			dashboard.forkDashboard.forkDialogBox.body.appendChild(dashboard.forkDashboard.container);
 		});
 
 		const
