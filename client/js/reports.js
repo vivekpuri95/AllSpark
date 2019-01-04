@@ -783,7 +783,7 @@ class DataSource {
 		this.visibleTo =  await API.call('reports/report/userPrvList', {report_id : this.query_id});
 	}
 
-	async response() {
+	async response(implied) {
 
 		// Empty out the pipeline
 		for(const event of this.pipeline) {
@@ -805,7 +805,7 @@ class DataSource {
 			return [];
 		}
 
-		const data = await this.transformations.run(this.originalResponse.data);
+		const data = await this.transformations.run(this.originalResponse.data, implied);
 
 		if(!this.columns.list.size) {
 			return this.error();
@@ -944,23 +944,20 @@ class DataSource {
 
 		else {
 
-			for(const data of response.data) {
+			const response = await this.response(true);
+
+			for(const row of response) {
 
 				const line = [];
 
-				for(const index in data) {
-
-					if(data[index] === null) {
-						data[index] = '';
-					}
-
-					line.push(JSON.stringify(String(data[index]).replace(/"/g,"'")));
+				for(const value of row.values()) {
+					line.push(JSON.stringify(String(value === null ? '' : value).replace(/"/g,"'")));
 				}
 
 				str.push(line.join());
 			}
 
-			str = Object.keys(response.data[0]).join() + '\r\n' + str.join('\r\n');
+			str = Array.from(response[0].keys()).join() + '\r\n' + str.join('\r\n');
 		}
 
 		const
@@ -4296,14 +4293,16 @@ class DataSourceTransformations extends Set {
 		this.source = source;
 	}
 
-	async run(response) {
+	async run(response, implied) {
 
 		this.clear();
 
 		this.reset();
 
-		this.loadFilters();
-		this.loadSorting();
+		if(!implied) {
+			this.loadFilters();
+			this.loadSorting();
+		}
 
 		response = JSON.parse(JSON.stringify(response));
 
