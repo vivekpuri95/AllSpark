@@ -713,7 +713,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				<td title="${report.filters.map(f => f.name).join(', ')}" >
 					${report.filters.length}
 				</td>
-				<td class="action visualizations green ${user.privileges.has('visualization.insert') || (report.visualizations.length && report.visualizations.some(rv => rv.editable)) ? 'clickable' : 'disabled'}" title="${report.visualizations.map(f => f.name).join(', ')}" >
+				<td class="action visualizations green" title="${report.visualizations.map(f => f.name).join(', ')}" >
 					${report.visualizations.length}
 				</td>
 				<td>${report.is_enabled ? 'Yes' : 'No'}</td>
@@ -763,18 +763,16 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				});
 			}
 
-			if(row.querySelector('.visualizations.clickable')) {
-				row.querySelector('.visualizations').on('click', () => {
+			row.querySelector('.visualizations').on('click', () => {
 
-					window.history.pushState({}, '', `/reports/pick-visualization/${report.query_id}`);
+				window.history.pushState({}, '', `/reports/pick-visualization/${report.query_id}`);
 
-					this.page.stages.get('configure-report').disabled = false;
-					this.page.stages.get('define-report').disabled = false;
-					this.page.stages.get('pick-visualization').disabled = false;
+				this.page.stages.get('configure-report').disabled = false;
+				this.page.stages.get('define-report').disabled = false;
+				this.page.stages.get('pick-visualization').disabled = false;
 
-					this.page.load();
-				});
-			}
+				this.page.load();
+			});
 
 			if(row.querySelector('.delete.red')) {
 				row.querySelector('.delete').on('click', () => this.delete(report));
