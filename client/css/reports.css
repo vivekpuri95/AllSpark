@@ -34,6 +34,10 @@ main .dataset {
 				margin: 0;
 			}
 
+button[disabled] {
+	color: #666;
+}
+
 .data-source {
 	display: flex;
 	flex-direction: column;

@@ -701,6 +701,8 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 			const row = document.createElement('tr');
 
+			const hasReportPrivilege = report.editable || user.privileges.has('report.insert');
+
 			row.innerHTML = `
 				<td>${report.query_id}</td>
 				<td>
@@ -713,12 +715,12 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				<td title="${report.filters.map(f => f.name).join(', ')}" >
 					${report.filters.length}
 				</td>
-				<td class="action visualizations green ${report.visualizations.length && report.visualizations.some(rv => rv.editable) ? 'clickable' : 'disabled'}" title="${report.visualizations.map(f => f.name).join(', ')}" >
+				<td class="action visualizations green" title="${report.visualizations.map(f => f.name).join(', ')}" >
 					${report.visualizations.length}
 				</td>
 				<td>${report.is_enabled ? 'Yes' : 'No'}</td>
-				<td title="${!report.editable ? 'Not enough privileges' : ''}" class="action configure ${!report.editable ? 'grey' : 'green'}">Configure</td>
-				<td title="${!report.editable ? 'Not enough privileges' : ''}" class="action define ${!report.editable ? 'grey' : 'green'}">Define</td>
+				<td title="${!hasReportPrivilege ? 'Not enough privileges' : ''}" class="action configure ${!hasReportPrivilege ? 'grey' : 'green'}">Configure</td>
+				<td title="${!hasReportPrivilege ? 'Not enough privileges' : ''}" class="action define ${!hasReportPrivilege ? 'grey' : 'green'}">Define</td>
 				<td title="${!report.deletable ? 'Not enough privileges' : ''}" class="action delete ${!report.deletable ? 'grey' : 'red'}">Delete</td>
 			`;
 
@@ -763,18 +765,16 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				});
 			}
 
-			if(row.querySelector('.visualizations.clickable')) {
-				row.querySelector('.visualizations').on('click', () => {
+			row.querySelector('.visualizations').on('click', () => {
 
-					window.history.pushState({}, '', `/reports/pick-visualization/${report.query_id}`);
+				window.history.pushState({}, '', `/reports/pick-visualization/${report.query_id}`);
 
-					this.page.stages.get('configure-report').disabled = false;
-					this.page.stages.get('define-report').disabled = false;
-					this.page.stages.get('pick-visualization').disabled = false;
+				this.page.stages.get('configure-report').disabled = false;
+				this.page.stages.get('define-report').disabled = false;
+				this.page.stages.get('pick-visualization').disabled = false;
 
-					this.page.load();
-				});
-			}
+				this.page.load();
+			});
 
 			if(row.querySelector('.delete.red')) {
 				row.querySelector('.delete').on('click', () => this.delete(report));
@@ -946,6 +946,7 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 	async load() {
 
+
 		if(!this.form.connection_name.children.length) {
 
 			for(const connection of this.page.connections.values()) {
@@ -965,6 +966,8 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 		}
 
 		this.report = this.selectedReport;
+
+		this.form.save.disabled = (!this.report && !user.privileges.has('report.insert')) || (this.selectedReport && !this.selectedReport.editable);
 
 		this.report ? this.edit() : this.add();
 	}
@@ -1280,6 +1283,9 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		if(!this.report.editable) {
 			this.container.querySelector('#save-container > button').disabled = true;
+		}
+
+		if(!user.privileges.has('report.insert')) {
 			this.container.querySelector('#save-container #save-more').disabled = true;
 		}
 
