@@ -1268,6 +1268,7 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 		this.scripts.push('/js/reports.js');
 		this.scripts.push('/js/settings.js');
 		this.scripts.push('/js/settings-manager.js');
+		this.scripts.push('https://devpreview.tiny.cloud/demo/tinymce.min.js');
 	}
 
 	async main() {
@@ -1432,6 +1433,67 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 								<option value="0">No</option>
 								<option value="1">Yes</option>
 							</select>
+						</label>
+					</form>
+				</section>
+			</div>
+
+			<div class="setting-page documentation-page hidden">
+
+				<section class="section" id="documentation-list">
+
+					<h1>Documentation</h1>
+
+					<header class="toolbar">
+						<button id="add-documentation"><i class="fa fa-plus"></i> Add New Documentation</button>
+					</header>
+
+					<table class="block">
+						<thead>
+							<th>Id</th>
+							<th>Heading</th>
+							<th>slug</th>
+							<th>Parent</th>
+							<th>Body</th>
+							<th>Order</th>
+							<th>Edit</th>
+							<th>Delete</th>
+						</thead>
+						<tbody></tbody>
+					</table>
+				</section>
+
+				<section class="section" id="documentation-form">
+
+					<h1></h1>
+
+					<header class="toolbar">
+						<button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
+						<button type="submit" form="documentation-edit-form"><i class="far fa-save"></i> Save</button>
+					</header>
+
+					<form class="block form" id="documentation-edit-form">
+						<label>
+							<span>Heading <span class="red">*</span></span>
+							<input type="text" name="heading" required>
+						</label>
+
+						<label>
+							<span>slug <span class="red">*</span></span>
+							<input type="text" name="slug" required>
+						</label>
+
+						<label class="parent">
+							<span>Parent</span>
+						</label>
+
+						<label>
+							<span>Order</span>
+							<input type="number" name="order">
+						</label>
+
+						<label class="body">
+							<span>Body</span>
 						</label>
 					</form>
 				</section>

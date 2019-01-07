@@ -374,6 +374,54 @@ Settings.list.set('categories', class Categories extends SettingPage {
 	}
 });
 
+Settings.list.set('documentation', class Documentations extends SettingPage {
+
+	get name() {
+		return 'Documentations'
+	}
+
+	async setup() {
+
+		this.container = this.page.querySelector('.documentation-page');
+		this.form = this.container.querySelector('section#documentation-form form');
+
+		this.container.querySelector('#documentation-list #add-documentation').on('click', () => Documentation.add(this));
+		this.container.querySelector('#documentation-form #cancel-form').on('click', () => Sections.show('documentation-list'));
+	}
+
+	async load() {
+
+		const response = await API.call('documentations/list');
+
+		this.list = new Map;
+
+		for (const data of response) {
+			this.list.set(data.id, new Documentation(data, this));
+		}
+
+		this.parentDatalist = response.map(d => {return {name: d.heading, value: d.id, subtitle: `#${d.id}`}});
+
+		await this.render();
+	}
+
+	async render() {
+
+		const container = this.container.querySelector('#documentation-list table tbody');
+
+		container.textContent = null;
+
+		if(!this.list.size) {
+			container.innerHTML = '<tr><td colspan="6" class="NA">No Global Filters Found</td></tr>'
+		}
+
+		for(const documentation of this.list.values()) {
+			container.appendChild(documentation.row);
+		}
+
+		await Sections.show('documentation-list');
+	}
+})
+
 Settings.list.set('executingReports', class ExecutingReports extends SettingPage {
 
 	get name() {
@@ -1564,6 +1612,233 @@ class GlobalFilter {
 			new SnackBar({
 				message: `${this.name} Global Filter Deleted`,
 				subtitle: `Type: <strong>${MetaData.filterTypes.get(this.type).name}</strong> Placeholer: <strong>${this.placeholder}</strong>`,
+				icon: 'far fa-trash-alt',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+}
+
+class Documentation {
+
+	static async add(documentation) {
+
+		const container = documentation.container.querySelector('#documentation-form .parent');
+
+		documentation.parentMultiSelect = new MultiSelect({datalist: documentation.parentDatalist, multiple: false});
+
+		if(container.querySelector('.multi-select')) {
+			container.querySelector('.multi-select').remove();
+		}
+
+		container.appendChild(documentation.parentMultiSelect.container);
+
+		documentation.container.querySelector('#documentation-form h1').textContent = 'Add new Documentation';
+		documentation.form.reset();
+
+		documentation.form.removeEventListener('submit', Documentation.submitListener);
+
+		documentation.form.on('submit', Documentation.submitListener = e => Documentation.insert(e, documentation));
+
+		documentation.bodyEditior = new HTMLEditor();
+
+		if(documentation.form.querySelector('.body .html-editor')) {
+			documentation.form.querySelector('.body .html-editor').remove();
+		}
+
+		documentation.form.querySelector('.body').appendChild(documentation.bodyEditior.container);
+
+		await documentation.bodyEditior.setup();
+
+		documentation.bodyEditior.value = documentation.body;
+
+		documentation.form.querySelector('.body').appendChild(documentation.bodyEditior.container);
+
+		Sections.show('documentation-form');
+
+		documentation.form.heading.focus();
+	}
+
+	static async insert(e, documentation) {
+
+		e.preventDefault();
+
+		const
+			parameters = {
+				parent: documentation.parentMultiSelect.value[0] || '',
+				body: documentation.bodyEditior.value || '',
+			},
+			options = {
+				method: 'POST',
+				form: new FormData(documentation.form),
+			};
+
+		try {
+
+			const response = await API.call('documentations/insert', parameters, options);
+
+			await documentation.load();
+
+			new SnackBar({
+				message: `Documentation for ${documentation.form.heading.value} Added`,
+				icon: 'fa fa-plus',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+
+	constructor(documentation, page) {
+
+		Object.assign(this, documentation);
+
+		this.page = page;
+
+		this.form = page.form;
+	}
+
+	get row() {
+
+		if (this.rowElement) {
+			return this.rowElement;
+		}
+
+		this.rowElement = document.createElement('tr');
+
+		this.rowElement.innerHTML = `
+			<td>${this.id}</td>
+			<td>${this.heading}</td>
+			<td>${this.slug}</td>
+			<td>${this.parent || ''}</td>
+			<td>${this.body}</td>
+			<td>${this.order || ''}</td>
+			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
+			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+		`;
+
+		this.rowElement.querySelector('.green').on('click', () => this.edit());
+		this.rowElement.querySelector('.red').on('click', () => this.delete());
+
+		return this.rowElement;
+	}
+
+	async edit() {
+
+		this.form.reset();
+
+		for(const element of this.form.elements) {
+
+			if(element.name in this) {
+				element.value = this[element.name];
+			}
+		}
+
+		this.parentMultiSelect = new MultiSelect({datalist: this.page.parentDatalist, multiple: true});
+
+		this.parentMultiSelect.value = [this.parent];
+
+		if(this.form.querySelector('.parent .multi-select')) {
+			this.form.querySelector('.parent .multi-select').remove();
+		}
+
+		this.form.querySelector('.parent').appendChild(this.parentMultiSelect.container);
+
+		this.bodyEditior = new HTMLEditor();
+
+		if(this.form.querySelector('.body .html-editor')) {
+			this.form.querySelector('.body .html-editor').remove();
+		}
+
+		this.form.querySelector('.body').appendChild(this.bodyEditior.container);
+
+		await this.bodyEditior.setup();
+
+		this.bodyEditior.value = this.body;
+
+		this.form.querySelector('.body').appendChild(this.bodyEditior.container);
+
+		this.form.on('submit', Documentation.submitListener = e => this.update(e));
+
+		await Sections.show('documentation-form');
+	}
+
+	async update(e) {
+
+		e.preventDefault();
+
+		const
+			parameter = {
+				id: this.id,
+				parent: this.parentMultiSelect.value[0] || '',
+				body: this.bodyEditior.value || '',
+			},
+			options = {
+				method: 'POST',
+				form: new FormData(this.form),
+			};
+
+		try {
+
+			await API.call('documentations/update', parameter, options);
+
+			await this.page.load();
+
+			new SnackBar({
+				message: `Documentation for ${this.heading} updated`,
+				icon: 'far fa-save',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+
+	async delete() {
+
+		if (!confirm('Are you sure?')) {
+			return;
+		}
+
+		const
+			options = {
+				method: 'POST',
+			},
+			parameter = {
+				id: this.id,
+			};
+
+		try {
+
+			await API.call('documentations/delete', parameter, options);
+
+			await this.page.load();
+
+			new SnackBar({
+				message: `Documentation for ${this.heading} Deleted`,
 				icon: 'far fa-trash-alt',
 			});
 
