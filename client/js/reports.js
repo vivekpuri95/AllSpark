@@ -1702,6 +1702,7 @@ class DataSourceFilter {
 		}
 
 		if(this.offset && this.offset.length) {
+			this.offset.filterType = this.type;
 			value = DataSourceFilter.parseOffset(this.offset);
 		}
 
@@ -1878,7 +1879,7 @@ class DataSourceFilter {
 
 			if(offset.snap) {
 
-				if(this.type == 'month') {
+				if(this.filterType == 'month') {
 					return new Date(Date.UTC(base.getFullYear(), base.getMonth() + offsetValue, 1)).toISOString().substring(0, 7);
 				} else {
 					return new Date(Date.UTC(base.getFullYear(), base.getMonth() + offsetValue, 1)).toISOString().substring(0, 10);
@@ -1892,7 +1893,7 @@ class DataSourceFilter {
 
 			if(offset.snap) {
 
-				if(this.type == 'month') {
+				if(this.filterType == 'year') {
 					return new Date(Date.UTC(base.getFullYear() + offsetValue, 0, 1)).toISOString().substring(0, 4);
 				} else {
 					return new Date(Date.UTC(base.getFullYear() + offsetValue, 0, 1)).toISOString().substring(0, 10);
