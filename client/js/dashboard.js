@@ -1780,8 +1780,6 @@ class DashboardGlobalFilters extends DataSourceFilters {
 			<div class="NA no-results hidden">No filters found!</div>
 		`;
 
-		this.container.querySelector('.close').remove();
-
 		if(window.globalFilterSubmitListener) {
 			this.container.removeEventListener('submit', Dashboard.globalFilterSubmitListener);
 		}
