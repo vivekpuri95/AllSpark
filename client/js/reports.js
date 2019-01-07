@@ -650,25 +650,22 @@ class DataSource {
 
 		filtersToggle.on('click', () => {
 
-			if(!this.element) {
+			if(!this.formContainer) {
 
-				const element = this.element = document.createElement('div');
+				const element = this.formContainer = document.createElement('div');
 
 				element.classList.add('overlay');
 
+				element.insertAdjacentElement('afterbegin', this.filters.container);
+
 				element.insertAdjacentHTML('beforeend', '<div class="close">&times;</div>');
+
+				this.formContainer.querySelector('.close').on('click', () => filtersToggle.click());
+
+				this.container.appendChild(this.formContainer);
 			}
 
-			if(this.element.querySelector('form')) {
-				this.element.querySelector('form').remove();
-			}
-
-			this.element.querySelector('.close').on('click', () => filtersToggle.click());
-
-			this.element.insertAdjacentElement('afterbegin', this.filters.container);
-
-			this.container.appendChild(this.element);
-			this.element.classList.toggle('hidden', filtersToggle.parentElement.classList.contains('selected'));
+			this.formContainer.classList.toggle('hidden', filtersToggle.parentElement.classList.contains('selected'));
 
 			toggleOverlay(filtersToggle);
 		});
