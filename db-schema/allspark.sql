@@ -101,6 +101,7 @@ CREATE TABLE `tb_global_filters` (
 	 `id` int(11) NOT NULL AUTO_INCREMENT,
 	 `name` varchar(64) DEFAULT NULL,
 	 `account_id` int(11) DEFAULT NULL,
+	 `dashboard_id` int(11) DEFAULT NULL,
 	 `placeholder` varchar(64) NOT NULL DEFAULT '' COMMENT '{{ backend }} , [[ frontend ]]',
 	 `description` varchar(200) DEFAULT NULL,
 	 `order` int(11) NOT NULL DEFAULT '0',
