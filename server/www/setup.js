@@ -37,39 +37,45 @@ class Setup extends API {
 					});
 				});
 			}),
-			env_name = this.environment.name;
+			env_name = this.environment.name
+		;
+
+		let databaseExist = false;
 
 		if(existingDatabases.filter(x => [`${env_name}_allspark`, `${env_name}_allspark_logs`].includes(x["Database"])).length) {
 
-			return 'Database already present.';
+			databaseExist = true;
 		}
 
-		const createDb = await Promise.all([
-			new Promise((resolve, reject) => {
+		if(!databaseExist) {
 
-				conn.query(`CREATE DATABASE ${env_name}_allspark`, [], (error, response) => {
+			const
+				createDb = await Promise.all([
+					new Promise((resolve, reject) => {
 
-					if (error) return reject(error);
+						conn.query(`CREATE DATABASE ${env_name}_allspark`, [], (error, response) => {
 
-					return resolve(response);
-				})
-			}),
-			new Promise((resolve, reject) => {
+							if (error) return reject(error);
 
-				conn.query(`CREATE DATABASE ${env_name}_allspark_logs`, [], (error, response) => {
+							return resolve(response);
+						})
+					}),
+					new Promise((resolve, reject) => {
 
-					if (error) return reject(error);
+						conn.query(`CREATE DATABASE ${env_name}_allspark_logs`, [], (error, response) => {
 
-					return resolve(response);
-				})
-			}),
-		]);
+							if (error) return reject(error);
 
-		const
-			importAllspark = child_process.execSync(`mysql -u${writeSQlConn.user} -p${writeSQlConn.password} -h${writeSQlConn.host} ${env_name}_allspark < ./db-schema/allspark.sql`).toString().trim(),
-			importAllsparkLogs = child_process.execSync(`mysql -u${writeSQlConn.user} -p${writeSQlConn.password} -h${writeSQlConn.host} ${env_name}_allspark_logs < ./db-schema/allspark_logs.sql`).toString().trim();
+							return resolve(response);
+						})
+					}),
+				]),
+				importAllspark = child_process.execSync(`mysql -u${writeSQlConn.user} -p${writeSQlConn.password} -h${writeSQlConn.host} ${env_name}_allspark < ./db-schema/allspark.sql`).toString().trim(),
+				importAllsparkLogs = child_process.execSync(`mysql -u${writeSQlConn.user} -p${writeSQlConn.password} -h${writeSQlConn.host} ${env_name}_allspark_logs < ./db-schema/allspark_logs.sql`).toString().trim()
+			;
 
-		await (new privileges()).insertNewPrivileges();
+			await (new privileges()).insertNewPrivileges();
+		}
 
 		if(!config.has("setup")) {
 
@@ -82,6 +88,10 @@ class Setup extends API {
 
 		this.assert(account.url && account.name, 'Insufficient account details');
 		this.assert(user.email && user.password && user.first_name, 'Insufficient user details');
+
+		const existingAccounts = await this.mysql.query('SELECT * FROM tb_accounts');
+
+		this.assert(!existingAccounts.length, 'Data already present in the database');
 
 		const
 			setupAccount = await this.mysql.query(
