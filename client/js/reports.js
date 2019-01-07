@@ -1452,8 +1452,6 @@ class DataSourceFilters extends Map {
 			}
 		}
 
-		// container.querySelector('.close').on('click', () => this.source.container.querySelector('.filters-toggle').click());
-
 		return container;
 	}
 
