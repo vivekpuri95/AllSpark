@@ -1877,7 +1877,12 @@ class DataSourceFilter {
 		else if(offset.unit == 'month') {
 
 			if(offset.snap) {
-				return new Date(Date.UTC(base.getFullYear(), base.getMonth() + offsetValue, 1)).toISOString().substring(0, 7);
+
+				if(this.type == 'month') {
+					return new Date(Date.UTC(base.getFullYear(), base.getMonth() + offsetValue, 1)).toISOString().substring(0, 7);
+				} else {
+					return new Date(Date.UTC(base.getFullYear(), base.getMonth() + offsetValue, 1)).toISOString().substring(0, 10);
+				}
 			} else {
 				return new Date(Date.UTC(base.getFullYear(), base.getMonth() + offsetValue, base.getDate())).toISOString().substring(0, 10);
 			}
@@ -1886,7 +1891,12 @@ class DataSourceFilter {
 		else if(offset.unit == 'year') {
 
 			if(offset.snap) {
-				return new Date(Date.UTC(base.getFullYear() + offsetValue, 0, 1)).toISOString().substring(0, 4);
+
+				if(this.type == 'month') {
+					return new Date(Date.UTC(base.getFullYear() + offsetValue, 0, 1)).toISOString().substring(0, 4);
+				} else {
+					return new Date(Date.UTC(base.getFullYear() + offsetValue, 0, 1)).toISOString().substring(0, 10);
+				}
 			} else {
 				return new Date(Date.UTC(base.getFullYear() + offsetValue, base.getMonth(), base.getDate())).toISOString().substring(0, 10);
 			}
@@ -5247,7 +5257,7 @@ DataSourceTransformation.types.set('row-limit', class DataSourceTransformationRo
 
 		return response.slice(0, this.options.row_limit);
 	}
-})
+});
 
 DataSourcePostProcessors.processors = new Map;
 
