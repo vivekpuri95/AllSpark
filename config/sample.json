@@ -2,22 +2,22 @@
   "port": 8080,
   "http": false,
   "bigquery_files_destination": "../../bigquery_files/",
-  "secret_key": "SECRET KEY HERE",
+  "secret_key": "<secret-key>",
   "ga_id": "",
   "sql_db": {
     "read": {
       "connectionLimit": 10,
-      "host": "host address",
-      "user": "username",
-      "password": "password",
-      "database":"default db"
+      "host": "mysql-host",
+      "user": "mysql-user",
+      "password": "mysql-pass",
+      "database":"mysql-db"
     },
     "write": {
       "connectionLimit": 10,
-      "host": "host address",
-      "user": "username",
-      "password": "password",
-      "database":"default db"
+      "host": "mysql-host",
+      "user": "mysql-user",
+      "password": "mysql-pass",
+      "database":"mysql-db"
     }
   },
   "mailer": {
