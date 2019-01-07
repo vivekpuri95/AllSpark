@@ -8,23 +8,23 @@
     "read": {
       "connectionLimit": 10,
       "host": "mysql-host",
-      "user": "mysql-user",
-      "password": "mysql-pass",
-      "database":"mysql-db"
+      "user": "mysql-read",
+      "password": "password",
+      "database":"env-db"
     },
     "write": {
       "connectionLimit": 10,
       "host": "mysql-host",
-      "user": "mysql-user",
-      "password": "mysql-pass",
-      "database":"mysql-db"
+      "user": "mysql-write",
+      "password": "password",
+      "database":"env-db"
     }
   },
   "mailer": {
     "api_key": "mandrill_api_key_here"
   },
   "redisOptions": {
-    "host": "localhost",
+    "host": "redis-local",
     "port": 6379,
     "db": 0
   },
