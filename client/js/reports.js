@@ -1702,6 +1702,7 @@ class DataSourceFilter {
 		}
 
 		if(this.offset && this.offset.length) {
+			this.offset.filterType = this.type;
 			value = DataSourceFilter.parseOffset(this.offset);
 		}
 
@@ -1819,6 +1820,7 @@ class DataSourceFilter {
 
 			for(const entry of offset) {
 
+				entry.filterType = offset.filterType;
 				value = DataSourceFilter.parseOffset(entry, value);
 			}
 
@@ -1877,7 +1879,12 @@ class DataSourceFilter {
 		else if(offset.unit == 'month') {
 
 			if(offset.snap) {
-				return new Date(Date.UTC(base.getFullYear(), base.getMonth() + offsetValue, 1)).toISOString().substring(0, 10);
+
+				if(offset.filterType == 'month') {
+					return new Date(Date.UTC(base.getFullYear(), base.getMonth() + offsetValue, 1)).toISOString().substring(0, 7);
+				} else {
+					return new Date(Date.UTC(base.getFullYear(), base.getMonth() + offsetValue, 1)).toISOString().substring(0, 10);
+				}
 			} else {
 				return new Date(Date.UTC(base.getFullYear(), base.getMonth() + offsetValue, base.getDate())).toISOString().substring(0, 10);
 			}
@@ -1886,7 +1893,12 @@ class DataSourceFilter {
 		else if(offset.unit == 'year') {
 
 			if(offset.snap) {
-				return new Date(Date.UTC(base.getFullYear() + offsetValue, 0, 1)).toISOString().substring(0, 10);
+
+				if(offset.filterType == 'year') {
+					return new Date(Date.UTC(base.getFullYear() + offsetValue, 0, 1)).toISOString().substring(0, 4);
+				} else {
+					return new Date(Date.UTC(base.getFullYear() + offsetValue, 0, 1)).toISOString().substring(0, 10);
+				}
 			} else {
 				return new Date(Date.UTC(base.getFullYear() + offsetValue, base.getMonth(), base.getDate())).toISOString().substring(0, 10);
 			}
@@ -5247,7 +5259,7 @@ DataSourceTransformation.types.set('row-limit', class DataSourceTransformationRo
 
 		return response.slice(0, this.options.row_limit);
 	}
-})
+});
 
 DataSourcePostProcessors.processors = new Map;
 
@@ -14355,9 +14367,11 @@ class DataSourceFilterForm {
 			for(const [index, entry] of offset.entries()) {
 
 				copy.push(entry);
+				copy.filterType = this.container.type.value;
 				containers[index].innerHTML = DataSourceFilter.parseOffset(copy) || '&mdash;';
 			}
 
+			offset.filterType = this.container.type.value;
 			this.container.querySelector('.offsets > .footer .result .value').innerHTML = DataSourceFilter.parseOffset(offset) || '&mdash;';
 
 			return f;
