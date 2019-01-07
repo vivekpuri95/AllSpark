@@ -11028,13 +11028,12 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		today = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), today.getHours(), today.getMinutes(), today.getSeconds()));
 
 		this.center = {
-			value: 0,
+			value: null,
 			date: Date.parse(new Date(new Date(today - ((this.options.centerOffset || 0) * 24 * 60 * 60 * 1000))).toISOString().substring(0, 10)),
 		};
 
-		if(this.dates.has(this.center.date)) {
+		if(this.dates.has(this.center.date))
 			this.center.value = this.dates.get(this.center.date).get(this.options.valueColumn);
-		}
 
 		if(this.options.rightOffset != '') {
 
@@ -11047,7 +11046,24 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 				const value = this.dates.get(this.right.date).get(this.options.valueColumn);
 
-				this.right.percentage = ((value - this.center.value) / value) * 100 * -1;
+				if(!isNaN(parseFloat(this.center.value))) {
+
+					let _value;
+
+					if((this.center.value >= 0 && value >= 0) || (this.center.value < 0 && value > 0)) {
+
+						_value = this.center.value - value;
+					}
+					else if((this.center.value <= 0 && value <= 0) || (this.center.value >= 0 && value <= 0)) {
+
+						_value = value - this.center.value;
+					}
+
+					if(value) {
+						this.right.percentage = _value / value * 100;
+					}
+				}
+
 				this.right.value = value;
 			}
 		}
@@ -11063,7 +11079,24 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 				const value = this.dates.get(this.left.date).get(this.options.valueColumn);
 
-				this.left.percentage = ((value - this.center.value) / value) * 100 * -1;
+				if(!isNaN(parseFloat(this.center.value))) {
+
+					let _value;
+
+					if((this.center.value >= 0 && value >= 0) || (this.center.value < 0 && value > 0)) {
+
+						_value = this.center.value - value;
+					}
+					else if((this.center.value <= 0 && value <= 0) || (this.center.value >= 0 && value <= 0)) {
+
+						_value = value - this.center.value;
+					}
+
+					if(value) {
+						this.left.percentage = _value / value * 100;
+					}
+				}
+
 				this.left.value = value;
 			}
 		}
@@ -11174,6 +11207,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		this.height = this.container.clientHeight - margin.top - margin.bottom - 10;
 
 		const
+			dates = [...this.dates.values()],
 			data = [],
 			x = d3.scale.ordinal().rangePoints([0, this.width], 0.1, 0),
 			y = d3.scale.linear().range([this.height, 0]),
@@ -11181,7 +11215,9 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 				.x(d => x(d.date))
 				.y(d => y(d.value));
 
-		for(const row of this.dates.values()) {
+		dates.sort((a, b) => Date.parse(a.get(this.options.timingColumn)) - Date.parse(b.get(this.options.timingColumn)));
+
+		for(const row of dates) {
 			data.push({
 				date: Format.date(row.get(this.options.timingColumn)),
 				value: row.get(this.options.valueColumn),
