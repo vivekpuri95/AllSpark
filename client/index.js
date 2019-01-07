@@ -662,7 +662,7 @@ router.get('/:type(dashboard|report|visualization)/:id?', API.serve(class extend
 						Share
 					</button>
 
-					<button id="partially">
+					<button id="partially-fork">
 						<i class="fas fa-code-branch"></i>
 						Partially Fork
 					</button>

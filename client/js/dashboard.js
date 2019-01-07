@@ -790,7 +790,7 @@ class Dashboard {
 		partiallyFork.on('click', () => {
 
 			const dashboard = page.list.get(page.currentDashboard);
-			dashboard.forkCompleteDashboard.forkDialogBox.body.appendChild(dashboard.forkCompleteDashboard.container);
+			dashboard.forkPartialDashboard.forkDialogBox.body.appendChild(dashboard.forkPartialDashboard.container);
 		});
 
 		const completeFork = page.container.querySelector('#complete-fork');
@@ -798,7 +798,7 @@ class Dashboard {
 		completeFork.on('click', () => {
 
 			const dashboard = page.list.get(page.currentDashboard);
-			dashboard.forkPartialDashboard.forkDialogBox.body.appendChild(dashboard.forkPartialDashboard.container);
+			dashboard.forkCompleteDashboard.forkDialogBox.body.appendChild(dashboard.forkCompleteDashboard.container);
 		});
 
 		const

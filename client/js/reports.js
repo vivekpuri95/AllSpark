@@ -30,7 +30,7 @@ class DataSource {
 		this.page = page;
 
 		this.tags = this.tags || '';
-		this.tags = this.tags.split(',').filter(a => a.trim());
+		this.tags = this.tags.length ? this.tags.split(',').filter(a => a.trim()) : [];
 
 		this.filters = new DataSourceFilters(this.filters, this);
 		this.columns = new DataSourceColumns(this);
