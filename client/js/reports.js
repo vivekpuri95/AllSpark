@@ -1877,7 +1877,7 @@ class DataSourceFilter {
 		else if(offset.unit == 'month') {
 
 			if(offset.snap) {
-				return new Date(Date.UTC(base.getFullYear(), base.getMonth() + offsetValue, 1)).toISOString().substring(0, 10);
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth() + offsetValue, 1)).toISOString().substring(0, 7);
 			} else {
 				return new Date(Date.UTC(base.getFullYear(), base.getMonth() + offsetValue, base.getDate())).toISOString().substring(0, 10);
 			}
@@ -1886,7 +1886,7 @@ class DataSourceFilter {
 		else if(offset.unit == 'year') {
 
 			if(offset.snap) {
-				return new Date(Date.UTC(base.getFullYear() + offsetValue, 0, 1)).toISOString().substring(0, 10);
+				return new Date(Date.UTC(base.getFullYear() + offsetValue, 0, 1)).toISOString().substring(0, 4);
 			} else {
 				return new Date(Date.UTC(base.getFullYear() + offsetValue, base.getMonth(), base.getDate())).toISOString().substring(0, 10);
 			}
