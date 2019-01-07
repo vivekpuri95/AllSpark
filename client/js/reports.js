@@ -804,7 +804,7 @@ class DataSource {
 		if(!Array.isArray(this.originalResponse.data)) {
 			return [];
 		}
-		debugger
+
 		const data = await this.transformations.run(this.originalResponse.data, implied);
 
 		if(!this.columns.list.size) {
