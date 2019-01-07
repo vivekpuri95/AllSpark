@@ -162,7 +162,6 @@ main #reports.show {
 	padding: calc(var(--gap) * 2) calc(var(--gap) * 3);
 	grid-template-rows: max-content max-content max-content;
 	overflow: auto;
-	margin: 0 calc(var(--gap) * 2);
 }
 
 main #reports > h1.dashboard-name {
@@ -531,15 +530,18 @@ main #reports > .list.editing {
 			main #reports .list.singleton .list {
 				padding: var(--gap) 0;
 			}
-				main .singleton .data-source .visualization {
-					max-height: 400px;
+				main #reports .list.singleton .data-source {
+					margin: 0 calc(var(--gap) * 2);
 				}
-				main .singleton .data-source .visualization.spatial-map {
-					max-height: calc(100vh - 190px);
-				}
-				main .singleton .data-source .visualization.table {
-					max-height: calc(100vh - 200px);
-				}
+					main .singleton .data-source .visualization {
+						max-height: 400px;
+					}
+					main .singleton .data-source .visualization.spatial-map {
+						max-height: calc(100vh - 190px);
+					}
+					main .singleton .data-source .visualization.table {
+						max-height: calc(100vh - 200px);
+					}
 
 @media (max-width: 1000px) {
 
