@@ -2,31 +2,47 @@
   "port": 8080,
   "http": false,
   "bigquery_files_destination": "../../bigquery_files/",
-  "secret_key": "SECRET KEY HERE",
+  "secret_key": "<secret-key>",
   "ga_id": "",
   "sql_db": {
     "read": {
       "connectionLimit": 10,
-      "host": "host address",
-      "user": "username",
+      "host": "mysql-host",
+      "user": "mysql-read",
       "password": "password",
-      "database":"default db"
+      "database":"env-db"
     },
     "write": {
       "connectionLimit": 10,
-      "host": "host address",
-      "user": "username",
+      "host": "mysql-host",
+      "user": "mysql-write",
       "password": "password",
-      "database":"default db"
+      "database":"env-db"
     }
   },
   "mailer": {
     "api_key": "mandrill_api_key_here"
   },
   "redisOptions": {
-    "host": "localhost",
+    "host": "redis-local",
     "port": 6379,
     "db": 0
+  },
+  "setup": {
+    "account": {
+      "name": "Setup Account Name",
+      "url": "Account Url",
+      "icon": "https://foo-bar.com/images/icon.png",
+      "logo": "https://foo-bar.com/images/logo.png"
+    },
+    "user": {
+      "first_name": "First Name",
+      "middle_name": "Middle Name",
+      "last_name": "Last Name",
+      "email": "foo@bar.com",
+      "password": "asd",
+      "phone": "123456"
+    }
   },
   "superAdmin_users": ["foo@bar.com"]
 }

@@ -101,9 +101,11 @@ CREATE TABLE `tb_global_filters` (
 	 `id` int(11) NOT NULL AUTO_INCREMENT,
 	 `name` varchar(64) DEFAULT NULL,
 	 `account_id` int(11) DEFAULT NULL,
+	 `dashboard_id` int(11) DEFAULT NULL,
 	 `placeholder` varchar(64) NOT NULL DEFAULT '' COMMENT '{{ backend }} , [[ frontend ]]',
 	 `description` varchar(200) DEFAULT NULL,
-	 `order` int(11) NOT NULL DEFAULT '0',
+	 `dashboard_id` int(11) DEFAULT NULL,
+	 `order` int(11) DEFAULT NULL,
 	 `default_value` varchar(500) DEFAULT NULL COMMENT 'default not null to apply filter',
 	 `offset` int(11) DEFAULT NULL,
 	 `multiple` smallint(6) DEFAULT '0',
@@ -113,7 +115,7 @@ CREATE TABLE `tb_global_filters` (
 	 `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	 `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	 PRIMARY KEY (`id`),
-	 UNIQUE KEY `unique_index` (`account_id`,`placeholder`)
+	 UNIQUE KEY `unique_index` (`account_id`,`placeholder`,`dashboard_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `tb_job_contacts` (
@@ -176,7 +178,7 @@ CREATE TABLE `tb_object_roles` (
 	 `target_id` int(11) NOT NULL,
 	 `target` enum('user','dashboard','role','connection') NOT NULL DEFAULT 'role' COMMENT 'to',
 	 `category_id` int(11) DEFAULT NULL,
-	 `group_id` int(11) NOT NULL,
+	 `group_id` int(11) NOT NULL DEFAULT 0,
 	 `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 	 `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	 PRIMARY KEY (`id`),
@@ -254,29 +256,9 @@ CREATE TABLE `tb_query_filters` (
 	 `query_id` int(11) DEFAULT NULL,
 	 `placeholder` varchar(64) NOT NULL COMMENT '{{ backend }} , [[ frontend ]]',
 	 `description` varchar(64) DEFAULT NULL,
-	 `order` int(11) DEFAULT '0',
+	 `order` int(11) DEFAULT NULL,
 	 `default_value` varchar(500) DEFAULT NULL COMMENT 'default not null to apply filter',
 	 `offset` varchar(500) DEFAULT NULL,
-	 `multiple` smallint(6) DEFAULT '0',
-	 `type` enum('number','text','date','month','hidden','column','datetime','literal','time','year') DEFAULT 'text',
-	 `dataset` int(11) DEFAULT NULL,
-	 `is_enabled` int(11) NOT NULL DEFAULT '1',
-	 `is_deleted` int(11) NOT NULL DEFAULT '0',
-	 `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	 `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-	 PRIMARY KEY (`filter_id`),
-	 UNIQUE KEY `unique_index` (`query_id`,`placeholder`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-CREATE TABLE `tb_query_filters_offset_dump2` (
-	 `filter_id` int(11) NOT NULL AUTO_INCREMENT,
-	 `name` varchar(64) DEFAULT NULL,
-	 `query_id` int(11) DEFAULT NULL,
-	 `placeholder` varchar(64) NOT NULL COMMENT '{{ backend }} , [[ frontend ]]',
-	 `description` varchar(64) DEFAULT NULL,
-	 `order` int(11) DEFAULT '0',
-	 `default_value` varchar(500) DEFAULT NULL COMMENT 'default not null to apply filter',
-	 `offset` int(11) DEFAULT NULL,
 	 `multiple` smallint(6) DEFAULT '0',
 	 `type` enum('number','text','date','month','hidden','column','datetime','literal','time','year') DEFAULT 'text',
 	 `dataset` int(11) DEFAULT NULL,
@@ -363,7 +345,8 @@ CREATE TABLE `tb_user_privilege` (
 	 `privilege_id` int(11) DEFAULT NULL,
 	 `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 	 `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-	 PRIMARY KEY (`id`)
+	 PRIMARY KEY (`id`),
+	 UNIQUE KEY `user_category_privilege` (`user_id`,`category_id`,`privilege_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `tb_user_query` (
@@ -414,16 +397,6 @@ CREATE TABLE `tb_visualization_canvas` (
 	 `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	 PRIMARY KEY (`id`),
 	 UNIQUE KEY `owner_visualization` (`owner`,`owner_id`,`visualization_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-CREATE TABLE `tb_visualization_dashboard_deleted` (
-	 `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-	 `dashboard_id` int(11) DEFAULT NULL,
-	 `visualization_id` int(11) DEFAULT NULL,
-	 `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-	 `format` json DEFAULT NULL,
-	 PRIMARY KEY (`id`),
-	 UNIQUE KEY `dashboard_id` (`dashboard_id`,`visualization_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `tb_visualizations` (
