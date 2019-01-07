@@ -3933,6 +3933,56 @@ class FormatSQL {
 	}
 }
 
+class Documnetations extends Map {
+
+	constructor(slug) {
+
+		super();
+
+		this.load(slug);
+	}
+
+	async load(slug) {
+
+		if(this.has(slug)) {
+			return this.get(slug);
+		}
+
+		const result = await API.call('documnetations/list');
+
+		this.set(slug, result);
+	}
+
+	async open() {
+
+	}
+
+	close() {
+
+	}
+
+	get container() {
+
+	}
+
+	set containerText(text) {
+
+	}
+
+	get infoContainer() {
+
+		if(this.infoContainerElement) {
+			return this.infoContainerElement;
+		}
+
+		const container = this.infoContainerElement = document.createElement('span');
+
+		container.innerHTML = `<i class="fa fa-question-circle"></i>`;
+
+		return container;
+	}
+}
+
 if(typeof Node != 'undefined') {
 	Node.prototype.on = window.on = function(name, fn) {
 		this.addEventListener(name, fn);
