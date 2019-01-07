@@ -4,6 +4,7 @@ const commonFun = require('../utils/commonFunctions');
 const Account = require('../onServerStart');
 const child_process = require('child_process');
 const mysql = require('mysql');
+const privileges = require('./privileges').insertNewPrivileges;
 
 class Setup extends API {
 
@@ -68,6 +69,7 @@ class Setup extends API {
 			importAllspark = child_process.execSync(`mysql -u${writeSQlConn.user} -p${writeSQlConn.password} -h${writeSQlConn.host} ${env_name}_allspark < ./db-schema/allspark.sql`).toString().trim(),
 			importAllsparkLogs = child_process.execSync(`mysql -u${writeSQlConn.user} -p${writeSQlConn.password} -h${writeSQlConn.host} ${env_name}_allspark_logs < ./db-schema/allspark_logs.sql`).toString().trim();
 
+		await (new privileges()).insertNewPrivileges();
 
 		if(!config.has("setup")) {
 
