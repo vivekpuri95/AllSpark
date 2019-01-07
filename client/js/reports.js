@@ -1820,6 +1820,7 @@ class DataSourceFilter {
 
 			for(const entry of offset) {
 
+				entry.filterType = offset.filterType;
 				value = DataSourceFilter.parseOffset(entry, value);
 			}
 
@@ -1879,7 +1880,7 @@ class DataSourceFilter {
 
 			if(offset.snap) {
 
-				if(this.filterType == 'month') {
+				if(offset.filterType == 'month') {
 					return new Date(Date.UTC(base.getFullYear(), base.getMonth() + offsetValue, 1)).toISOString().substring(0, 7);
 				} else {
 					return new Date(Date.UTC(base.getFullYear(), base.getMonth() + offsetValue, 1)).toISOString().substring(0, 10);
@@ -1893,7 +1894,7 @@ class DataSourceFilter {
 
 			if(offset.snap) {
 
-				if(this.filterType == 'year') {
+				if(offset.filterType == 'year') {
 					return new Date(Date.UTC(base.getFullYear() + offsetValue, 0, 1)).toISOString().substring(0, 4);
 				} else {
 					return new Date(Date.UTC(base.getFullYear() + offsetValue, 0, 1)).toISOString().substring(0, 10);
@@ -14366,9 +14367,11 @@ class DataSourceFilterForm {
 			for(const [index, entry] of offset.entries()) {
 
 				copy.push(entry);
+				copy.filterType = this.container.type.value;
 				containers[index].innerHTML = DataSourceFilter.parseOffset(copy) || '&mdash;';
 			}
 
+			offset.filterType = this.container.type.value;
 			this.container.querySelector('.offsets > .footer .result .value').innerHTML = DataSourceFilter.parseOffset(offset) || '&mdash;';
 
 			return f;
