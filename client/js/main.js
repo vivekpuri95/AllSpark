@@ -4720,7 +4720,7 @@ class ForkCompleteDashboard extends ForkData {
 					reports.push(reportJson);
 
 					dashboardJson.title = customJson.dashboardHeading;
-					dashboardJson.parent = customJson.parent[0];
+					dashboardJson.parent = customJson.parent[0] || '';
 					dashboardJson.prefix = customJson.prefix;
 					dashboardJson.filters = reportJson.filters || [];
 					dashboardJson.reportsVisualizations = reportJson.visualizations || [];
@@ -4789,9 +4789,9 @@ class ForkCompleteDashboard extends ForkData {
 			max: visualizations.length + filters.length + reportsVisualizations.length + reports.length + 1,
 		});
 
-		{
-			let newDashboardId = null;
+		let newDashboardId = null;
 
+		{
 			if(!visualizations.length) {
 
 				return new SnackBar({
@@ -4808,19 +4808,18 @@ class ForkCompleteDashboard extends ForkData {
 				});
 			}
 
-			const options = {
-				method: 'POST',
-			};
-
-			const parameters = {
-				name: json.dashboardHeading,
-				icon: this.dashboard.icon,
-				order: this.dashboard.order,
-				format: JSON.stringify(this.dashboard.format),
-				parent: json.parent || '',
-			};
-
-			const response = await API.call('dashboards/insert', parameters, options);
+			const
+				options = {
+					method: 'POST',
+				},
+				parameters = {
+					name: json.title,
+					icon: this.dashboard.icon,
+					order: this.dashboard.order,
+					format: JSON.stringify(this.dashboard.format),
+					parent: json.parent || '',
+				},
+				response = await API.call('dashboards/insert', parameters, options);
 
 			newDashboardId = response.insertId;
 
@@ -4830,10 +4829,6 @@ class ForkCompleteDashboard extends ForkData {
 		}
 
 		for(const visualization of json.visualizations) {
-
-			if(!visualizations.includes(JSON.stringify(visualization.visualization_id))) {
-				continue;
-			}
 
 			updateProgress({
 
