@@ -10,7 +10,7 @@ class Settings extends Page {
 
 			for (const [key, settings] of Settings.list) {
 
-				if(['executingReports', 'accounts', 'cachedReports'].includes(key) && !this.user.privileges.has('superadmin')) {
+				if(['executingReports', 'accounts', 'cachedReports'].includes(key) && !this.user.privileges.has('everything')) {
 					continue;
 				}
 
