@@ -11,7 +11,12 @@ CREATE TABLE `tb_api_logs` (
 	 `useragent` varchar(1000) DEFAULT NULL,
 	 `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	 `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-	 PRIMARY KEY (`id`)
+	 PRIMARY KEY (`id`),
+	 KEY `status` (`status`),
+	 KEY `created_at` (`created_at`),
+	 KEY `account_id` (`account_id`),
+	 KEY `user_id` (`user_id`),
+	 KEY `pathname` (`pathname`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `tb_errors` (
@@ -19,24 +24,29 @@ CREATE TABLE `tb_errors` (
 	 `account_id` int(11) NOT NULL,
 	 `user_id` int(11) DEFAULT NULL,
 	 `session_id` int(11) DEFAULT NULL,
+	 `type` varchar(100) DEFAULT NULL,
+	 `url` varchar(1000) DEFAULT NULL,
 	 `os` varchar(50) DEFAULT NULL,
 	 `browser` varchar(50) DEFAULT NULL,
 	 `user_agent` varchar(500) DEFAULT NULL,
-	 `type` varchar(100) DEFAULT NULL,
-	 `url` varchar(1000) DEFAULT NULL,
 	 `message` varchar(1000) DEFAULT NULL,
 	 `description` text,
+	 `status` int(11) DEFAULT NULL,
 	 `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 	 `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-	 `status` int(11) DEFAULT NULL,
-	 `creation_date` date DEFAULT NULL,
-	 PRIMARY KEY (`id`)
+	 `creation_date` date NOT NULL,
+	 PRIMARY KEY (`id`),
+	 KEY `created_at` (`created_at`),
+	 KEY `url` (`url`(50),`message`(80),`description`(80)),
+	 KEY `account_id` (`account_id`),
+	 KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `tb_history` (
 	 `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'PK',
 	 `session_id` int(11) DEFAULT NULL,
 	 `account_id` int(11) DEFAULT NULL,
+	 `query_id` int(11) DEFAULT NULL,
 	 `owner` enum('query','filter','visualization','connection') DEFAULT NULL,
 	 `owner_id` int(11) NOT NULL,
 	 `state` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,
@@ -48,8 +58,9 @@ CREATE TABLE `tb_history` (
 	 `user_id` int(11) DEFAULT NULL,
 	 `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	 `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-	 `creation_date` date DEFAULT NULL,
-	 PRIMARY KEY (`id`)
+	 `creation_date` date NOT NULL,
+	 PRIMARY KEY (`id`),
+	 KEY `creation_date` (`creation_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `tb_jobs_history` (
@@ -57,13 +68,19 @@ CREATE TABLE `tb_jobs_history` (
 	 `owner` varchar(40) DEFAULT NULL,
 	 `owner_id` int(11) DEFAULT NULL,
 	 `timing` timestamp NULL DEFAULT NULL,
-	 `user_id` int(11) DEFAULT NULL,
+	 `user_id` int(11) NOT NULL DEFAULT '0',
 	 `successful` int(11) DEFAULT NULL,
 	 `response` text,
+	 `runtime` double DEFAULT NULL,
 	 `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 	 `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-	 `creation_date` date DEFAULT NULL,
-	 PRIMARY KEY (`id`)
+	 `creation_date` date NOT NULL,
+	 PRIMARY KEY (`id`),
+	 KEY `created_at` (`created_at`),
+	 KEY `owner` (`owner`,`owner_id`),
+	 KEY `timing` (`timing`),
+	 KEY `successful` (`successful`),
+	 KEY `creation_date` (`creation_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `tb_report_logs` (
@@ -102,8 +119,13 @@ CREATE TABLE `tb_sessions` (
 	 `description` text,
 	 `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	 `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	 `creation_date` date DEFAULT NULL,
-	 PRIMARY KEY (`id`)
+	 `creation_date` date NOT NULL,
+	 PRIMARY KEY (`id`),
+	 KEY `user_id` (`user_id`),
+	 KEY `session_id` (`session_id`),
+	 KEY `type` (`type`),
+	 KEY `user_id_2` (`user_id`,`type`,`session_id`),
+	 KEY `creation_date` (`creation_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `tb_tests_logs` (

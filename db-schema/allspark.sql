@@ -13,8 +13,8 @@ CREATE TABLE `tb_accounts` (
 	 `account_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
 	 `name` varchar(30) NOT NULL DEFAULT '',
 	 `url` varchar(500) NOT NULL DEFAULT '',
-	 `icon` varchar(500) NOT NULL DEFAULT '',
-	 `logo` varchar(500) NOT NULL DEFAULT '',
+	 `icon` varchar(500) DEFAULT NULL,
+	 `logo` varchar(500) DEFAULT NULL,
 	 `auth_api` varchar(300) DEFAULT NULL,
 	 `status` int(11) NOT NULL DEFAULT '1',
 	 `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -32,8 +32,9 @@ CREATE TABLE `tb_categories` (
 	 `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	 `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	 PRIMARY KEY (`category_id`),
-	 UNIQUE KEY `account_id` (`account_id`,`slug`),
-	 KEY `parent` (`parent`)
+	 UNIQUE KEY `account_slug` (`account_id`,`slug`),
+	 KEY `parent` (`parent`),
+	 KEY `slug` (`slug`,`account_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `tb_credentials` (
@@ -73,20 +74,6 @@ CREATE TABLE `tb_dashboards` (
 	 PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-CREATE TABLE `tb_datasets` (
-	 `id` int(11) NOT NULL AUTO_INCREMENT,
-	 `account_id` int(11) NOT NULL,
-	 `name` varchar(100) NOT NULL,
-	 `query_id` int(11) NOT NULL,
-	 `category_id` int(11) NOT NULL,
-	 `order` int(11) DEFAULT '0',
-	 `status` tinyint(1) NOT NULL DEFAULT '1',
-	 `created_by` int(11) NOT NULL,
-	 `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	 `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-	 PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
 CREATE TABLE `tb_datasources` (
 	 `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
 	 `name` varchar(50) NOT NULL DEFAULT '',
@@ -115,7 +102,7 @@ CREATE TABLE `tb_global_filters` (
 	 `name` varchar(64) DEFAULT NULL,
 	 `account_id` int(11) DEFAULT NULL,
 	 `placeholder` varchar(64) NOT NULL DEFAULT '' COMMENT '{{ backend }} , [[ frontend ]]',
-	 `description` varchar(64) DEFAULT NULL,
+	 `description` varchar(200) DEFAULT NULL,
 	 `dashboard_id` int(11) DEFAULT NULL,
 	 `order` int(11) DEFAULT NULL,
 	 `default_value` varchar(500) DEFAULT NULL COMMENT 'default not null to apply filter',
@@ -127,7 +114,34 @@ CREATE TABLE `tb_global_filters` (
 	 `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	 `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	 PRIMARY KEY (`id`),
-	 UNIQUE KEY `account_dashboard_placeholder` (`account_id`,`dashboard_id`,`placeholder`)
+	 UNIQUE KEY `unique_index` (`account_id`,`placeholder`,`dashboard_id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+CREATE TABLE `tb_job_contacts` (
+	 `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+	 `job_id` int(11) DEFAULT NULL,
+	 `user_id` int(11) DEFAULT NULL,
+	 `job_status` int(11) DEFAULT NULL,
+	 `contact_type` varchar(11) DEFAULT NULL,
+	 `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	 `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	 PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+CREATE TABLE `tb_jobs` (
+	 `job_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+	 `account_id` int(11) DEFAULT NULL,
+	 `name` varchar(50) DEFAULT NULL,
+	 `cron_interval_string` varchar(50) DEFAULT NULL,
+	 `next_interval` timestamp NULL DEFAULT NULL,
+	 `is_enabled` int(11) NOT NULL DEFAULT '1',
+	 `is_deleted` int(11) NOT NULL DEFAULT '0',
+	 `added_by` int(11) DEFAULT NULL,
+	 `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	 `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	 `type` enum('none','adword') DEFAULT 'none',
+	 `config` text,
+	 PRIMARY KEY (`job_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `tb_oauth_connections` (
@@ -162,30 +176,17 @@ CREATE TABLE `tb_object_roles` (
 	 `owner` enum('user','dashboard','role','query','connection','visualization') DEFAULT NULL,
 	 `target_id` int(11) NOT NULL,
 	 `target` enum('user','dashboard','role','connection') NOT NULL DEFAULT 'role' COMMENT 'to',
-	 `group_id` int(11) NOT NULL,
 	 `category_id` int(11) DEFAULT NULL,
+	 `group_id` int(11) NOT NULL,
 	 `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 	 `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	 PRIMARY KEY (`id`),
-	 UNIQUE KEY `account_owner_target_cat_group` (`account_id`,`owner_id`,`owner`,`target`,`target_id`,`category_id`,`group_id`),
+	 UNIQUE KEY `account_owner_target_cat_group` (`account_id`,`owner_id`,`owner`,`target_id`,`target`,`category_id`,`group_id`),
 	 KEY `account_id` (`account_id`),
 	 KEY `owner_id` (`owner_id`),
 	 KEY `owner` (`owner`),
 	 KEY `target` (`target`),
 	 KEY `target_id` (`target_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-CREATE TABLE `tb_object_transformation` (
-	 `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-	 `owner_id` int(11) DEFAULT NULL,
-	 `owner` enum('query','visualization') DEFAULT NULL,
-	 `title` varchar(200) DEFAULT NULL,
-	 `type` enum('pivot','filters','autofill','stream','restrict-columns','sort','linear-regression','custom-column') DEFAULT NULL,
-	 `options` json DEFAULT NULL,
-	 `is_enabled` tinyint(1) NOT NULL DEFAULT '1',
-	 `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	 `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-	 PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `tb_password_reset` (
@@ -208,7 +209,7 @@ CREATE TABLE `tb_privileges` (
 	 `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	 `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	 PRIMARY KEY (`privilege_id`),
-	 UNIQUE KEY `account_id` (`name`)
+	 UNIQUE KEY `name` (`name`,`account_id`,`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `tb_privileges_tree` (
@@ -226,8 +227,7 @@ CREATE TABLE `tb_query` (
 	 `account_id` int(11) DEFAULT NULL,
 	 `name` varchar(64) NOT NULL,
 	 `connection_name` int(11) DEFAULT NULL,
-	 `source_deleted` enum('query','api','pg','bigquery') NOT NULL DEFAULT 'query',
-	 `query` varchar(25000) DEFAULT NULL,
+	 `query` mediumtext,
 	 `definition` json DEFAULT NULL,
 	 `url` varchar(500) DEFAULT NULL,
 	 `url_options` json DEFAULT NULL,
@@ -259,7 +259,27 @@ CREATE TABLE `tb_query_filters` (
 	 `default_value` varchar(500) DEFAULT NULL COMMENT 'default not null to apply filter',
 	 `offset` varchar(500) DEFAULT NULL,
 	 `multiple` smallint(6) DEFAULT '0',
-	 `type` enum('number','text','date','month','hidden','column','datetime') DEFAULT 'text',
+	 `type` enum('number','text','date','month','hidden','column','datetime','literal','time','year') DEFAULT 'text',
+	 `dataset` int(11) DEFAULT NULL,
+	 `is_enabled` int(11) NOT NULL DEFAULT '1',
+	 `is_deleted` int(11) NOT NULL DEFAULT '0',
+	 `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	 `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	 PRIMARY KEY (`filter_id`),
+	 UNIQUE KEY `unique_index` (`query_id`,`placeholder`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+CREATE TABLE `tb_query_filters_offset_dump2` (
+	 `filter_id` int(11) NOT NULL AUTO_INCREMENT,
+	 `name` varchar(64) DEFAULT NULL,
+	 `query_id` int(11) DEFAULT NULL,
+	 `placeholder` varchar(64) NOT NULL COMMENT '{{ backend }} , [[ frontend ]]',
+	 `description` varchar(64) DEFAULT NULL,
+	 `order` int(11) DEFAULT '0',
+	 `default_value` varchar(500) DEFAULT NULL COMMENT 'default not null to apply filter',
+	 `offset` int(11) DEFAULT NULL,
+	 `multiple` smallint(6) DEFAULT '0',
+	 `type` enum('number','text','date','month','hidden','column','datetime','literal','time','year') DEFAULT 'text',
 	 `dataset` int(11) DEFAULT NULL,
 	 `is_enabled` int(11) NOT NULL DEFAULT '1',
 	 `is_deleted` int(11) NOT NULL DEFAULT '0',
@@ -273,7 +293,23 @@ CREATE TABLE `tb_query_visualizations` (
 	 `visualization_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
 	 `query_id` int(11) NOT NULL,
 	 `name` varchar(250) DEFAULT NULL,
-	 `type` enum('sankey','table','spatialmap','funnel','cohort','line','bar','area','pie','stacked','livenumber','dualaxisbar','bigtext','scatter','bubble','html','linear','calendar') NOT NULL DEFAULT 'table',
+	 `type` enum('table','spatialmap','funnel','cohort','line','bar','area','pie','stacked','livenumber','dualaxisbar','bigtext','scatter','bubble','html','linear','sankey','calendar') NOT NULL DEFAULT 'table',
+	 `description` text,
+	 `tags` varchar(1024) DEFAULT NULL,
+	 `options` json DEFAULT NULL,
+	 `added_by` int(11) DEFAULT NULL,
+	 `is_enabled` tinyint(4) NOT NULL DEFAULT '1',
+	 `is_deleted` smallint(11) DEFAULT '0',
+	 `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	 `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	 PRIMARY KEY (`visualization_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+CREATE TABLE `tb_query_visualizations_copy` (
+	 `visualization_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+	 `query_id` int(11) NOT NULL,
+	 `name` varchar(250) DEFAULT NULL,
+	 `type` enum('table','spatialmap','funnel','cohort','line','bar','area','pie','stacked','livenumber','dualaxisbar','bigtext','scatter','bubble','html','linear','sankey','calendar') NOT NULL DEFAULT 'table',
 	 `description` text,
 	 `tags` varchar(1024) DEFAULT NULL,
 	 `options` json DEFAULT NULL,
@@ -306,7 +342,7 @@ CREATE TABLE `tb_settings` (
 	 `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 	 `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	 PRIMARY KEY (`id`),
-	 UNIQUE KEY `account_id` (`account_id`,`owner`,`profile`,`owner_id`)
+	 UNIQUE KEY `account_id` (`account_id`,`owner`,`profile`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `tb_spatial_map_themes` (
@@ -319,25 +355,22 @@ CREATE TABLE `tb_spatial_map_themes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `tb_tasks` (
-	 `id` int(11) NOT NULL AUTO_INCREMENT,
-	 `account_id` int(11) DEFAULT NULL,
-	 `har` json NOT NULL,
-	 `type` varchar(50) NOT NULL,
-	 `frequency` varchar(100) NOT NULL,
-	 `metadata` json NOT NULL,
-	 `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	 `updated_at` timestamp NOT NULL ON UPDATE CURRENT_TIMESTAMP,
-	 `status` int(11) NOT NULL,
-	 PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-CREATE TABLE `tb_user_dashboard` (
-	 `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-	 `dashboard_id` int(11) DEFAULT NULL,
-	 `user_id` int(11) DEFAULT NULL,
+	 `task_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+	 `job_id` int(11) NOT NULL,
+	 `name` varchar(50) DEFAULT NULL,
+	 `account_id` int(11) NOT NULL,
+	 `definition` text COMMENT 'json containing url and method',
+	 `parameters` varchar(200) DEFAULT NULL,
+	 `timeout` float DEFAULT NULL COMMENT 'seconds',
+	 `sequence` int(11) NOT NULL,
+	 `inherit_data` smallint(6) DEFAULT NULL,
+	 `fatal` int(11) NOT NULL DEFAULT '0',
+	 `is_enabled` smallint(11) NOT NULL DEFAULT '1',
+	 `is_deleted` smallint(11) NOT NULL DEFAULT '0',
+	 `added_by` int(11) DEFAULT NULL,
 	 `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-	 PRIMARY KEY (`id`),
-	 UNIQUE KEY `dashboard_id` (`dashboard_id`,`user_id`)
+	 `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	 PRIMARY KEY (`task_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `tb_user_privilege` (
@@ -360,28 +393,16 @@ CREATE TABLE `tb_user_query` (
 	 PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-CREATE TABLE `tb_user_roles` (
-	 `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-	 `user_id` int(11) NOT NULL,
-	 `category_id` int(11) NOT NULL,
-	 `role_id` int(11) NOT NULL,
-	 `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	 `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-	 PRIMARY KEY (`id`),
-	 UNIQUE KEY `category_user_role` (`category_id`,`user_id`,`role_id`),
-	 KEY `user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
 CREATE TABLE `tb_users` (
 	 `user_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
 	 `account_id` int(11) NOT NULL,
-	 `phone` varchar(15) NOT NULL DEFAULT '',
+	 `phone` varchar(15) DEFAULT '',
 	 `email` varchar(50) NOT NULL DEFAULT '',
 	 `first_name` varchar(30) NOT NULL DEFAULT '',
 	 `last_name` varchar(30) DEFAULT NULL,
 	 `middle_name` varchar(30) DEFAULT NULL,
-	 `privileges` varchar(50) DEFAULT NULL,
-	 `TTL` int(11) NOT NULL DEFAULT '7',
+	 `privileges_deleted` varchar(50) DEFAULT NULL,
+	 `TTL` int(11) NOT NULL DEFAULT '30',
 	 `password` varchar(300) DEFAULT NULL,
 	 `added_by` int(11) DEFAULT '0',
 	 `status` varchar(30) NOT NULL DEFAULT '1',
@@ -408,8 +429,19 @@ CREATE TABLE `tb_visualization_canvas` (
 	 `visualization_id` int(11) DEFAULT NULL,
 	 `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 	 `format` json DEFAULT NULL,
+	 `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	 PRIMARY KEY (`id`),
 	 UNIQUE KEY `owner_visualization` (`owner`,`owner_id`,`visualization_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+CREATE TABLE `tb_visualization_dashboard_deleted` (
+	 `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+	 `dashboard_id` int(11) DEFAULT NULL,
+	 `visualization_id` int(11) DEFAULT NULL,
+	 `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+	 `format` json DEFAULT NULL,
+	 PRIMARY KEY (`id`),
+	 UNIQUE KEY `dashboard_id` (`dashboard_id`,`visualization_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `tb_visualizations` (
@@ -448,7 +480,7 @@ VALUES
 	('BigQuery','bigquery','source'),
 	('HTML','html','visualization'),
 	('MongoDB','mongo','source'),
-	('FIle','file','source'),
+	('File','file','source'),
 	('Linear','linear','visualization'),
 	('Sankey','sankey','visualization'),
 	('Calendar Heatmap','calendar','visualization'),
@@ -479,7 +511,7 @@ VALUES
 	('Area','area','https://i.imgur.com/4lVeuw1.png'),
 	('Stacked','stacked','https://i.imgur.com/7PLntjB.png'),
 	('Pie','pie','https://i.imgur.com/9VDKnlz.png'),
-	('Live Number','livenumber','https://i.imgur.com/4UaXSNt.png'),
+	('Live Number','livenumber','https://i.imgur.com/xxcMnSv.png'),
 	('Dual Axis Bar','dualaxisbar','https://i.imgur.com/5Csusur.png'),
 	('Bubble','bubble','https://i.imgur.com/UtECRk2.png'),
 	('Big Text','bigtext','https://i.imgur.com/zip77tn.png'),
@@ -488,7 +520,7 @@ VALUES
 	('HTML','html',''),
 	('Linear','linear','https://i.imgur.com/5Csusur.png'),
 	('Sankey','sankey',''),
-	('Calendar','calendar','');
+	('Calender','calendar','');
 
 INSERT INTO
 	tb_privileges (privilege_id, name, account_id)
