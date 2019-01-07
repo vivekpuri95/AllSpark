@@ -177,7 +177,7 @@ CREATE TABLE `tb_object_roles` (
 	 `target_id` int(11) NOT NULL,
 	 `target` enum('user','dashboard','role','connection') NOT NULL DEFAULT 'role' COMMENT 'to',
 	 `category_id` int(11) DEFAULT NULL,
-	 `group_id` int(11) NOT NULL,
+	 `group_id` int(11) NOT NULL DEFAULT 0,
 	 `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 	 `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	 PRIMARY KEY (`id`),
