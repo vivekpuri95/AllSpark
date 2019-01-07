@@ -783,7 +783,7 @@ class DataSource {
 		this.visibleTo =  await API.call('reports/report/userPrvList', {report_id : this.query_id});
 	}
 
-	async response(implied) {
+	async response(imply = {}) {
 
 		// Empty out the pipeline
 		for(const event of this.pipeline) {
@@ -805,7 +805,7 @@ class DataSource {
 			return [];
 		}
 
-		const data = await this.transformations.run(this.originalResponse.data, implied);
+		const data = await this.transformations.run(this.originalResponse.data, imply.implied);
 
 		if(!this.columns.list.size) {
 			return this.error();
@@ -903,14 +903,7 @@ class DataSource {
 
 		else if(what.mode == 'filtered-csv' || what.mode == 'csv') {
 
-			let response;
-
-			if(what.mode == 'csv') {
-				response = await this.response(true);
-			}
-			else {
-				response = await this.response();
-			}
+			const response = await this.response({implied: what.mode == 'csv'});
 
 			for(const row of response) {
 
