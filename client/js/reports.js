@@ -863,6 +863,8 @@ class DataSource {
 				str.push(line);
 			}
 
+			str = JSON.stringify(str);
+
 			what.mode = 'json';
 		}
 
