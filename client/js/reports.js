@@ -10919,14 +10919,11 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 			return this.source.error();
 		}
 
-		let columnValue = response[0].get(this.options.column);
+		let value = response[0].get(this.options.column);
 
 		if(this.options.format) {
-			columnValue = d3.format(this.options.format)(columnValue) || 0;
-			response[0].set(this.options.column, columnValue);
+			value = d3.format(this.options.format)(value) || 0;
 		}
-
-		const value = response[0].getTypedValue(this.options.column);
 
 		this.container.querySelector('.container').innerHTML = `<div class="value">${value}</div>`;
 
