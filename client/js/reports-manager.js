@@ -1234,7 +1234,14 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			this.container.querySelector('#save-container #save-menu').classList.add('hidden');
 		});
 
-		this.container.querySelector('#save-container #fork').on('click', () => this.forkReport.forkDialogBox.body.appendChild(this.forkReport.container));
+		this.container.querySelector('#save-container #fork').on('click', () => {
+
+			if(!this.saveReportConfirm()) {
+				return;
+			}
+
+			this.forkReport.forkDialogBox.body.appendChild(this.forkReport.container);
+		});
 
 		this.container.querySelector('#run').on('click', () => this.preview());
 	}
