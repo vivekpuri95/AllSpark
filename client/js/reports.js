@@ -10930,7 +10930,6 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 		if(this.options.fontSize) {
 			this.container.querySelector('.value').style.fontSize = `${this.options.fontSize}%`;
 		}
-
 	}
 });
 
