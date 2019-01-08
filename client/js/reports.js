@@ -851,16 +851,14 @@ class DataSource {
 
 			for(const data of response) {
 
-				const line = [], rowObj = {};
+				const rowObj = {};
 
 				for(let [key, value] of data) {
 
 					rowObj[key] = value;
 				}
 
-				line.push(JSON.stringify(rowObj));
-
-				str.push(line);
+				str.push(rowObj);
 			}
 
 			str = JSON.stringify(str);
