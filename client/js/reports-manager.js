@@ -4354,8 +4354,9 @@ class Axis {
 			let usedColumns = [];
 			const freeColumns = [];
 
-			for(const axis of this.axes)
+			for(const axis of this.axes) {
 				usedColumns = usedColumns.concat(axis.container.multiSelectColumns.value);
+			}
 
 			for(const axis of this.axes) {
 				for(const item of axis.container.multiSelectColumns.datalist) {
@@ -4366,8 +4367,9 @@ class Axis {
 
 			for(const axis of this.axes) {
 
-				if(axis == this)
+				if(axis == this) {
 					continue;
+				}
 
 				const selected = axis.container.multiSelectColumns.value;
 
@@ -4380,8 +4382,10 @@ class Axis {
 				}
 
 				for(const value of freeColumns) {
-					if(!newDataList.some(k => k.value.includes(value.value)))
+
+					if(!newDataList.some(k => k.value.includes(value.value))) {
 						newDataList.push(value);
+					}
 				}
 
 				if(axis.container.multiSelectColumns.datalist.map(x => x.value).sort().join() == newDataList.map(x => x.value).sort().join())
@@ -4878,8 +4882,10 @@ class ReportVisualizationOptions {
 		const result = {};
 
 		for(const element of this.form.querySelectorAll('input, select')) {
-			if(element.type != 'radio')
+
+			if(element.type != 'radio') {
 				result[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
+			}
 		}
 
 		return result;
@@ -5927,6 +5933,14 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 							<span>Font Size <span class="NA right">percentage</span></span>
 							<input type="number" name="fontSize" min="0.1" max="3000" step="0.01" placeholder="815">
 						</label>
+
+						<label>
+							<span>Format</span>
+							<select name="format">
+								<option value="">None</option>
+								<option value="s">SI</option>
+							</select>
+						</label>
 					</div>
 				</div>
 			</div>
@@ -5937,8 +5951,10 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 		this.bigReportsColumns.value = this.visualization.options && this.visualization.options.column || [];
 
 		for(const element of this.formContainer.querySelectorAll('select, input')) {
-			if(element.type != 'radio')
+
+			if(element.type != 'radio') {
 				element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
+			}
 		}
 
 		return container;
