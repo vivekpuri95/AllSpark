@@ -10926,7 +10926,7 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 			response[0].set(this.options.column, columnValue);
 		}
 
-		let value = response[0].getTypedValue(this.options.column);
+		const value = response[0].getTypedValue(this.options.column);
 
 		this.container.querySelector('.container').innerHTML = `<div class="value">${value}</div>`;
 

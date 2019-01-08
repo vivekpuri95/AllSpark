@@ -5935,7 +5935,7 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 						</label>
 
 						<label>
-							<span>Format</span>
+							<span>Format<span class="right" data-tooltip="This format takes precedence over column's type format.">?</span></span>
 							<select name="format">
 								<option value="">None</option>
 								<option value="s">SI</option>
