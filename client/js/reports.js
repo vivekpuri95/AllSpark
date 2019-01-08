@@ -650,8 +650,22 @@ class DataSource {
 
 		filtersToggle.on('click', () => {
 
-			this.container.appendChild(this.filters.container);
-			this.filters.container.classList.toggle('hidden', filtersToggle.parentElement.classList.contains('selected'));
+			if(!this.formContainer) {
+
+				const element = this.formContainer = document.createElement('div');
+
+				element.classList.add('overlay');
+
+				element.insertAdjacentElement('afterbegin', this.filters.container);
+
+				element.insertAdjacentHTML('beforeend', '<div class="close">&times;</div>');
+
+				this.formContainer.querySelector('.close').on('click', () => filtersToggle.click());
+
+				this.container.appendChild(this.formContainer);
+			}
+
+			this.formContainer.classList.toggle('hidden', filtersToggle.parentElement.classList.contains('selected'));
 
 			toggleOverlay(filtersToggle);
 		});
@@ -1357,7 +1371,7 @@ class DataSourceFilters extends Map {
 
 		const container = this.containerElement = document.createElement('form');
 
-		container.classList.add('toolbar', 'form', 'filters', 'overlay');
+		container.classList.add('toolbar', 'form', 'filters');
 
 		for(const filter of this.values()) {
 
@@ -1406,8 +1420,6 @@ class DataSourceFilters extends Map {
 					<i class="fas fa-paper-plane"></i> Apply
 				</button>
 			</label>
-
-			<div class="close">&times;</div>
 		`);
 
 		{
@@ -1436,8 +1448,6 @@ class DataSourceFilters extends Map {
 				}
 			}
 		}
-
-		container.querySelector('.close').on('click', () => this.source.container.querySelector('.filters-toggle').click());
 
 		return container;
 	}

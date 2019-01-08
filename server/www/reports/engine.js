@@ -209,6 +209,7 @@ class report extends API {
 	}
 
 	async authenticate() {
+
 		this.account.features.needs(this.reportObj.type + '-source');
 
 		const authResponse = await auth.report(this.reportObj, this.user);
@@ -313,6 +314,11 @@ class report extends API {
 		}
 
 		for (const filter of this.filters) {
+
+			if(parseFloat(filter.placeholder) == filter.placeholder) {
+
+				filter.placeholder = `(${filter.placeholder})`;
+			}
 
 			filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
 		}
