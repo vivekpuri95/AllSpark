@@ -10924,6 +10924,9 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 		if(this.options.format) {
 			value = d3.format(this.options.format)(value) || 0;
 		}
+		else {
+			value = response[0].getTypedValue(this.options.column);
+		}
 
 		this.container.querySelector('.container').innerHTML = `<div class="value">${value}</div>`;
 
