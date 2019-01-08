@@ -845,25 +845,25 @@ class DataSource {
 			response = await this.fetch({download: 1});
 		}
 
-		if(what.mode == 'json') {
+		if(what.mode == 'filtered-json' || what.mode == 'json') {
 
-			for(const data of response.data) {
+			const response = await this.response({implied: what.mode == 'json'});
 
-				const
-					line = [],
-					_data = {};
+			for(const data of response) {
 
-				for(const key in data) {
+				const line = [], rowObj = {};
 
-					if(data[key] === null) {
-						_data[key] = '';
-					}
+				for(let [key, value] of data) {
+
+					rowObj[key] = value;
 				}
 
-				line.push(JSON.stringify(_data));
+				line.push(JSON.stringify(rowObj));
 
 				str.push(line);
 			}
+
+			what.mode = 'json';
 		}
 
 		else if(what.mode == 'xlsx' && this.xlsxDownloadable) {
@@ -919,27 +919,6 @@ class DataSource {
 			str = Array.from(response[0].keys()).join() + '\r\n' + str.join('\r\n');
 
 			what.mode = 'csv';
-		}
-
-		else if(what.mode == 'filtered-json') {
-
-			const response = await this.response();
-
-			for(const data of response) {
-
-				const line = [], rowObj = {};
-
-				for(let [key, value] of data) {
-
-					rowObj[key] = value;
-				}
-
-				line.push(JSON.stringify(rowObj));
-
-				str.push(line);
-			}
-
-			what.mode = 'json';
 		}
 
 		const
