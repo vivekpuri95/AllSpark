@@ -305,47 +305,7 @@ CREATE TABLE `tb_query_filters` (
 
 
 
-CREATE TABLE `tb_query_filters_offset_dump2` (
-  `filter_id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(64) DEFAULT NULL,
-  `query_id` int(11) DEFAULT NULL,
-  `placeholder` varchar(64) NOT NULL COMMENT '{{ backend }} , [[ frontend ]]',
-  `description` varchar(64) DEFAULT NULL,
-  `order` int(11) DEFAULT '0',
-  `default_value` varchar(500) DEFAULT NULL COMMENT 'default not null to apply filter',
-  `offset` int(11) DEFAULT NULL,
-  `multiple` smallint(6) DEFAULT '0',
-  `type` enum('number','text','date','month','hidden','column','datetime','literal','time','year') DEFAULT 'text',
-  `dataset` int(11) DEFAULT NULL,
-  `is_enabled` int(11) NOT NULL DEFAULT '1',
-  `is_deleted` int(11) NOT NULL DEFAULT '0',
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`filter_id`),
-  UNIQUE KEY `unique_index` (`query_id`,`placeholder`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-
-
 CREATE TABLE `tb_query_visualizations` (
-  `visualization_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `query_id` int(11) NOT NULL,
-  `name` varchar(250) DEFAULT NULL,
-  `type` enum('table','spatialmap','funnel','cohort','line','bar','area','pie','stacked','livenumber','dualaxisbar','bigtext','scatter','bubble','html','linear','sankey','calendar') NOT NULL DEFAULT 'table',
-  `description` text,
-  `tags` varchar(1024) DEFAULT NULL,
-  `options` json DEFAULT NULL,
-  `added_by` int(11) DEFAULT NULL,
-  `is_enabled` tinyint(4) NOT NULL DEFAULT '1',
-  `is_deleted` smallint(11) DEFAULT '0',
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`visualization_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-
-
-CREATE TABLE `tb_query_visualizations_copy` (
   `visualization_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `query_id` int(11) NOT NULL,
   `name` varchar(250) DEFAULT NULL,
@@ -488,18 +448,6 @@ CREATE TABLE `tb_visualization_canvas` (
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `owner_visualization` (`owner`,`owner_id`,`visualization_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-
-
-CREATE TABLE `tb_visualization_dashboard_deleted` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `dashboard_id` int(11) DEFAULT NULL,
-  `visualization_id` int(11) DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `format` json DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `dashboard_id` (`dashboard_id`,`visualization_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 
