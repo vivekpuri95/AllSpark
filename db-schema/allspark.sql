@@ -104,7 +104,6 @@ CREATE TABLE `tb_global_filters` (
 	 `dashboard_id` int(11) DEFAULT NULL,
 	 `placeholder` varchar(64) NOT NULL DEFAULT '' COMMENT '{{ backend }} , [[ frontend ]]',
 	 `description` varchar(200) DEFAULT NULL,
-	 `dashboard_id` int(11) DEFAULT NULL,
 	 `order` int(11) DEFAULT NULL,
 	 `default_value` varchar(500) DEFAULT NULL COMMENT 'default not null to apply filter',
 	 `offset` int(11) DEFAULT NULL,
