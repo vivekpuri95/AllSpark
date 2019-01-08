@@ -532,7 +532,7 @@ class DataSource {
 
 				<div class="submenu">
 
-					<div class="item" title="Get the raw data as it was recieved immediately after execution in a CSV format">
+					<div class="item" title="Get the data that includes any transformations that were applied after execution in a CSV format">
 						<span class="label csv-download"><i class="far fa-file-excel"></i> CSV</label>
 					</div>
 
@@ -544,7 +544,7 @@ class DataSource {
 						<span class="label xlsx-download"><i class="fas fa-file-excel"></i> XLSX</label>
 					</div>
 
-					<div class="item" title="Get the raw data as it was recieved immediately after execution in a JSON format">
+					<div class="item" title="Get the data that includes any transformations that were applied after execution in a JSON format">
 						<span class="label json-download"><i class="fas fa-code"></i> JSON</label>
 					</div>
 
