@@ -284,7 +284,8 @@ class PreviewTabsManager extends Array {
 		}
 
 		this.report = JSON.parse(JSON.stringify(DataSource.list.get(options.query_id)));
-		this.report.visualizations = this.report.visualizations.filter(f => options.visualization ? f.visualization_id == options.visualization.id : f.type == 'table');
+
+		this.report.visualizations = options.step != 3 ? (this.report.visualizations.filter(f => options.visualization ? f.visualization_id == options.visualization.id : f.type == 'table')) : [];
 
 		if(options.definition && options.definition != this.report.definition) {
 			this.report.query = options.definition.query;
@@ -337,7 +338,6 @@ class PreviewTabsManager extends Array {
 		await this.report.visualizations.selected.load();
 
 		this.move({render: false});
-
 	}
 
 	set hidden(hidden) {
@@ -1253,6 +1253,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			definition: definition,
 			tab: 'current',
 			position: 'bottom',
+			step: 3
 		};
 
 		await this.page.preview.loadTab(options);
