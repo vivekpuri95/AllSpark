@@ -2190,8 +2190,11 @@ class DataSourceColumn {
 				}
 
 				if (this.source.format.columns) {
+
 					for (const column of this.source.format.columns) {
+
 						if (column.key == this.key) {
+
 							column.disabled = !column.disabled;
 							found = true;
 							break;
@@ -2211,7 +2214,6 @@ class DataSourceColumn {
 				}
 
 				this.disabled = !this.disabled;
-				this.source.columns.render();
 				await this.update();
 			}, 300);
 		});
@@ -7892,9 +7894,6 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					continue outer;
 				}
 			}
-
-			column.hidden = true;
-			column.render();
 		}
 
 		for(const axis of this.axes) {
