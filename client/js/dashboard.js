@@ -1171,7 +1171,7 @@ class Dashboard {
 				dimentions.textContent = `${visualizationFormat.width} x ${visualizationFormat.height}`;
 
 				report.container.setAttribute('style', `
-					order: ${report.selectedVisualization.format.position || 0};
+					order: ${report.selectedCanvasVisualization.format.position || 0};
 					grid-column: auto / span ${visualizationFormat.width || Dashboard.grid.columns};
 					grid-row: auto / span ${visualizationFormat.height || Dashboard.grid.rows};
 				`);
@@ -1186,7 +1186,7 @@ class Dashboard {
 					clearTimeout(this.saveTimeout);
 				}
 
-				this.saveTimeout = setTimeout(() => this.save(visualizationFormat, report.selectedVisualization.id), 1000);
+				this.saveTimeout = setTimeout(() => this.save(visualizationFormat, report.selectedCanvasVisualization.id), 1000);
 			}
 		});
 
