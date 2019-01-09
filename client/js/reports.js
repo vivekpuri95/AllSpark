@@ -532,7 +532,7 @@ class DataSource {
 
 				<div class="submenu">
 
-					<div class="item" title="Get the raw data as it was recieved immediately after execution in a CSV format">
+					<div class="item" title="Get the data that includes any transformations that were applied after execution in a CSV format">
 						<span class="label csv-download"><i class="far fa-file-excel"></i> CSV</label>
 					</div>
 
@@ -544,7 +544,7 @@ class DataSource {
 						<span class="label xlsx-download"><i class="fas fa-file-excel"></i> XLSX</label>
 					</div>
 
-					<div class="item" title="Get the raw data as it was recieved immediately after execution in a JSON format">
+					<div class="item" title="Get the data that includes any transformations that were applied after execution in a JSON format">
 						<span class="label json-download"><i class="fas fa-code"></i> JSON</label>
 					</div>
 
@@ -797,7 +797,7 @@ class DataSource {
 		this.visibleTo =  await API.call('reports/report/userPrvList', {report_id : this.query_id});
 	}
 
-	async response() {
+	async response({implied} = {}) {
 
 		// Empty out the pipeline
 		for(const event of this.pipeline) {
@@ -819,7 +819,7 @@ class DataSource {
 			return [];
 		}
 
-		const data = await this.transformations.run(this.originalResponse.data);
+		const data = await this.transformations.run(this.originalResponse.data, implied);
 
 		if(!this.columns.list.size) {
 			return this.error();
@@ -859,25 +859,25 @@ class DataSource {
 			response = await this.fetch({download: 1});
 		}
 
-		if(what.mode == 'json') {
+		if(what.mode == 'filtered-json' || what.mode == 'json') {
 
-			for(const data of response.data) {
+			const response = await this.response({implied: what.mode == 'json'});
 
-				const
-					line = [],
-					_data = {};
+			for(const data of response) {
 
-				for(const key in data) {
+				const rowObj = {};
 
-					if(data[key] === null) {
-						_data[key] = '';
-					}
+				for(let [key, value] of data) {
+
+					rowObj[key] = value;
 				}
 
-				line.push(JSON.stringify(_data));
-
-				str.push(line);
+				str.push(rowObj);
 			}
+
+			str = JSON.stringify(str);
+
+			what.mode = 'json';
 		}
 
 		else if(what.mode == 'xlsx' && this.xlsxDownloadable) {
@@ -915,9 +915,9 @@ class DataSource {
 			return await this.excelSheetDownloader(response, obj);
 		}
 
-		else if(what.mode == 'filtered-csv') {
+		else if(what.mode == 'filtered-csv' || what.mode == 'csv') {
 
-			const response = await this.response();
+			const response = await this.response({implied: what.mode == 'csv'});
 
 			for(const row of response) {
 
@@ -933,48 +933,6 @@ class DataSource {
 			str = Array.from(response[0].keys()).join() + '\r\n' + str.join('\r\n');
 
 			what.mode = 'csv';
-		}
-
-		else if(what.mode == 'filtered-json') {
-
-			const response = await this.response();
-
-			for(const data of response) {
-
-				const line = [], rowObj = {};
-
-				for(let [key, value] of data) {
-
-					rowObj[key] = value;
-				}
-
-				line.push(JSON.stringify(rowObj));
-
-				str.push(line);
-			}
-
-			what.mode = 'json';
-		}
-
-		else {
-
-			for(const data of response.data) {
-
-				const line = [];
-
-				for(const index in data) {
-
-					if(data[index] === null) {
-						data[index] = '';
-					}
-
-					line.push(JSON.stringify(String(data[index]).replace(/"/g,"'")));
-				}
-
-				str.push(line.join());
-			}
-
-			str = Object.keys(response.data[0]).join() + '\r\n' + str.join('\r\n');
 		}
 
 		const
@@ -4306,14 +4264,16 @@ class DataSourceTransformations extends Set {
 		this.source = source;
 	}
 
-	async run(response) {
+	async run(response, implied) {
 
 		this.clear();
 
 		this.reset();
 
-		this.loadFilters();
-		this.loadSorting();
+		if(!implied) {
+			this.loadFilters();
+			this.loadSorting();
+		}
 
 		response = JSON.parse(JSON.stringify(response));
 
