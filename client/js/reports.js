@@ -4853,8 +4853,13 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 						joinGroup.column = column;
 					}
 
-					if(joinsMatched && streamRow.has(column.column))
+					else {
+						joinGroup = newRow[column.name || column.column];
+					}
+
+					if(joinsMatched && streamRow.has(column.column)) {
 						joinGroup.push(streamRow.get(column.column));
+					}
 				}
 			}
 
