@@ -1450,52 +1450,15 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 
 					<table class="block">
 						<thead>
-							<th>Id</th>
 							<th>Heading</th>
-							<th>slug</th>
+							<th>Slug</th>
 							<th>Parent</th>
-							<th>Body</th>
-							<th>Order</th>
+							<th>Chapter</th>
 							<th>Edit</th>
 							<th>Delete</th>
 						</thead>
 						<tbody></tbody>
 					</table>
-				</section>
-
-				<section class="section" id="documentation-form">
-
-					<h1></h1>
-
-					<header class="toolbar">
-						<button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
-						<button type="submit" form="documentation-edit-form"><i class="far fa-save"></i> Save</button>
-					</header>
-
-					<form class="block form" id="documentation-edit-form">
-						<label>
-							<span>Heading <span class="red">*</span></span>
-							<input type="text" name="heading" required>
-						</label>
-
-						<label>
-							<span>slug <span class="red">*</span></span>
-							<input type="text" name="slug" required>
-						</label>
-
-						<label class="parent">
-							<span>Parent</span>
-						</label>
-
-						<label>
-							<span>Order</span>
-							<input type="number" name="order">
-						</label>
-
-						<label class="body">
-							<span>Body</span>
-						</label>
-					</form>
 				</section>
 			</div>
 

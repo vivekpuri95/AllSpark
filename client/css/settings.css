@@ -159,6 +159,6 @@ main .cached-reports table {
 		height: 400px;
 	}
 
-main #documentation-form label.body {
+main #documentation-form div.body {
 	min-width: 100%;
 }

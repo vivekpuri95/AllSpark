@@ -220,7 +220,7 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 		container.textContent = null;
 
 		if(!this.list.size) {
-			container.innerHTML = '<tr><td colspan="5" class="NA">No Global Filters Found</td></tr>'
+			container.innerHTML = '<tr><td colspan="12" class="NA">No Global Filters Found</td></tr>'
 		}
 
 		for(const globalFilter of this.list.values()) {
@@ -377,7 +377,7 @@ Settings.list.set('categories', class Categories extends SettingPage {
 Settings.list.set('documentation', class Documentations extends SettingPage {
 
 	get name() {
-		return 'Documentations'
+		return 'Documentation';
 	}
 
 	async setup() {
@@ -385,13 +385,12 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 		this.container = this.page.querySelector('.documentation-page');
 		this.form = this.container.querySelector('section#documentation-form form');
 
-		this.container.querySelector('#documentation-list #add-documentation').on('click', () => Documentation.add(this));
-		this.container.querySelector('#documentation-form #cancel-form').on('click', () => Sections.show('documentation-list'));
+		this.container.querySelector('#documentation-list #add-documentation').on('click', () => this.add());
 	}
 
 	async load() {
 
-		const response = await API.call('documentations/list');
+		const response = await API.call('documentation/list');
 
 		this.list = new Map;
 
@@ -411,7 +410,7 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 		container.textContent = null;
 
 		if(!this.list.size) {
-			container.innerHTML = '<tr><td colspan="6" class="NA">No Global Filters Found</td></tr>'
+			container.innerHTML = '<tr><td colspan="7" class="NA">No Documentation Found</td></tr>';
 		}
 
 		for(const documentation of this.list.values()) {
@@ -419,6 +418,130 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 		}
 
 		await Sections.show('documentation-list');
+	}
+
+	get addForm() {
+
+		if(this.addFormElement) {
+			return this.addFormElement;
+		}
+
+		const container = this.addFormElement = document.createElement('section');
+		container.classList.add('section');
+		container.id = 'documentation-form-add';
+
+		container.innerHTML = `
+
+			<h1>Add new Documentation</h1>
+
+			<header class="toolbar">
+				<button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
+				<button type="submit" form="documentation-add"><i class="far fa-save"></i> Save</button>
+			</header>
+
+			<form class="block form" id="documentation-add">
+				<label>
+					<span>Heading <span class="red">*</span></span>
+					<input type="text" name="heading" required>
+				</label>
+
+				<label>
+					<span>Slug <span class="red">*</span></span>
+					<input type="text" name="slug" required>
+				</label>
+
+				<label class="parent">
+					<span>Parent</span>
+				</label>
+
+				<label>
+					<span>Chapter <span class="red">*</span></span>
+					<input type="number" name="chapter" min="1" step="1" required>
+				</label>
+
+				<div class="body">
+					<span>Body</span>
+				</div>
+			</form>
+		`;
+
+		container.querySelector('#cancel-form').on('click', () => Sections.show('documentation-list'));
+
+		container.on('submit', e => this.insert(e));
+
+		return container;
+	}
+
+	async add() {
+
+		this.form = this.addForm.querySelector('form');
+
+		this.form.reset();
+
+		this.container.appendChild(this.addForm);
+
+		Sections.show('documentation-form-add');
+
+		this.parentMultiSelect = new MultiSelect({datalist: this.parentDatalist, multiple: false});
+
+		this.parentMultiSelect.value = '';
+
+		if(this.form.querySelector('.parent .multi-select')) {
+			this.form.querySelector('.parent .multi-select').remove();
+		}
+
+		this.form.querySelector('.parent').appendChild(this.parentMultiSelect.container);
+
+		this.bodyEditior = new HTMLEditor();
+
+		if(this.form.querySelector('.body .html-editor')) {
+			this.form.querySelector('.body .html-editor').remove();
+		}
+
+		this.form.querySelector('.body').appendChild(this.bodyEditior.container);
+
+		await this.bodyEditior.setup();
+
+		this.bodyEditior.value = '';
+
+		this.form.heading.focus();
+	}
+
+	async insert(e) {
+
+		e.preventDefault();
+
+		const
+			parameters = {
+				parent: this.parentMultiSelect.value[0] || '',
+				body: this.bodyEditior.value || '',
+			},
+			options = {
+				method: 'POST',
+				form: new FormData(this.form),
+			};
+
+		try {
+
+			const response = await API.call('documentation/insert', parameters, options);
+
+			await this.load();
+
+			new SnackBar({
+				message: `Documentation for ${this.form.heading.value} Added`,
+				icon: 'fa fa-plus',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 })
 
@@ -1630,88 +1753,11 @@ class GlobalFilter {
 
 class Documentation {
 
-	static async add(documentation) {
-
-		const container = documentation.container.querySelector('#documentation-form .parent');
-
-		documentation.parentMultiSelect = new MultiSelect({datalist: documentation.parentDatalist, multiple: false});
-
-		if(container.querySelector('.multi-select')) {
-			container.querySelector('.multi-select').remove();
-		}
-
-		container.appendChild(documentation.parentMultiSelect.container);
-
-		documentation.container.querySelector('#documentation-form h1').textContent = 'Add new Documentation';
-		documentation.form.reset();
-
-		documentation.form.removeEventListener('submit', Documentation.submitListener);
-
-		documentation.form.on('submit', Documentation.submitListener = e => Documentation.insert(e, documentation));
-
-		documentation.bodyEditior = new HTMLEditor();
-
-		if(documentation.form.querySelector('.body .html-editor')) {
-			documentation.form.querySelector('.body .html-editor').remove();
-		}
-
-		documentation.form.querySelector('.body').appendChild(documentation.bodyEditior.container);
-
-		await documentation.bodyEditior.setup();
-
-		documentation.bodyEditior.value = documentation.body;
-
-		documentation.form.querySelector('.body').appendChild(documentation.bodyEditior.container);
-
-		Sections.show('documentation-form');
-
-		documentation.form.heading.focus();
-	}
-
-	static async insert(e, documentation) {
-
-		e.preventDefault();
-
-		const
-			parameters = {
-				parent: documentation.parentMultiSelect.value[0] || '',
-				body: documentation.bodyEditior.value || '',
-			},
-			options = {
-				method: 'POST',
-				form: new FormData(documentation.form),
-			};
-
-		try {
-
-			const response = await API.call('documentations/insert', parameters, options);
-
-			await documentation.load();
-
-			new SnackBar({
-				message: `Documentation for ${documentation.form.heading.value} Added`,
-				icon: 'fa fa-plus',
-			});
-
-		} catch(e) {
-
-			new SnackBar({
-				message: 'Request Failed',
-				subtitle: e.message,
-				type: 'error',
-			});
-
-			throw e;
-		}
-	}
-
 	constructor(documentation, page) {
 
 		Object.assign(this, documentation);
 
 		this.page = page;
-
-		this.form = page.form;
 	}
 
 	get row() {
@@ -1720,63 +1766,117 @@ class Documentation {
 			return this.rowElement;
 		}
 
-		this.rowElement = document.createElement('tr');
+		const container = this.rowElement = document.createElement('tr');
 
-		this.rowElement.innerHTML = `
-			<td>${this.id}</td>
+		const [parent] = this.page.parentDatalist.filter(x => x.value == this.parent);
+
+		container.innerHTML = `
 			<td>${this.heading}</td>
 			<td>${this.slug}</td>
-			<td>${this.parent || ''}</td>
-			<td>${this.body}</td>
-			<td>${this.order || ''}</td>
+			<td>${parent ? parent.name : ''}</td>
+			<td>${this.chapter}</td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
 
-		this.rowElement.querySelector('.green').on('click', () => this.edit());
-		this.rowElement.querySelector('.red').on('click', () => this.delete());
+		container.querySelector('.green').on('click', () => this.edit());
+		container.querySelector('.red').on('click', () => this.delete());
 
-		return this.rowElement;
+		return container;
+	}
+
+	get form() {
+
+		if(this.formElement) {
+			return this.formElement;
+		}
+
+		const container = this.formElement = document.createElement('section');
+		container.classList.add('section');
+		container.id = `documentation-form-${this.id}`;
+
+		container.innerHTML = `
+
+			<h1></h1>
+
+			<header class="toolbar">
+				<button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
+				<button type="submit" form="documentation-${this.id}"><i class="far fa-save"></i> Save</button>
+			</header>
+
+			<form class="block form" id="documentation-${this.id}">
+				<label>
+					<span>Heading <span class="red">*</span></span>
+					<input type="text" name="heading" required>
+				</label>
+
+				<label>
+					<span>Slug <span class="red">*</span></span>
+					<input type="text" name="slug" required>
+				</label>
+
+				<label class="parent">
+					<span>Parent</span>
+				</label>
+
+				<label>
+					<span>Chapter <span class="red">*</span></span>
+					<input type="number" name="chapter" min="1" step="1" required>
+				</label>
+
+				<div class="body">
+					<span>Body</span>
+				</div>
+			</form>
+		`;
+
+		container.querySelector('#cancel-form').on('click', () => Sections.show('documentation-list'));
+
+		this.parentMultiSelect = new MultiSelect({multiple: false});
+
+		this.form.querySelector('.parent').appendChild(this.parentMultiSelect.container);
+
+		this.bodyEditior = new HTMLEditor();
+
+		this.form.querySelector('.body').appendChild(this.bodyEditior.container);
+
+		container.on('submit', e => {
+			this.update(e);
+		});
+
+		return container;
 	}
 
 	async edit() {
 
-		this.form.reset();
+		if(this.page.container.querySelector(`#documentation-form-${this.id}`)) {
+			this.page.container.querySelector(`#documentation-form-${this.id}`).remove();
+		}
 
-		for(const element of this.form.elements) {
+		this.page.container.appendChild(this.form);
+
+		await Sections.show(`documentation-form-${this.id}`);
+
+		for(const element of this.form.querySelector('form').elements) {
 
 			if(element.name in this) {
 				element.value = this[element.name];
 			}
 		}
 
-		this.parentMultiSelect = new MultiSelect({datalist: this.page.parentDatalist, multiple: true});
+		this.form.querySelector('h1').innerHTML = `Edit Documentation for ${this.heading}`;
+
+		const datalist = this.page.parentDatalist.filter(x => x.value != this.id);
+
+		this.parentMultiSelect.datalist = datalist;
+
+		this.parentMultiSelect.render();
 
 		this.parentMultiSelect.value = [this.parent];
-
-		if(this.form.querySelector('.parent .multi-select')) {
-			this.form.querySelector('.parent .multi-select').remove();
-		}
-
-		this.form.querySelector('.parent').appendChild(this.parentMultiSelect.container);
-
-		this.bodyEditior = new HTMLEditor();
-
-		if(this.form.querySelector('.body .html-editor')) {
-			this.form.querySelector('.body .html-editor').remove();
-		}
-
-		this.form.querySelector('.body').appendChild(this.bodyEditior.container);
 
 		await this.bodyEditior.setup();
 
 		this.bodyEditior.value = this.body;
-
-		this.form.querySelector('.body').appendChild(this.bodyEditior.container);
-
-		this.form.on('submit', Documentation.submitListener = e => this.update(e));
-
-		await Sections.show('documentation-form');
 	}
 
 	async update(e) {
@@ -1791,12 +1891,12 @@ class Documentation {
 			},
 			options = {
 				method: 'POST',
-				form: new FormData(this.form),
+				form: new FormData(this.form.querySelector('form')),
 			};
 
 		try {
 
-			await API.call('documentations/update', parameter, options);
+			await API.call('documentation/update', parameter, options);
 
 			await this.page.load();
 
@@ -1833,7 +1933,7 @@ class Documentation {
 
 		try {
 
-			await API.call('documentations/delete', parameter, options);
+			await API.call('documentation/delete', parameter, options);
 
 			await this.page.load();
 
