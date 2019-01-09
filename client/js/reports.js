@@ -4828,14 +4828,15 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 			}
 
 			// Make a LEFT JOIN on the current row with the stream report
-			outer:
 			for(const streamRow of streamResponse) {
+
+				let joinsMatched = true;
 
 				// If any of the stream's join conditions don't match then skip this row
 				for(const join of this.options.joins) {
 
 					if(!filters[join.function].apply(baseRow[join.sourceColumn], streamRow.get(join.streamColumn))) {
-						continue outer;
+						joinsMatched = false;
 					}
 				}
 
@@ -4845,9 +4846,6 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 						continue;
 					}
 
-					if(!streamRow.has(column.column))
-						continue;
-
 					let joinGroup = [];
 
 					if(!((column.name || column.column) in newRow)) {
@@ -4855,7 +4853,8 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 						joinGroup.column = column;
 					}
 
-					joinGroup.push(streamRow.get(column.column));
+					if(joinsMatched && streamRow.has(column.column))
+						joinGroup.push(streamRow.get(column.column));
 				}
 			}
 
