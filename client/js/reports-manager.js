@@ -285,7 +285,7 @@ class PreviewTabsManager extends Array {
 
 		this.report = JSON.parse(JSON.stringify(DataSource.list.get(options.query_id)));
 
-		this.report.visualizations = options.step != 3 ? (this.report.visualizations.filter(f => options.visualization ? f.visualization_id == options.visualization.id : f.type == 'table')) : [];
+		this.report.visualizations = this.report.visualizations.filter(f => options.visualization ? f.visualization_id == options.visualization.id : f.type == 'table');
 
 		if(options.definition && options.definition != this.report.definition) {
 			this.report.query = options.definition.query;
@@ -1245,15 +1245,37 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		const definition = logQuery || this.report.connection.json;
 
-		if(this.report.connection.editor && this.report.connection.editor.editor.getSelectedText())
+		if(this.report.connection.editor && this.report.connection.editor.editor.getSelectedText()) {
 			definition.query = this.report.connection.editor.editor.getSelectedText();
+		}
+
+		this.report.visualizations = this.report.visualizations.filter(f => f.visualization_id != 0);
+		this.report.transformationVisualization = [];
+
+		if(!this.report.transformationVisualization.length) {
+
+			const visualization = {
+				visualization_id: 0,
+				name: 'Table',
+				type: 'table',
+				options: {},
+			};
+
+			this.report.visualizations.push(visualization);
+			this.report.transformationVisualization = visualization;
+		}
+
+		this.report.transformationVisualization.options.transformations = [];
+		this.report.transformationVisualization.options.transformationsStopAt = -1;
 
 		const options = {
 			query_id: this.report.query_id,
 			definition: definition,
 			tab: 'current',
 			position: 'bottom',
-			step: 3
+			visualization: {
+				id: 0,
+			},
 		};
 
 		await this.page.preview.loadTab(options);
@@ -1261,8 +1283,9 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.page.preview.hidden = false;
 		this.container.querySelector('#preview-toggle').classList.add('selected');
 
-		if(this.report.connection.editor)
+		if(this.report.connection.editor) {
 			this.report.connection.editor.editor.resize();
+		}
 	}
 
 	async load() {
