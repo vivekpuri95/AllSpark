@@ -398,7 +398,7 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 			this.list.set(data.id, new Documentation(data, this));
 		}
 
-		this.parentDatalist = response.map(d => {return {name: d.heading, value: d.id, subtitle: `#${d.id}`}});
+		this.parentDatalist = response.map(d => {return {name: d.heading, value: d.id, subtitle: `${d.slug}`}});
 
 		await this.render();
 	}
