@@ -507,16 +507,16 @@ INSERT INTO `tb_visualizations` VALUES (1,'Table','table','https://i.imgur.com/t
 (14,'Scatter','scatter','https://i.imgur.com/mBxqW9e.png',NULL,NULL,'2018-05-01 11:07:22','2018-05-08 10:50:40'),
 (15,'JSON','json','https://i.imgur.com/ydjKDYl.png',NULL,'Show the raw response as JSON in a well formatted UI.','2018-05-04 13:32:51','2018-07-27 09:51:17'),
 (16,'HTML','html',NULL,NULL,'Add any arbitrary HTML, CSS or JavaScript into the page.','2018-06-27 06:56:31','2018-06-27 06:56:31'),
-(17,'Linear','linear','https://i.imgur.com/5Csusur.png',NULL,'Add a any combination of Line, Bar, Area or Stacked graphs on a single\' graphs Y axes.','2018-04-23 10:02:09','2018-08-24 10:57:51'),
+(17,'Linear','linear','https://i.imgur.com/5Csusur.png',NULL,'Add a any combination of Line, Bar, Area or Stacked graphs on a single graph\'s Y axes.','2018-04-23 10:02:09','2018-08-24 10:57:51'),
 (18,'Sankey','sankey',NULL,NULL,NULL,'2018-10-25 15:25:22','2018-10-25 15:25:22'),
 (19,'Calender','calendar',NULL,NULL,NULL,'2018-11-21 15:29:56','2018-12-03 14:13:11');
 
-INSERT INTO `tb_datasources` VALUES (1,'MySQL','mysql','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/mysql.svg',1,'2018-08-31 16:13:47','2018-09-13 08:42:26'),
-(2,'MSSQL','mssql','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/microsoft-sql-server.svg',1,'2018-08-31 16:15:03','2018-09-13 08:42:37'),
-(3,'PostgreSQL','pgsql','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/postgresql-elephant.svg',1,'2018-08-31 16:15:57','2018-09-13 08:42:45'),
-(4,'Google Bigquery','bigquery','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/icon-bigquery.svg',1,'2018-08-31 16:16:20','2018-09-13 08:43:05'),
-(5,'Mongodb','mongo','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/mongodb.svg',1,'2018-08-31 16:16:30','2018-09-13 08:43:15'),
-(6,'Oracle','oracle','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/shutterstock-1089009710.svg',1,'2018-08-31 16:16:44','2018-09-13 08:43:24'),
-(7,'API','api','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/shutterstock-783027679.svg',1,'2018-08-31 16:16:45','2018-09-13 08:43:31'),
-(8,'File','file','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/shutterstock-441483991.svg',1,'2018-08-31 16:16:58','2018-09-13 08:43:38'),
-(9,'Google Bigquery Legacy','bigquery_legacy','https://test-pan.jugnoo.in/analytics_front/app/img/icons/connection_logo/icon-bigquery.svg',1,'2018-08-31 16:16:20','2018-09-13 08:43:05');
+INSERT INTO `tb_datasources` VALUES (1,'MySQL','mysql','https://svgshare.com/i/AQa.svg',1,'2018-08-31 16:13:47','2019-01-09 06:05:14'),
+(2,'MSSQL','mssql','https://svgshare.com/i/ARK.svg',1,'2018-08-31 16:15:03','2019-01-09 06:04:09'),
+(3,'PostgreSQL','pgsql','https://svgshare.com/i/AQk.svg',1,'2018-08-31 16:15:57','2019-01-09 06:07:31'),
+(4,'Google Bigquery','bigquery','https://svgshare.com/i/AR6.svg',1,'2018-08-31 16:16:20','2019-01-09 06:07:55'),
+(5,'Mongodb','mongo','https://svgshare.com/i/AQS.svg',1,'2018-08-31 16:16:30','2019-01-09 06:08:21'),
+(6,'Oracle','oracle','https://svgshare.com/i/ARS.svg',1,'2018-08-31 16:16:44','2019-01-09 06:08:53'),
+(7,'API','api','https://svgshare.com/i/AQv.svg',1,'2018-08-31 16:16:45','2019-01-09 06:09:16'),
+(8,'File','file','https://svgshare.com/i/ARa.svg',1,'2018-08-31 16:16:58','2019-01-09 06:09:42'),
+(9,'Google Bigquery Legacy','bigquery_legacy','https://svgshare.com/i/AR6.svg',1,'2018-08-31 16:16:20','2019-01-09 06:07:57');
