@@ -893,11 +893,13 @@ class Dashboard {
 
 		for (const [visualization_id, visualization] of this.visualizationTrack) {
 
-			//const visualization_id = visualization.visualization_id;
-
 			if ((parseInt(visualization.position) < this.maxScrollHeightAchieved + offset) && !visualization.loaded) {
 
+				if(!visualization.query.selectedVisualization.load)
+					continue;
+
 				visualization.query.selectedVisualization.load();
+
 				visualization.loaded = true;
 				this.page.loadedVisualizations.add(visualization);
 
@@ -963,7 +965,7 @@ class Dashboard {
 
 			const [selectedVisualizationProperties] = this.page.list.get(this.id).visualizations.filter(x => x.visualization_id === report.selectedVisualization.visualization_id);
 
-			report.selectedVisualization = selectedVisualizationProperties
+			report.selectedCanvasVisualization = selectedVisualizationProperties
 
 			if (!report.format) {
 				report.format = {};
@@ -973,7 +975,7 @@ class Dashboard {
 
 			const
 				header = report.container.querySelector('header .actions'),
-				format = report.selectedVisualization.format;
+				format = report.selectedCanvasVisualization.format;
 
 			if (!format.width) {
 				format.width = Dashboard.grid.columns;
@@ -991,7 +993,7 @@ class Dashboard {
 
 			header.querySelector('.move-up').on('click', () => {
 
-				const current = report.selectedVisualization;
+				const current = report.selectedCanvasVisualization;
 
 				let previous = null;
 
@@ -1041,7 +1043,7 @@ class Dashboard {
 
 			header.querySelector('.move-down').on('click', () => {
 
-				const current = report.selectedVisualization;
+				const current = report.selectedCanvasVisualization;
 
 				let next = null;
 				for (let [index, value] of this.visualizations.entries()) {
