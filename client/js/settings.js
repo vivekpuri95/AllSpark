@@ -446,7 +446,7 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 				</label>
 
 				<label>
-					<span>Slug <span class="red">*</span></span>
+					<span>Slug <span class="red">*</span><span class="generate-slug">Generate</span></span>
 					<input type="text" name="slug" required>
 				</label>
 
@@ -466,6 +466,15 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 		`;
 
 		container.querySelector('#cancel-form').on('click', () => Sections.show('documentation-list'));
+
+		container.querySelector('.generate-slug').on('click', () => {
+
+			const
+				heading = container.querySelector('form').heading.value,
+				slug = heading.toLowerCase().split(' ').join('_');
+
+			container.querySelector('form').slug.value = slug;
+		});
 
 		container.on('submit', e => this.insert(e));
 
@@ -1811,7 +1820,7 @@ class Documentation {
 				</label>
 
 				<label>
-					<span>Slug <span class="red">*</span></span>
+					<span>Slug <span class="red">*</span><span class="generate-slug">Generate</span></span>
 					<input type="text" name="slug" required>
 				</label>
 
@@ -1829,6 +1838,15 @@ class Documentation {
 				</div>
 			</form>
 		`;
+
+		container.querySelector('.generate-slug').on('click', () => {
+
+			const
+				heading = container.querySelector('form').heading.value,
+				slug = heading.toLowerCase().split(' ').join('_');
+
+			container.querySelector('form').slug.value = slug;
+		});
 
 		container.querySelector('#cancel-form').on('click', () => Sections.show('documentation-list'));
 

@@ -162,3 +162,10 @@ main .cached-reports table {
 main #documentation-form div.body {
 	min-width: 100%;
 }
+main .documentation-page .generate-slug {
+	margin-left: auto;
+	cursor: pointer;
+}
+main .documentation-page .generate-slug:hover {
+	text-decoration: underline;
+}
