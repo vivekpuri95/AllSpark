@@ -398,7 +398,7 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 			this.list.set(data.id, new Documentation(data, this));
 		}
 
-		this.parentDatalist = response.map(d => {return {name: d.heading, value: d.id, subtitle: `${d.slug}`}});
+		this.parentDatalist = response.map(d => {return {name: d.heading, value: d.id, subtitle: d.slug}});
 
 		await this.render();
 	}
@@ -465,25 +465,33 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 			</form>
 		`;
 
+		const form = this.form = container.querySelector('form');
+
 		container.querySelector('#cancel-form').on('click', () => Sections.show('documentation-list'));
 
 		container.querySelector('.generate-slug').on('click', () => {
 
 			const
-				heading = container.querySelector('form').heading.value,
+				heading = form.heading.value,
 				slug = heading.toLowerCase().split(' ').join('_');
 
-			container.querySelector('form').slug.value = slug;
+			form.slug.value = slug;
 		});
 
-		container.on('submit', e => this.insert(e));
+		this.parentMultiSelect = new MultiSelect({multiple: false});
+
+		form.querySelector('.parent').appendChild(this.parentMultiSelect.container);
+
+		this.bodyEditior = new HTMLEditor();
+
+		form.querySelector('.body').appendChild(this.bodyEditior.container);
+
+		form.on('submit', e => this.insert(e));
 
 		return container;
 	}
 
 	async add() {
-
-		this.form = this.addForm.querySelector('form');
 
 		this.form.reset();
 
@@ -491,23 +499,11 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 		Sections.show('documentation-form-add');
 
-		this.parentMultiSelect = new MultiSelect({datalist: this.parentDatalist, multiple: false});
+		this.parentMultiSelect.datalist = this.parentDatalist;
+
+		this.parentMultiSelect.render();
 
 		this.parentMultiSelect.value = '';
-
-		if(this.form.querySelector('.parent .multi-select')) {
-			this.form.querySelector('.parent .multi-select').remove();
-		}
-
-		this.form.querySelector('.parent').appendChild(this.parentMultiSelect.container);
-
-		this.bodyEditior = new HTMLEditor();
-
-		if(this.form.querySelector('.body .html-editor')) {
-			this.form.querySelector('.body .html-editor').remove();
-		}
-
-		this.form.querySelector('.body').appendChild(this.bodyEditior.container);
 
 		await this.bodyEditior.setup();
 

@@ -19,15 +19,7 @@ class Documentation extends API {
 
 		parent = parent === '' ? null : parent;
 
-		if(parent && parent != 0) {
-
-			const response = await this.mysql.query('SELECT id from tb_documentation WHERE parent = ? and chapter = ?',
-				[parent, chapter]
-			);
-
-			this.assert(!response.length, 'Duplicate entry found');
-		}
-		else {
+		if(!parent) {
 
 			const response = await this.mysql.query('SELECT id from tb_documentation WHERE parent is null and chapter = ?',
 				[chapter]
@@ -45,11 +37,17 @@ class Documentation extends API {
 			added_by: this.user.user_id,
 		};
 
-		return await this.mysql.query(
-			'INSERT INTO tb_documentation SET ?',
-			[parameters],
-			'write'
-		);
+		try {
+
+			return await this.mysql.query(
+				'INSERT INTO tb_documentation SET ?',
+				[parameters],
+				'write'
+			);
+		}
+		catch(e) {
+			this.assert(false, 'Duplicate entry found.');
+		}
 	}
 
 	async update({id} = {}) {
@@ -72,19 +70,11 @@ class Documentation extends API {
 				parameters[key] = this.request.body[key];
 			}
 			else {
-				parameters[key] = response[key]
+				parameters[key] = response[key];
 			}
 		}
 
-		if(parameters.parent && parameters.parent != 0) {
-
-			const response = await this.mysql.query('SELECT id from tb_documentation WHERE parent = ? and chapter = ? and id != ?',
-				[parameters.parent, parameters.chapter, id]
-			);
-
-			this.assert(!response.length, 'Duplicate entry found.');
-		}
-		else {
+		if(!parameters.parent) {
 
 			const response = await this.mysql.query('SELECT id from tb_documentation WHERE parent is null and chapter = ? and id != ?',
 				[parameters.chapter, id]
@@ -93,11 +83,17 @@ class Documentation extends API {
 			this.assert(!response.length, 'Duplicate entry found.');
 		}
 
-		return await this.mysql.query(
-			'UPDATE tb_documentation SET ? WHERE id = ?',
-			[parameters, id],
-			'write'
-		);
+		try {
+
+			return await this.mysql.query(
+				'UPDATE tb_documentation SET ? WHERE id = ?',
+				[parameters, id],
+				'write'
+			);
+		}
+		catch(e) {
+			this.assert(false, 'Duplicate entry found.');
+		}
 	}
 
 	async delete({id} = {}) {
