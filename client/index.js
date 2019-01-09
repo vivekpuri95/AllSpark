@@ -1438,29 +1438,7 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 				</section>
 			</div>
 
-			<div class="setting-page documentation-page hidden">
-
-				<section class="section" id="documentation-list">
-
-					<h1>Documentation</h1>
-
-					<header class="toolbar">
-						<button id="add-documentation"><i class="fa fa-plus"></i> Add New Documentation</button>
-					</header>
-
-					<table class="block">
-						<thead>
-							<th>Heading</th>
-							<th>Slug</th>
-							<th>Parent</th>
-							<th>Chapter</th>
-							<th>Edit</th>
-							<th>Delete</th>
-						</thead>
-						<tbody></tbody>
-					</table>
-				</section>
-			</div>
+			<div class="setting-page documentation-page hidden"></div>
 
 			<div class="setting-page privilege-page hidden">
 

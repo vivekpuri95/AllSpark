@@ -37,17 +37,11 @@ class Documentation extends API {
 			added_by: this.user.user_id,
 		};
 
-		try {
-
-			return await this.mysql.query(
-				'INSERT INTO tb_documentation SET ?',
-				[parameters],
-				'write'
-			);
-		}
-		catch(e) {
-			this.assert(false, 'Duplicate entry found.');
-		}
+		return await this.mysql.query(
+			'INSERT INTO tb_documentation SET ?',
+			[parameters],
+			'write'
+		);
 	}
 
 	async update({id} = {}) {
@@ -56,7 +50,9 @@ class Documentation extends API {
 
 		this.assert(id, "Id is required to update.");
 
-		this.request.body.parent = this.request.body.parent === '' ? null : this.request.body.parent;
+		const parent = this.request.body.parent;
+
+		parent = parent === '' ? null : parent;
 
 		const [response] = await this.mysql.query('SELECT * FROM tb_documentation WHERE id = ?',[id]);
 
@@ -67,7 +63,8 @@ class Documentation extends API {
 		for(const key in response) {
 
 			if(keysToUpdate.includes(key) && key in this.request.body) {
-				parameters[key] = this.request.body[key];
+
+				parameters[key] = key != 'parent' ? this.request.body[key] : parent;
 			}
 			else {
 				parameters[key] = response[key];
@@ -83,17 +80,11 @@ class Documentation extends API {
 			this.assert(!response.length, 'Duplicate entry found.');
 		}
 
-		try {
-
-			return await this.mysql.query(
-				'UPDATE tb_documentation SET ? WHERE id = ?',
-				[parameters, id],
-				'write'
-			);
-		}
-		catch(e) {
-			this.assert(false, 'Duplicate entry found.');
-		}
+		return await this.mysql.query(
+			'UPDATE tb_documentation SET ? WHERE id = ?',
+			[parameters, id],
+			'write'
+		);
 	}
 
 	async delete({id} = {}) {

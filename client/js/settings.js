@@ -383,9 +383,6 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 	async setup() {
 
 		this.container = this.page.querySelector('.documentation-page');
-		this.form = this.container.querySelector('section#documentation-form form');
-
-		this.container.querySelector('#documentation-list #add-documentation').on('click', () => this.add());
 	}
 
 	async load() {
@@ -405,7 +402,11 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 	async render() {
 
-		const container = this.container.querySelector('#documentation-list table tbody');
+		this.container.textContent = null;
+
+		this.container.appendChild(this.section);
+
+		const container = this.section.querySelector('table tbody');
 
 		container.textContent = null;
 
@@ -547,6 +548,41 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 			throw e;
 		}
+	}
+
+	get section() {
+
+		if(this.listElement) {
+			return this.listElement;
+		}
+
+		const container = this.listElement = document.createElement('section');
+		container.classList.add('section');
+		container.id = 'documentation-list';
+
+		container.innerHTML = `
+			<h1>Documentation</h1>
+
+			<header class="toolbar">
+				<button id="add-documentation"><i class="fa fa-plus"></i> Add New Documentation</button>
+			</header>
+
+			<table class="block">
+				<thead>
+					<th>Heading</th>
+					<th>Slug</th>
+					<th>Parent</th>
+					<th>Chapter</th>
+					<th>Edit</th>
+					<th>Delete</th>
+				</thead>
+				<tbody></tbody>
+			</table>
+		`;
+
+		container.querySelector('#documentation-list #add-documentation').on('click', () => this.add());
+
+		return container;
 	}
 })
 
@@ -1854,7 +1890,7 @@ class Documentation {
 
 		this.form.querySelector('.body').appendChild(this.bodyEditior.container);
 
-		container.on('submit', e => {
+		this.form.querySelector('.form').on('submit', e => {
 			this.update(e);
 		});
 
@@ -1862,10 +1898,6 @@ class Documentation {
 	}
 
 	async edit() {
-
-		if(this.page.container.querySelector(`#documentation-form-${this.id}`)) {
-			this.page.container.querySelector(`#documentation-form-${this.id}`).remove();
-		}
 
 		this.page.container.appendChild(this.form);
 
