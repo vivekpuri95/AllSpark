@@ -296,12 +296,14 @@ class PreviewTabsManager extends Array {
 			this.report.visualizations[0].options = options.visualizationOptions;
 		}
 
-		if(options.visualization && options.visualization.type) {
-			this.report.visualizations[0].type = options.visualization.type;
-		}
+		for(const key in options.visualization) {
 
-		if(options.visualization && options.visualization.name) {
-			this.report.visualizations[0].name = options.visualization.name;
+			if(!['type', 'name', 'description'].includes(key)) {
+
+				continue;
+			}
+
+			this.report.visualizations[0][key] = options.visualization[key];
 		}
 
 		this.report = new DataSource(this.report);
@@ -3304,7 +3306,8 @@ class VisualizationManager {
 			visualization: {
 				id: this.visualization_id,
 				type: this.json.type,
-				name: this.json.name
+				name: this.json.name,
+				description: this.json.description,
 			}
 		});
 
@@ -8121,7 +8124,7 @@ class ReportVisualizationDashboard {
 
 			<label>
 				<span>Position</span>
-				<input type="number" name="position" value="${this.visualization.format.position || ''}">
+				<input type="number" name="position" value="${parseFloat(this.visualization.format.position)}">
 			</label>
 
 			<label>
