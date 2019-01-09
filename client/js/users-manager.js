@@ -421,11 +421,15 @@ class Privileges {
 
 		Privileges.add_filter = Privileges.container.querySelector('#add-filter');
 
+		Privileges.add_filter.category_id.innerHTML = '<option value="none">Select</option>';
+
 		for(const data of MetaData.categories.values()) {
 			Privileges.add_filter.category_id.insertAdjacentHTML('beforeend',`
 				<option value="${data.category_id}">${data.name}</option>
 			`);
 		}
+
+		Privileges.add_filter.privilege_id.innerHTML = '<option value="none">Select</option>';
 
 		for(const data of MetaData.privileges.values()) {
 			Privileges.add_filter.privilege_id.insertAdjacentHTML('beforeend',`
