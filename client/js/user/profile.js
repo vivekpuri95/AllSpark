@@ -110,15 +110,7 @@ class Sessions {
 		if(this.response)
 			return this.response;
 
-		const
-			parameters = {
-				user_id: this.user_id,
-			},
-			options = {
-				method: 'GET',
-			};
-
-		this.response = await API.call('session-logs/list', parameters, options);
+		this.response = await API.call('session-logs/list');
 
 		return this.response;
 	}
