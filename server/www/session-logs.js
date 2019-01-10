@@ -18,7 +18,7 @@ class SessionLogs extends API {
 
 			const [user] = await listObj.list();
 
-			this.assert(user, 'No user found');
+			this.assert(user && user.editable, 'No user found');
 		}
 
 		const db = dbConfig.write.database.concat('_logs');

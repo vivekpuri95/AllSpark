@@ -46,7 +46,7 @@ class UserProfile extends Page {
 			return this.container.querySelector('#profile-info').innerHTML = '<div class="NA">No User found</div>';
 		}
 
-		if(!this.data.editable) {
+		if(!this.data.editable && this.data.user_id != user.user_id) {
 
 			activity.remove();
 		}
