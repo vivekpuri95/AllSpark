@@ -96,10 +96,10 @@ class Setup extends API {
 		const
 			setupAccount = await this.mysql.query(
 				`INSERT INTO 
-					tb_accounts (name, url, icon, logo)
+					tb_accounts (name, url, icon, logo, auth_api)
 				VALUES (?, ?, ?, ?)
 				`,
-				[account.name, account.url, account.icon || '', account.logo || ''],
+				[account.name, account.url, account.icon || '', account.logo || '', account.auth_api],
 				'write'
 			);
 
@@ -141,8 +141,8 @@ class Setup extends API {
 				"write"
 			),
 			this.mysql.query(
-				'INSERT INTO tb_settings (account_id, owner, owner_id, profile, value) VALUES (?, "account", ?, "main", "[]")',
-				[setupAccount.insertId, setupAccount.insertId],
+				'INSERT INTO tb_settings (account_id, owner, owner_id, profile, value) VALUES (?, "account", ?, "main", ?)',
+				[setupAccount.insertId, setupAccount.insertId, JSON.stringify(account.auth_api_parameters || [])],
 				"write"
 			),
 		]);
