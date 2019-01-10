@@ -280,6 +280,14 @@ class DashboardsDashboard {
 
 		DashboardsDashboard.container.querySelector('h1').textContent = 'Edit ' + this.name;
 
+		if(DashboardsDashboard.container.querySelector('#form .toolbar .right')) {
+			DashboardsDashboard.container.querySelector('#form .toolbar .right').remove();
+		}
+
+		DashboardsDashboard.container.querySelector('#form .toolbar').insertAdjacentHTML('beforeend', `
+			<span class="right">Added by <a href="/user/profile/${this.added_by}" target="_blank">${this.added_by_name}</a> ${Format.ago(this.created_at)}</span>
+		`);
+
 		this.objectRoles = new ObjectRoles('dashboard', this.id);
 
 		await this.objectRoles.load();

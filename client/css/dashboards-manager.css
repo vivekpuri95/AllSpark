@@ -24,6 +24,14 @@ main {
 					height: 250px;
 					margin: 0;
 				}
+	main #form .toolbar {
+		grid-template-columns: max-content max-content 1fr;
+		align-items: center;
+	}
+		main #form .toolbar .right {
+			margin-left: auto;
+			font-size: 90%;
+		}
 	main section .heading {
 		display: flex;
 		align-items: center;
