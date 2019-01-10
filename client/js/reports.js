@@ -532,7 +532,7 @@ class DataSource {
 
 				<div class="submenu">
 
-					<div class="item" title="Get the raw data as it was recieved immediately after execution in a CSV format">
+					<div class="item" title="Get the data that includes any transformations that were applied after execution in a CSV format">
 						<span class="label csv-download"><i class="far fa-file-excel"></i> CSV</label>
 					</div>
 
@@ -544,7 +544,7 @@ class DataSource {
 						<span class="label xlsx-download"><i class="fas fa-file-excel"></i> XLSX</label>
 					</div>
 
-					<div class="item" title="Get the raw data as it was recieved immediately after execution in a JSON format">
+					<div class="item" title="Get the data that includes any transformations that were applied after execution in a JSON format">
 						<span class="label json-download"><i class="fas fa-code"></i> JSON</label>
 					</div>
 
@@ -650,8 +650,22 @@ class DataSource {
 
 		filtersToggle.on('click', () => {
 
-			this.container.appendChild(this.filters.container);
-			this.filters.container.classList.toggle('hidden', filtersToggle.parentElement.classList.contains('selected'));
+			if(!this.formContainer) {
+
+				const element = this.formContainer = document.createElement('div');
+
+				element.classList.add('overlay');
+
+				element.insertAdjacentElement('afterbegin', this.filters.container);
+
+				element.insertAdjacentHTML('beforeend', '<div class="close">&times;</div>');
+
+				this.formContainer.querySelector('.close').on('click', () => filtersToggle.click());
+
+				this.container.appendChild(this.formContainer);
+			}
+
+			this.formContainer.classList.toggle('hidden', filtersToggle.parentElement.classList.contains('selected'));
 
 			toggleOverlay(filtersToggle);
 		});
@@ -783,7 +797,7 @@ class DataSource {
 		this.visibleTo =  await API.call('reports/report/userPrvList', {report_id : this.query_id});
 	}
 
-	async response() {
+	async response({implied} = {}) {
 
 		// Empty out the pipeline
 		for(const event of this.pipeline) {
@@ -805,7 +819,7 @@ class DataSource {
 			return [];
 		}
 
-		const data = await this.transformations.run(this.originalResponse.data);
+		const data = await this.transformations.run(this.originalResponse.data, implied);
 
 		if(!this.columns.list.size) {
 			return this.error();
@@ -845,25 +859,25 @@ class DataSource {
 			response = await this.fetch({download: 1});
 		}
 
-		if(what.mode == 'json') {
+		if(what.mode == 'filtered-json' || what.mode == 'json') {
 
-			for(const data of response.data) {
+			const response = await this.response({implied: what.mode == 'json'});
 
-				const
-					line = [],
-					_data = {};
+			for(const data of response) {
 
-				for(const key in data) {
+				const rowObj = {};
 
-					if(data[key] === null) {
-						_data[key] = '';
-					}
+				for(let [key, value] of data) {
+
+					rowObj[key] = value;
 				}
 
-				line.push(JSON.stringify(_data));
-
-				str.push(line);
+				str.push(rowObj);
 			}
+
+			str = JSON.stringify(str);
+
+			what.mode = 'json';
 		}
 
 		else if(what.mode == 'xlsx' && this.xlsxDownloadable) {
@@ -901,9 +915,9 @@ class DataSource {
 			return await this.excelSheetDownloader(response, obj);
 		}
 
-		else if(what.mode == 'filtered-csv') {
+		else if(what.mode == 'filtered-csv' || what.mode == 'csv') {
 
-			const response = await this.response();
+			const response = await this.response({implied: what.mode == 'csv'});
 
 			for(const row of response) {
 
@@ -919,48 +933,6 @@ class DataSource {
 			str = Array.from(response[0].keys()).join() + '\r\n' + str.join('\r\n');
 
 			what.mode = 'csv';
-		}
-
-		else if(what.mode == 'filtered-json') {
-
-			const response = await this.response();
-
-			for(const data of response) {
-
-				const line = [], rowObj = {};
-
-				for(let [key, value] of data) {
-
-					rowObj[key] = value;
-				}
-
-				line.push(JSON.stringify(rowObj));
-
-				str.push(line);
-			}
-
-			what.mode = 'json';
-		}
-
-		else {
-
-			for(const data of response.data) {
-
-				const line = [];
-
-				for(const index in data) {
-
-					if(data[index] === null) {
-						data[index] = '';
-					}
-
-					line.push(JSON.stringify(String(data[index]).replace(/"/g,"'")));
-				}
-
-				str.push(line.join());
-			}
-
-			str = Object.keys(response.data[0]).join() + '\r\n' + str.join('\r\n');
 		}
 
 		const
@@ -1357,7 +1329,7 @@ class DataSourceFilters extends Map {
 
 		const container = this.containerElement = document.createElement('form');
 
-		container.classList.add('toolbar', 'form', 'filters', 'overlay');
+		container.classList.add('toolbar', 'form', 'filters');
 
 		for(const filter of this.values()) {
 
@@ -1406,8 +1378,6 @@ class DataSourceFilters extends Map {
 					<i class="fas fa-paper-plane"></i> Apply
 				</button>
 			</label>
-
-			<div class="close">&times;</div>
 		`);
 
 		{
@@ -1436,8 +1406,6 @@ class DataSourceFilters extends Map {
 				}
 			}
 		}
-
-		container.querySelector('.close').on('click', () => this.source.container.querySelector('.filters-toggle').click());
 
 		return container;
 	}
@@ -4296,14 +4264,16 @@ class DataSourceTransformations extends Set {
 		this.source = source;
 	}
 
-	async run(response) {
+	async run(response, implied) {
 
 		this.clear();
 
 		this.reset();
 
-		this.loadFilters();
-		this.loadSorting();
+		if(!implied) {
+			this.loadFilters();
+			this.loadSorting();
+		}
 
 		response = JSON.parse(JSON.stringify(response));
 
@@ -4858,14 +4828,15 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 			}
 
 			// Make a LEFT JOIN on the current row with the stream report
-			outer:
 			for(const streamRow of streamResponse) {
+
+				let joinsMatched = true;
 
 				// If any of the stream's join conditions don't match then skip this row
 				for(const join of this.options.joins) {
 
 					if(!filters[join.function].apply(baseRow[join.sourceColumn], streamRow.get(join.streamColumn))) {
-						continue outer;
+						joinsMatched = false;
 					}
 				}
 
@@ -4875,9 +4846,6 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 						continue;
 					}
 
-					if(!streamRow.has(column.column))
-						continue;
-
 					let joinGroup = [];
 
 					if(!((column.name || column.column) in newRow)) {
@@ -4885,7 +4853,13 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 						joinGroup.column = column;
 					}
 
-					joinGroup.push(streamRow.get(column.column));
+					else {
+						joinGroup = newRow[column.name || column.column];
+					}
+
+					if(joinsMatched && streamRow.has(column.column)) {
+						joinGroup.push(streamRow.get(column.column));
+					}
 				}
 			}
 
@@ -10919,7 +10893,14 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 			return this.source.error();
 		}
 
-		const value = response[0].getTypedValue(this.options.column);
+		let value = response[0].get(this.options.column);
+
+		if(this.options.format) {
+			value = d3.format(this.options.format)(value) || 0;
+		}
+		else {
+			value = response[0].getTypedValue(this.options.column);
+		}
 
 		this.container.querySelector('.container').innerHTML = `<div class="value">${value}</div>`;
 

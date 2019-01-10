@@ -296,12 +296,14 @@ class PreviewTabsManager extends Array {
 			this.report.visualizations[0].options = options.visualizationOptions;
 		}
 
-		if(options.visualization && options.visualization.type) {
-			this.report.visualizations[0].type = options.visualization.type;
-		}
+		for(const key in options.visualization) {
 
-		if(options.visualization && options.visualization.name) {
-			this.report.visualizations[0].name = options.visualization.name;
+			if(!['type', 'name', 'description'].includes(key)) {
+
+				continue;
+			}
+
+			this.report.visualizations[0][key] = options.visualization[key];
 		}
 
 		this.report = new DataSource(this.report);
@@ -3304,7 +3306,8 @@ class VisualizationManager {
 			visualization: {
 				id: this.visualization_id,
 				type: this.json.type,
-				name: this.json.name
+				name: this.json.name,
+				description: this.json.description,
 			}
 		});
 
@@ -4354,8 +4357,9 @@ class Axis {
 			let usedColumns = [];
 			const freeColumns = [];
 
-			for(const axis of this.axes)
+			for(const axis of this.axes) {
 				usedColumns = usedColumns.concat(axis.container.multiSelectColumns.value);
+			}
 
 			for(const axis of this.axes) {
 				for(const item of axis.container.multiSelectColumns.datalist) {
@@ -4366,8 +4370,9 @@ class Axis {
 
 			for(const axis of this.axes) {
 
-				if(axis == this)
+				if(axis == this) {
 					continue;
+				}
 
 				const selected = axis.container.multiSelectColumns.value;
 
@@ -4380,8 +4385,10 @@ class Axis {
 				}
 
 				for(const value of freeColumns) {
-					if(!newDataList.some(k => k.value.includes(value.value)))
+
+					if(!newDataList.some(k => k.value.includes(value.value))) {
 						newDataList.push(value);
+					}
 				}
 
 				if(axis.container.multiSelectColumns.datalist.map(x => x.value).sort().join() == newDataList.map(x => x.value).sort().join())
@@ -4878,8 +4885,10 @@ class ReportVisualizationOptions {
 		const result = {};
 
 		for(const element of this.form.querySelectorAll('input, select')) {
-			if(element.type != 'radio')
+
+			if(element.type != 'radio') {
 				result[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
+			}
 		}
 
 		return result;
@@ -5927,6 +5936,14 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 							<span>Font Size <span class="NA right">percentage</span></span>
 							<input type="number" name="fontSize" min="0.1" max="3000" step="0.01" placeholder="815">
 						</label>
+
+						<label>
+							<span>Format<span class="right" data-tooltip="This format takes precedence over column's type format.">?</span></span>
+							<select name="format">
+								<option value="">None</option>
+								<option value="s">SI</option>
+							</select>
+						</label>
 					</div>
 				</div>
 			</div>
@@ -5937,8 +5954,10 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 		this.bigReportsColumns.value = this.visualization.options && this.visualization.options.column || [];
 
 		for(const element of this.formContainer.querySelectorAll('select, input')) {
-			if(element.type != 'radio')
+
+			if(element.type != 'radio') {
 				element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
+			}
 		}
 
 		return container;
@@ -8105,7 +8124,7 @@ class ReportVisualizationDashboard {
 
 			<label>
 				<span>Position</span>
-				<input type="number" name="position" value="${this.visualization.format.position || ''}">
+				<input type="number" name="position" value="${parseFloat(this.visualization.format.position)}">
 			</label>
 
 			<label>

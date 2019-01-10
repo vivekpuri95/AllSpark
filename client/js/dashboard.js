@@ -893,11 +893,13 @@ class Dashboard {
 
 		for (const [visualization_id, visualization] of this.visualizationTrack) {
 
-			//const visualization_id = visualization.visualization_id;
-
 			if ((parseInt(visualization.position) < this.maxScrollHeightAchieved + offset) && !visualization.loaded) {
 
+				if(!visualization.query.selectedVisualization.load)
+					continue;
+
 				visualization.query.selectedVisualization.load();
+
 				visualization.loaded = true;
 				this.page.loadedVisualizations.add(visualization);
 
@@ -959,11 +961,11 @@ class Dashboard {
 
 		Dashboard.container.classList.add('editing');
 
-		for (let {query: report} of this.page.loadedVisualizations) {
+		for (const report of this.visibleVisuliaztions) {
 
 			const [selectedVisualizationProperties] = this.page.list.get(this.id).visualizations.filter(x => x.visualization_id === report.selectedVisualization.visualization_id);
 
-			report.selectedVisualization = selectedVisualizationProperties
+			report.selectedCanvasVisualization = selectedVisualizationProperties
 
 			if (!report.format) {
 				report.format = {};
@@ -973,7 +975,7 @@ class Dashboard {
 
 			const
 				header = report.container.querySelector('header .actions'),
-				format = report.selectedVisualization.format;
+				format = report.selectedCanvasVisualization.format;
 
 			if (!format.width) {
 				format.width = Dashboard.grid.columns;
@@ -991,7 +993,7 @@ class Dashboard {
 
 			header.querySelector('.move-up').on('click', () => {
 
-				const current = report.selectedVisualization;
+				const current = report.selectedCanvasVisualization;
 
 				let previous = null;
 
@@ -1041,7 +1043,7 @@ class Dashboard {
 
 			header.querySelector('.move-down').on('click', () => {
 
-				const current = report.selectedVisualization;
+				const current = report.selectedCanvasVisualization;
 
 				let next = null;
 				for (let [index, value] of this.visualizations.entries()) {
@@ -1169,7 +1171,7 @@ class Dashboard {
 				dimentions.textContent = `${visualizationFormat.width} x ${visualizationFormat.height}`;
 
 				report.container.setAttribute('style', `
-					order: ${report.selectedVisualization.format.position || 0};
+					order: ${report.selectedCanvasVisualization.format.position || 0};
 					grid-column: auto / span ${visualizationFormat.width || Dashboard.grid.columns};
 					grid-row: auto / span ${visualizationFormat.height || Dashboard.grid.rows};
 				`);
@@ -1184,7 +1186,7 @@ class Dashboard {
 					clearTimeout(this.saveTimeout);
 				}
 
-				this.saveTimeout = setTimeout(() => this.save(visualizationFormat, report.selectedVisualization.id), 1000);
+				this.saveTimeout = setTimeout(() => this.save(visualizationFormat, report.selectedCanvasVisualization.id), 1000);
 			}
 		});
 
@@ -1779,8 +1781,6 @@ class DashboardGlobalFilters extends DataSourceFilters {
 			</div>
 			<div class="NA no-results hidden">No filters found!</div>
 		`;
-
-		this.container.querySelector('.close').remove();
 
 		if(window.globalFilterSubmitListener) {
 			this.container.removeEventListener('submit', Dashboard.globalFilterSubmitListener);
