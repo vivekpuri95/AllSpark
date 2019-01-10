@@ -285,7 +285,7 @@ class DashboardsDashboard {
 		}
 
 		DashboardsDashboard.container.querySelector('#form .toolbar').insertAdjacentHTML('beforeend', `
-			<span class="right">Added by <a href="/user/profile/${this.added_by}" target="_blank">${this.added_by_name}</a> ${Format.ago(this.created_at)}</span>
+			<span class="right">Added by <a href="/user/profile/${this.added_by}" target="_blank">${this.added_by_name || 'Unknown User'}</a> ${Format.ago(this.created_at)}</span>
 		`);
 
 		this.objectRoles = new ObjectRoles('dashboard', this.id);

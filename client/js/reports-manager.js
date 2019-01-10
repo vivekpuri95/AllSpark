@@ -3155,7 +3155,7 @@ class VisualizationManager {
 			<form id="configure-visualization-form">
 
 				<div class="configuration-section">
-					<h3><i class="fas fa-angle-right"></i> General</h3>
+					<h3><i class="fas fa-angle-right"></i> General <span class="count"></span></h3>
 					<div class="body">
 						<div class="form subform">
 							<label>
@@ -6395,7 +6395,8 @@ class ReportTransformations extends Set {
 						</div>
 					</fieldset>
 				</form>
-			</div>`;
+			</div>
+		`;
 
 		const select = this.container.querySelector('.add-transformation select');
 
