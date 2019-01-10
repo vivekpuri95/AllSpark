@@ -536,6 +536,7 @@ body {
 			table td {
 				padding: 8px;
 				position: relative;
+				user-select: text;
 			}
 				table .thin,
 				table .action {
