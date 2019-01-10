@@ -289,9 +289,9 @@ class DashboardsDashboard {
 		}
 
 		DashboardsDashboard.container.querySelector('#form .toolbar').insertAdjacentHTML('beforeend', `
-			<span class="right">
+			<span class="right NA">
 				Added by
-				<a href="/user/profile/${this.added_by}" target="_blank">${this.added_by_name || 'Unknown User'}</a>
+				${this.added_by_name ? `<a href="/user/profile/${this.added_by}" target="_blank">${this.added_by_name}</a>` : 'Unknown User'}
 				<span title="${Format.dateTime(this.created_at)}">${Format.ago(this.created_at)}</span>
 			</span>
 		`);

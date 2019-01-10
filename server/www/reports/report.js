@@ -26,7 +26,7 @@ exports.list = class extends API {
 			LEFT JOIN
 				tb_users u
 			ON
-				q.added_by = u.user_id
+				q.added_by = u.user_id AND status = 1
 			WHERE
 				is_deleted = 0
 				and q.account_id = ${this.account.account_id}

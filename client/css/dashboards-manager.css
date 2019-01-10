@@ -30,7 +30,6 @@ main {
 	}
 		main #form .toolbar .right {
 			margin-left: auto;
-			font-size: 90%;
 		}
 	main section .heading {
 		display: flex;

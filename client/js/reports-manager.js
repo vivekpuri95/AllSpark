@@ -3184,7 +3184,6 @@ class VisualizationManager {
 				</div>
 
 				<div class="options"></div>
-
 			</form>
 		`;
 
@@ -3211,10 +3210,14 @@ class VisualizationManager {
 		container.querySelector('.configuration-section h3 .count').innerHTML = `
 			<span class="right">
 				Added by
-				<a href="/user/profile/${this.added_by}" target="_blank">${this.added_by_name || 'Unknown User'}</a>
+				${this.added_by_name ? `<a href="/user/profile/${this.added_by}" target="_blank">${this.added_by_name}</a>` : 'Unknown User'}
 				<span title="${Format.dateTime(this.created_at)}">${Format.ago(this.created_at)}</span>
 			</span>
 		`;
+
+		if(container.querySelector('.configuration-section h3 .count a')) {
+			container.querySelector('.configuration-section h3 .count a').on('click', e => e.stopPropagation());
+		}
 
 		this.form.on('submit', e => this.update(e));
 
