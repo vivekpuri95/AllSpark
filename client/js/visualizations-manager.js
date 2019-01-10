@@ -75,6 +75,10 @@ class VisualizationsManagerList extends Map {
 				rowValue: row => row.description ? [row.description] : [],
 			},
 			{
+				key: 'Created By',
+				rowValue: row =>  row.added_by_name ? [row.added_by_name] : [],
+			},
+			{
 				key: 'Connection Name',
 				rowValue: row => {
 					if(page.connections.has(parseInt(row.connection_name)))
@@ -93,27 +97,27 @@ class VisualizationsManagerList extends Map {
 				},
 			},
 			{
-				key: 'Filters Length',
+				key: 'Filter Length',
 				rowValue: row => [row.filters.length]
 			},
 			{
-				key: 'Filters Name',
+				key: 'Filter Name',
 				rowValue: row => row.filters.map(f => f.name ? f.name : []),
 			},
 			{
-				key: 'Filters Placeholder',
+				key: 'Filter Placeholder',
 				rowValue: row => row.filters.map(f => f.placeholder ? f.placeholder : []),
 			},
 			{
-				key: 'Visualizations ID',
+				key: 'Visualization ID',
 				rowValue: row => row.visualizations.map(f => f.visualization_id ? f.visualization_id : []),
 			},
 			{
-				key: 'Visualizations Name',
+				key: 'Visualization Name',
 				rowValue: row => row.visualizations.map(f => f.name ? f.name : []),
 			},
 			{
-				key: 'Visualizations Type',
+				key: 'Visualization Type',
 				rowValue: row => {
 					return row.visualizations.map(f => f.type)
 											   .map(m => MetaData.visualizations.has(m) ?
@@ -121,7 +125,11 @@ class VisualizationsManagerList extends Map {
 				},
 			},
 			{
-				key: 'Visualizations Length',
+				key: 'Visualization Created By',
+				rowValue: row => row.visualizations.map(f => f.added_by_name ? f.added_by_name : []),
+			},
+			{
+				key: 'Visualization Length',
 				rowValue: row => [row.visualizations.length],
 			},
 			{

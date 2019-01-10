@@ -152,13 +152,18 @@ exports.list = class extends API {
 					owner,
 					owner_id,
 					vc.visualization_id AS sub_visualization_id,
-					vc.format as sub_visualization_format
+					vc.format as sub_visualization_format,
+					CONCAT_WS(' ', u.first_name, u.last_name) AS added_by_name
 				FROM
 					tb_query_visualizations qv
 				JOIN
 					tb_query q
 				ON
 					qv.query_id = q.query_id
+				LEFT JOIN
+					tb_users u
+				ON
+					u.user_id = qv.added_by AND u.status = 1
 				LEFT JOIN
 					tb_visualization_canvas vc
 				ON

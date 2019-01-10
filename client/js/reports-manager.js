@@ -78,6 +78,10 @@ class ReportsManger extends Page {
 				rowValue: row => row.description ? [row.description] : [],
 			},
 			{
+				key: 'Created By',
+				rowValue: row =>  row.added_by_name ? [row.added_by_name] : [],
+			},
+			{
 				key: 'Connection name',
 				rowValue: row => {
 					if(page.connections.has(parseInt(row.connection_name)))
@@ -100,31 +104,39 @@ class ReportsManger extends Page {
 				rowValue: row => row.tags ? row.tags.split(',').map(t => t.trim()) : [],
 			},
 			{
-				key: 'Filters Length',
+				key: 'Filter Length',
 				rowValue: row => [row.filters.length]
 			},
 			{
-				key: 'Filters Name',
+				key: 'Filter Name',
 				rowValue: row => row.filters.map(f => f.name),
 			},
 			{
-				key: 'Filters Placeholder',
+				key: 'Filter Placeholder',
 				rowValue: row => row.filters.map(f => f.placeholder),
 			},
 			{
-				key: 'Visualizations Name',
-				rowValue: row => row.visualizations.map(f => f.name),
+				key: 'Visualization Name',
+				rowValue: row => row.visualizations.map(v => v.name),
 			},
 			{
-				key: 'Visualizations Type',
+				key: 'Visualization ID',
+				rowValue: row => row.visualizations.map(v => v.visualization_id),
+			},
+			{
+				key: 'Visualization Type',
 				rowValue: row => {
-					return row.visualizations.map(f => f.type)
+					return row.visualizations.map(v => v.type)
 											 .map(m => MetaData.visualizations.has(m) ?
 											 (MetaData.visualizations.get(m)).name : []);
 				},
 			},
 			{
-				key: 'Visualizations Length',
+				key: 'Visualization Created By',
+				rowValue: row => row.visualizations.map(f => f.added_by_name ? f.added_by_name : []),
+			},
+			{
+				key: 'Visualization Length',
 				rowValue: row => [row.visualizations.length],
 			},
 			{

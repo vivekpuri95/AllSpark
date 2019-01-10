@@ -84,6 +84,10 @@ class DashboardManager extends Page {
 				key: 'Order',
 				rowValue: row => row.order ? [row.order] : [],
 			},
+			{
+				key: 'Created By',
+				rowValue: row => row.added_by_name ? [row.added_by_name] : [],
+			},
 		];
 
 		this.searchBar = new SearchColumnFilters({ filters });
