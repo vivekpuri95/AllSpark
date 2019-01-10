@@ -1,16 +1,30 @@
 const API = require('../utils/api');
 const commonFun = require('../utils/commonFunctions');
 const dbConfig = require('config').get("sql_db");
+const userList = require('./users').list;
 
 class SessionLogs extends API {
 
-	async list() {
+	async list({user_id, inactive, sdate, edate} = {}) {
 
-		this.user.privilege.needs('user');
+		this.assert(user_id, 'User id required!');
+
+		if(user_id != this.user.user_id) {
+
+			let listObj = new userList();
+
+			Object.assign(this.request.body, this.request.query);
+			Object.assign(listObj, this);
+
+			const [user] = await listObj.list();
+
+			this.assert(user && user.editable, 'No user found');
+		}
 
 		const db = dbConfig.write.database.concat('_logs');
 
-		if(this.request.query.inactive) {
+		if(inactive && false) {
+
 			return await this.mysql.query(`
 				SELECT
 					*
@@ -19,7 +33,7 @@ class SessionLogs extends API {
 				WHERE
 					date(created_at) between ? and ?
 				`,
-				[db,this.request.query.sdate,this.request.query.edate]
+				[db, sdate, edate]
 			);
 		}
 
@@ -38,7 +52,7 @@ class SessionLogs extends API {
 				AND s1.created_at >  now() - interval 5 day
 				AND s1.user_id = ?
 			`,
-			[db, db, this.request.query.user_id]
+			[db, db, user_id]
 		)
 	};
 

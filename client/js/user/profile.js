@@ -33,8 +33,23 @@ class UserProfile extends Page {
 
 	render() {
 
-		if(!this.data.user_id)
-			return this.container.innerHTML = '<div class="NA">No User found</div>';
+		const
+			info = this.container.querySelector('.heading-bar .info'),
+			activity = this.container.querySelector('.heading-bar .activity'),
+			access = this.container.querySelector('.heading-bar .access');
+
+		if(!this.data || !this.data.user_id){
+
+			access.remove();
+			activity.remove();
+
+			return this.container.querySelector('#profile-info').innerHTML = '<div class="NA">No User found</div>';
+		}
+
+		if(!this.data.editable && this.data.user_id != user.user_id) {
+
+			activity.remove();
+		}
 
 		this.container.querySelector('h1 span').textContent = [this.data.first_name, this.data.middle_name, this.data.last_name].filter(a => a).join(' ');
 
@@ -54,11 +69,6 @@ class UserProfile extends Page {
 		`;
 
 		this.profileInfo.render();
-
-		const
-			info = this.container.querySelector('.heading-bar .info'),
-			activity = this.container.querySelector('.heading-bar .activity'),
-			access = this.container.querySelector('.heading-bar .access');
 
 		info.on('click',() => {
 
@@ -154,6 +164,11 @@ class Sessions {
 
 		for(const session of this.sessionsList.values())
 			list.appendChild(session.container);
+
+		if(!this.sessionsList.size) {
+
+			list.innerHTML = '<div class="NA">No activity found.</div>'
+		}
 
 		return container;
 	}
