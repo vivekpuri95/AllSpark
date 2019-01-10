@@ -181,6 +181,10 @@ class DashboardsDashboard {
 			DashboardsDashboard.container.querySelector('.parent-dashboard .multi-select').remove();
 		}
 
+		if(DashboardsDashboard.container.querySelector('#form .toolbar .right')) {
+			DashboardsDashboard.container.querySelector('#form .toolbar .right').remove();
+		}
+
 		DashboardsDashboard.container.querySelector('.parent-dashboard').appendChild(DashboardsDashboard.multiselect.container);
 
 		DashboardsDashboard.container.querySelector('h1').textContent = 'Add New Dashboard';
@@ -285,7 +289,11 @@ class DashboardsDashboard {
 		}
 
 		DashboardsDashboard.container.querySelector('#form .toolbar').insertAdjacentHTML('beforeend', `
-			<span class="right">Added by <a href="/user/profile/${this.added_by}" target="_blank">${this.added_by_name || 'Unknown User'}</a> ${Format.ago(this.created_at)}</span>
+			<span class="right">
+				Added by
+				<a href="/user/profile/${this.added_by}" target="_blank">${this.added_by_name || 'Unknown User'}</a>
+				<span title="${Format.dateTime(this.created_at)}">${Format.ago(this.created_at)}</span>
+			</span>
 		`);
 
 		this.objectRoles = new ObjectRoles('dashboard', this.id);

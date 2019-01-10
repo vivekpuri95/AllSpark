@@ -3208,6 +3208,14 @@ class VisualizationManager {
 
 		container.querySelector('.form.description').appendChild(this.descriptionEditor.container);
 
+		container.querySelector('.configuration-section h3 .count').innerHTML = `
+			<span class="right">
+				Added by
+				<a href="/user/profile/${this.added_by}" target="_blank">${this.added_by_name || 'Unknown User'}</a>
+				<span title="${Format.dateTime(this.created_at)}">${Format.ago(this.created_at)}</span>
+			</span>
+		`;
+
 		this.form.on('submit', e => this.update(e));
 
 		return container;
