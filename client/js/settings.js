@@ -410,6 +410,8 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 		const container = this.section.querySelector('table tbody');
 
+		container.textContent = null;
+
 		if(!this.list.size) {
 			container.innerHTML = '<tr><td colspan="7" class="NA">No Documentation Found</td></tr>';
 		}
