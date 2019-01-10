@@ -25,7 +25,7 @@ class Documentation extends API {
 				[chapter]
 			);
 
-			this.assert(!response.length, 'Duplicate entry found');
+			this.assert(!response.length, `Duplicate entry found for ${parent}, ${chapter}`);
 		}
 
 		const parameters = {
@@ -77,7 +77,7 @@ class Documentation extends API {
 				[parameters.chapter, id]
 			);
 
-			this.assert(!response.length, 'Duplicate entry found.');
+			this.assert(!response.length, `Duplicate entry found for ${parameters.parent}, ${parameters.chapter}.`);
 		}
 
 		return await this.mysql.query(

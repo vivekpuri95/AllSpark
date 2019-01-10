@@ -447,7 +447,7 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 				</label>
 
 				<label>
-					<span>Slug <span class="red">*</span><span class="generate-slug">Generate</span></span>
+					<span>Slug <span class="red">*</span><a class="generate-slug">Generate</a></span>
 					<input type="text" name="slug" required>
 				</label>
 
@@ -468,7 +468,10 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 		const form = this.form = container.querySelector('form');
 
-		container.querySelector('#cancel-form').on('click', () => Sections.show('documentation-list'));
+		container.querySelector('#cancel-form').on('click', () => {
+			container.querySelector('.body .html-editor').remove();
+			Sections.show('documentation-list');
+		});
 
 		container.querySelector('.generate-slug').on('click', () => {
 
@@ -483,17 +486,12 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 		form.querySelector('.parent').appendChild(this.parentMultiSelect.container);
 
-		this.bodyEditior = new HTMLEditor();
-
-		form.querySelector('.body').appendChild(this.bodyEditior.container);
-
 		form.on('submit', e => this.insert(e));
 
 		return container;
 	}
 
 	async add() {
-
 
 		this.container.appendChild(this.addForm);
 
@@ -506,6 +504,10 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 		this.parentMultiSelect.render();
 
 		this.parentMultiSelect.value = '';
+
+		this.bodyEditior = new HTMLEditor();
+
+		this.form.querySelector('.body').appendChild(this.bodyEditior.container);
 
 		await this.bodyEditior.setup();
 
@@ -1853,7 +1855,7 @@ class Documentation {
 				</label>
 
 				<label>
-					<span>Slug <span class="red">*</span><span class="generate-slug">Generate</span></span>
+					<span>Slug <span class="red">*</span><a class="generate-slug">Generate</a></span>
 					<input type="text" name="slug" required>
 				</label>
 
@@ -1881,15 +1883,14 @@ class Documentation {
 			container.querySelector('form').slug.value = slug;
 		});
 
-		container.querySelector('#cancel-form').on('click', () => Sections.show('documentation-list'));
+		container.querySelector('#cancel-form').on('click', () => {
+			container.querySelector('.body .html-editor').remove();
+			Sections.show('documentation-list');
+		});
 
 		this.parentMultiSelect = new MultiSelect({multiple: false});
 
 		this.form.querySelector('.parent').appendChild(this.parentMultiSelect.container);
-
-		this.bodyEditior = new HTMLEditor();
-
-		this.form.querySelector('.body').appendChild(this.bodyEditior.container);
 
 		this.form.querySelector('.form').on('submit', e => {
 			this.update(e);
@@ -1920,6 +1921,10 @@ class Documentation {
 		this.parentMultiSelect.render();
 
 		this.parentMultiSelect.value = [this.parent];
+
+		this.bodyEditior = new HTMLEditor();
+
+		this.form.querySelector('.body').appendChild(this.bodyEditior.container);
 
 		await this.bodyEditior.setup();
 
