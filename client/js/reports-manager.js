@@ -2049,6 +2049,10 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 				rowValue: row => [row.type],
 			},
 			{
+				key: 'Created By',
+				rowValue: row => [row.added_by_name],
+			},
+			{
 				key: 'Tags',
 				rowValue: row => row.tags ? row.tags.split(',').map(t => t.trim()) : [],
 			}
