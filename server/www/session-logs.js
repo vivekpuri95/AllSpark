@@ -1,6 +1,7 @@
 const API = require('../utils/api');
 const commonFun = require('../utils/commonFunctions');
 const dbConfig = require('config').get("sql_db");
+const userList = require('./users').list;
 
 class SessionLogs extends API {
 
@@ -10,7 +11,14 @@ class SessionLogs extends API {
 
 		if(user_id != this.user.user_id) {
 
-			this.user.privilege.needs('administrator');
+			let listObj = new userList();
+
+			Object.assign(this.request.body, this.request.query);
+			Object.assign(listObj, this);
+
+			const [user] = await listObj.list();
+
+			this.assert(user, 'No user found');
 		}
 
 		const db = dbConfig.write.database.concat('_logs');
