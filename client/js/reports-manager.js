@@ -3820,19 +3820,98 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 					<option>POST</option>
 				</select>
 			</label>
+
+			<label class="parameters">
+				<span>Parameters</span>
+				<div class="headings">
+					<span>Key</span>
+					<span>Value</span>
+				</div>
+				<div class="list"></div>
+			</label>
+
+			<label class="add-parameter">
+				<span> Add Parameters</span>
+				<div class="add-form">
+					<label>
+						<span>Key</span>
+						<input type="text" name="_key">
+					</label>
+					<label>
+						<span>Value</span>
+						<input type="text" name="_value">
+					</label>
+					<label>
+						<span>&nbsp;</span>
+						<button type="button"><i class="fa fa-paper-plane"></i>Add</button>
+					</label>
+				</div>
+			</label>
 		`;
 
 		// Set the vlues from report definition
 		this.formJson = this.report.definition || {};
 
+		if(this.report && this.report.definition && this.report.definition.parameters) {
+
+			for(const parameter of this.report.definition.parameters) {
+				this.insetParameters(parameter);
+			}
+		}
+
+		super.form.querySelector('.add-parameter button').on('click', () => {
+
+			this.addParameter();
+			super.form._key.value = '';
+			super.form._value.value = '';
+		});
+
 		return super.form;
+	}
+
+	addParameter() {
+
+		const
+			key = this.form._key.value,
+			value = this.form._value.value;
+
+		this.insetParameters({key,value});
+	}
+
+	insetParameters(parameter) {
+
+		const label = document.createElement('label');
+
+		label.innerHTML = `
+			<input type="text" name="key" value="${parameter.key}" readonly>
+			<input type="text" name="value" value="${parameter.value}" readonly>
+			<button type="button"><i class="fa fa-trash-alt"></i></button>
+		`;
+
+		label.querySelector('button').on('click', () => {
+
+			label.remove();
+		});
+
+		this.form.querySelector('.parameters .list').appendChild(label);
 	}
 
 	get json() {
 
+		const labels = this.form.querySelectorAll('.parameters .list label');
+		const parameters = [];
+
+		for(const label of labels) {
+			parameters.push({
+				key: label.querySelector('input[name=key]').value,
+				value: label.querySelector('input[name=value]').value,
+			});
+		};
+
 		return {
 			url: this.form.url.value,
 			method: this.form.method.value,
+			parameters
 		};
 	}
 });
