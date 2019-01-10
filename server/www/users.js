@@ -61,7 +61,7 @@ exports.delete = class extends API {
 			[this.request.body.user_id]
 		);
 
-		this.assert(this.user.privilege.has('user.delete', 'ignore') && existingUser.added_by == this.user.user_id);
+		this.assert(this.user.privilege.has('user.delete', 'ignore') || existingUser.added_by == this.user.user_id);
 
 		this.user.privilege.needs('user.delete', "ignore");
 
