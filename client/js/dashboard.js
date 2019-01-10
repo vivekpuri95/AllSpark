@@ -100,6 +100,10 @@ Page.class = class Dashboards extends Page {
 					rowValue: row => row.tags ? row.tags.split(',').map(t => t.trim()) : [],
 				},
 				{
+					key: 'Created By',
+					rowValue: row => row.added_by_name ? [row.added_by_name] : [],
+				},
+				{
 					key: 'Category',
 					rowValue: row => MetaData.categories.has(row.source.subtitle) ? [MetaData.categories.get(row.source.subtitle).name] : [],
 				}

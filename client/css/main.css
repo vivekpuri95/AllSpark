@@ -536,6 +536,7 @@ body {
 			table td {
 				padding: 8px;
 				position: relative;
+				user-select: text;
 			}
 				table .thin,
 				table .action {
@@ -1425,5 +1426,5 @@ body {
 body#tinymce,
 body#tinymce table tr {
 	background: transparent !important;
-	color: var(--color-surface-text);
+	color: initial !important;
 }

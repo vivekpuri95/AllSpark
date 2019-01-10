@@ -218,7 +218,7 @@ class DataSource {
 
 					<span>
 						<span class="label">Added By:</span>
-						<span><a href="/user/profile/${this.added_by}">${this.added_by_name || 'NA'}</a></span>
+						<span>${this.added_by_name ? `<a href="/user/profile/${this.added_by}" target="_blank">${this.added_by_name}</a>` : 'Unknown User'}</span>
 					</span>
 
 					<span>
@@ -2190,8 +2190,11 @@ class DataSourceColumn {
 				}
 
 				if (this.source.format.columns) {
+
 					for (const column of this.source.format.columns) {
+
 						if (column.key == this.key) {
+
 							column.disabled = !column.disabled;
 							found = true;
 							break;
@@ -2211,7 +2214,6 @@ class DataSourceColumn {
 				}
 
 				this.disabled = !this.disabled;
-				this.source.columns.render();
 				await this.update();
 			}, 300);
 		});
@@ -7892,9 +7894,6 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					continue outer;
 				}
 			}
-
-			column.hidden = true;
-			column.render();
 		}
 
 		for(const axis of this.axes) {
@@ -13460,11 +13459,14 @@ class ReportLog {
 		container.innerHTML = `
 			<span class="clock"><i class="fa fa-history"></i></span>
 			<span class="timing" title="${Format.dateTime(this.created_at)}">${(this.operation == 'insert'? 'Created ' : 'Updated ') + Format.ago(this.created_at)}</span>
-			<a href="/user/profile/${this.user_id}" target="_blank">${this.user_name}</a>
+			${this.user_name ? `<a href="/user/profile/${this.user_id}" target="_blank">${this.user_name}</a>` : '<a>Unknown User</a>'}
 		`;
 
 		container.on('click', () => this.load());
-		container.querySelector('a').on('click', e => e.stopPropagation());
+
+		if(container.querySelector('a')) {
+			container.querySelector('a').on('click', e => e.stopPropagation());
+		}
 
 		return container;
 	}

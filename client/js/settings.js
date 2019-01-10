@@ -220,7 +220,7 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 		container.textContent = null;
 
 		if(!this.list.size) {
-			container.innerHTML = '<tr><td colspan="5" class="NA">No Global Filters Found</td></tr>'
+			container.innerHTML = '<tr><td colspan="12" class="NA">No Global Filters Found</td></tr>'
 		}
 
 		for(const globalFilter of this.list.values()) {
@@ -373,6 +373,243 @@ Settings.list.set('categories', class Categories extends SettingPage {
 		await Sections.show('category-list');
 	}
 });
+
+Settings.list.set('documentation', class Documentations extends SettingPage {
+
+	constructor(...params) {
+
+		super(...params);
+
+		this.list = new Map;
+	}
+
+	get name() {
+		return 'Documentation';
+	}
+
+	async setup() {
+
+		this.container = this.page.querySelector('.documentation-page');
+		this.container.appendChild(this.addForm);
+	}
+
+	async load(force) {
+
+		const response = await API.call('documentation/list');
+
+		this.list.clear();
+
+		for (const data of response) {
+			this.list.set(data.id, new Documentation(data, this));
+		}
+
+		this.parentDatalist = response.map(d => {return {name: d.heading, value: d.id, subtitle: d.slug}});
+
+		if(force) {
+			for(const node of this.container.querySelectorAll('.edit-form')) {
+				node.remove();
+			}
+		}
+
+
+		await this.render();
+	}
+
+	async render() {
+
+		this.container.appendChild(this.section);
+
+		const container = this.section.querySelector('table tbody');
+
+		container.textContent = null;
+
+		if(!this.list.size) {
+			container.innerHTML = '<tr><td colspan="7" class="NA">No Documentation Found</td></tr>';
+		}
+
+		for(const documentation of this.list.values()) {
+			container.appendChild(documentation.row);
+		}
+
+		for(const documentation of this.list.values()) {
+			this.container.appendChild(documentation.form);
+		}
+
+		await Sections.show('documentation-list');
+	}
+
+	get addForm() {
+
+		if(this.addFormElement) {
+			return this.addFormElement;
+		}
+
+		const container = this.addFormElement = document.createElement('section');
+		container.classList.add('section');
+		container.id = 'documentation-form-add';
+
+		container.innerHTML = `
+
+			<h1>Add new Documentation</h1>
+
+			<header class="toolbar">
+				<button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
+				<button type="submit" form="documentation-add"><i class="far fa-save"></i> Save</button>
+			</header>
+
+			<form class="block form" id="documentation-add">
+				<label>
+					<span>Heading <span class="red">*</span></span>
+					<input type="text" name="heading" required>
+				</label>
+
+				<label>
+					<span>Slug <span class="red">*</span><a class="generate-slug">Generate</a></span>
+					<input type="text" name="slug" required>
+				</label>
+
+				<label class="parent">
+					<span>Parent</span>
+				</label>
+
+				<label>
+					<span>Chapter <span class="red">*</span></span>
+					<input type="number" name="chapter" min="1" step="1" required>
+				</label>
+
+				<div class="body">
+					<span>Body</span>
+				</div>
+			</form>
+		`;
+
+		const form = this.form = container.querySelector('form');
+
+		container.querySelector('#cancel-form').on('click', () => {
+			Sections.show('documentation-list');
+		});
+
+		container.querySelector('.generate-slug').on('click', () => {
+
+			const
+				heading = form.heading.value,
+				slug = heading.toLowerCase().split(' ').join('_');
+
+			form.slug.value = slug;
+		});
+
+		this.parentMultiSelect = new MultiSelect({multiple: false});
+
+		form.querySelector('.parent').appendChild(this.parentMultiSelect.container);
+
+		this.bodyEditior = new HTMLEditor();
+
+		form.on('submit', e => this.insert(e));
+
+		return container;
+	}
+
+	async add() {
+
+		this.form.reset();
+
+		Sections.show('documentation-form-add');
+
+		this.parentMultiSelect.datalist = this.parentDatalist;
+
+		this.parentMultiSelect.render();
+
+		this.parentMultiSelect.value = '';
+
+		if(!this.form.querySelector('.body .html-editor')) {
+
+			this.form.querySelector('.body').appendChild(this.bodyEditior.container);
+
+			await this.bodyEditior.setup();
+		}
+
+		this.bodyEditior.value = '';
+
+		this.form.heading.focus();
+	}
+
+	async insert(e) {
+
+		e.preventDefault();
+
+		const
+			parameters = {
+				parent: this.parentMultiSelect.value[0] || '',
+				body: this.bodyEditior.value || '',
+			},
+			options = {
+				method: 'POST',
+				form: new FormData(this.form),
+			};
+
+		try {
+
+			const response = await API.call('documentation/insert', parameters, options);
+
+			await this.load();
+
+			new SnackBar({
+				message: `Documentation for ${this.form.heading.value} Added`,
+				icon: 'fa fa-plus',
+			});
+
+		} catch(e) {
+
+			if(e.message.includes('ER_DUP_ENTRY')) {
+				e.message = 'Duplicate entry for chapter found.';
+			}
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+
+	get section() {
+
+		if(this.listElement) {
+			return this.listElement;
+		}
+
+		const container = this.listElement = document.createElement('section');
+		container.classList.add('section');
+		container.id = 'documentation-list';
+
+		container.innerHTML = `
+			<h1>Documentation</h1>
+
+			<header class="toolbar">
+				<button id="add-documentation"><i class="fa fa-plus"></i> Add New Documentation</button>
+			</header>
+
+			<table class="block">
+				<thead>
+					<th>Heading</th>
+					<th>Slug</th>
+					<th>Parent</th>
+					<th>Chapter</th>
+					<th>Added by</th>
+					<th>Edit</th>
+					<th>Delete</th>
+				</thead>
+				<tbody></tbody>
+			</table>
+		`;
+
+		container.querySelector('#documentation-list #add-documentation').on('click', () => this.add());
+
+		return container;
+	}
+})
 
 Settings.list.set('executingReports', class ExecutingReports extends SettingPage {
 
@@ -1564,6 +1801,223 @@ class GlobalFilter {
 			new SnackBar({
 				message: `${this.name} Global Filter Deleted`,
 				subtitle: `Type: <strong>${MetaData.filterTypes.get(this.type).name}</strong> Placeholer: <strong>${this.placeholder}</strong>`,
+				icon: 'far fa-trash-alt',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+}
+
+class Documentation {
+
+	constructor(documentation, page) {
+
+		Object.assign(this, documentation);
+
+		this.page = page;
+	}
+
+	get row() {
+
+		if (this.rowElement) {
+			return this.rowElement;
+		}
+
+		const container = this.rowElement = document.createElement('tr');
+
+		const [parent] = this.page.parentDatalist.filter(x => x.value == this.parent);
+
+		container.innerHTML = `
+			<td>${this.heading}</td>
+			<td>${this.slug}</td>
+			<td>${parent ? parent.name : ''}</td>
+			<td>${this.chapter}</td>
+			<td>${this.name}</td>
+			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
+			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+		`;
+
+		container.querySelector('.green').on('click', () => this.edit());
+		container.querySelector('.red').on('click', () => this.delete());
+
+		return container;
+	}
+
+	get form() {
+
+		if(this.formElement) {
+			return this.formElement;
+		}
+
+		const container = this.formElement = document.createElement('section');
+		container.classList.add('section', 'edit-form');
+		container.id = `documentation-form-${this.id}`;
+
+		container.innerHTML = `
+
+			<h1></h1>
+
+			<header class="toolbar">
+				<button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
+				<button type="submit" form="documentation-${this.id}"><i class="far fa-save"></i> Save</button>
+			</header>
+
+			<form class="block form" id="documentation-${this.id}">
+				<label>
+					<span>Heading <span class="red">*</span></span>
+					<input type="text" name="heading" required>
+				</label>
+
+				<label>
+					<span>Slug <span class="red">*</span><a data-tooltip="Auto generate the slug from heading." class="generate-slug">Generate</a></span>
+					<input type="text" name="slug" required>
+				</label>
+
+				<label class="parent">
+					<span>Parent</span>
+				</label>
+
+				<label>
+					<span>Chapter <span class="red">*</span></span>
+					<input type="number" name="chapter" min="1" step="1" required>
+				</label>
+
+				<div class="body">
+					<span>Body</span>
+				</div>
+			</form>
+		`;
+
+		container.querySelector('.generate-slug').on('click', () => {
+
+			const
+				heading = container.querySelector('form').heading.value,
+				slug = heading.toLowerCase().split(' ').join('_');
+
+			container.querySelector('form').slug.value = slug;
+		});
+
+		container.querySelector('#cancel-form').on('click', () => {
+			Sections.show('documentation-list');
+		});
+
+		this.parentMultiSelect = new MultiSelect({multiple: false});
+
+		container.querySelector('.parent').appendChild(this.parentMultiSelect.container);
+
+		this.bodyEditior = new HTMLEditor();
+
+		container.querySelector('.form').on('submit', e => {
+			this.update(e);
+		});
+
+		return container;
+	}
+
+	async edit() {
+
+		for(const element of this.form.querySelector('form').elements) {
+
+			if(element.name in this) {
+				element.value = this[element.name];
+			}
+		}
+
+		await Sections.show(`documentation-form-${this.id}`);
+
+		this.form.querySelector('h1').innerHTML = `Edit Documentation for ${this.heading}`;
+
+		const datalist = this.page.parentDatalist.filter(x => x.value != this.id);
+
+		this.parentMultiSelect.datalist = datalist;
+
+		this.parentMultiSelect.render();
+
+		this.parentMultiSelect.value = [this.parent];
+
+		if(!this.form.querySelector('.body .html-editor')) {
+
+			this.form.querySelector('.body').appendChild(this.bodyEditior.container);
+
+			await this.bodyEditior.setup();
+		}
+
+		this.bodyEditior.value = this.body;
+	}
+
+	async update(e) {
+
+		e.preventDefault();
+
+		const
+			parameter = {
+				id: this.id,
+				parent: this.parentMultiSelect.value[0] || '',
+				body: this.bodyEditior.value || '',
+			},
+			options = {
+				method: 'POST',
+				form: new FormData(this.form.querySelector('form')),
+			};
+
+		try {
+
+			await API.call('documentation/update', parameter, options);
+
+			await this.page.load(true);
+
+			new SnackBar({
+				message: `Documentation for ${this.heading} updated`,
+				icon: 'far fa-save',
+			});
+
+		} catch(e) {
+
+			if(e.message.includes('ER_DUP_ENTRY')) {
+				e.message = 'Duplicate entry for chapter found.';
+			}
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+
+	async delete() {
+
+		if (!confirm('Are you sure?')) {
+			return;
+		}
+
+		const
+			options = {
+				method: 'POST',
+			},
+			parameter = {
+				id: this.id,
+			};
+
+		try {
+
+			await API.call('documentation/delete', parameter, options);
+
+			await this.page.load();
+
+			new SnackBar({
+				message: `Documentation for ${this.heading} Deleted`,
 				icon: 'far fa-trash-alt',
 			});
 

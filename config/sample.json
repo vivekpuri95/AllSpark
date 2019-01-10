@@ -33,7 +33,9 @@
       "name": "Setup Account Name",
       "url": "Account Url",
       "icon": "https://foo-bar.com/images/icon.png",
-      "logo": "https://foo-bar.com/images/logo.png"
+      "logo": "https://foo-bar.com/images/logo.png",
+      "auth_api": "External Login api",
+      "auth_api_parameters": ["External login api parameters"]
     },
     "user": {
       "first_name": "First Name",

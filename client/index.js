@@ -857,7 +857,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 
 					<header class="toolbar">
 						<button type="submit" form="configure-report-form" class="save-configure-stage"><i class="far fa-save"></i> Save</button>
-						<small id="added-by"></small>
+						<span id="added-by" class="NA"></span>
 					</header>
 
 					<form id="configure-report-form">
@@ -1268,6 +1268,7 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 		this.scripts.push('/js/reports.js');
 		this.scripts.push('/js/settings.js');
 		this.scripts.push('/js/settings-manager.js');
+		this.scripts.push('https://devpreview.tiny.cloud/demo/tinymce.min.js');
 	}
 
 	async main() {
@@ -1436,6 +1437,8 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 					</form>
 				</section>
 			</div>
+
+			<div class="setting-page documentation-page hidden"></div>
 
 			<div class="setting-page privilege-page hidden">
 
