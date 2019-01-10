@@ -376,6 +376,13 @@ Settings.list.set('categories', class Categories extends SettingPage {
 
 Settings.list.set('documentation', class Documentations extends SettingPage {
 
+	constructor(...params) {
+
+		super(...params);
+
+		this.list = new Map;
+	}
+
 	get name() {
 		return 'Documentation';
 	}
@@ -390,7 +397,7 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 		const response = await API.call('documentation/list');
 
-		this.list = new Map;
+		this.list.clear();
 
 		for (const data of response) {
 			this.list.set(data.id, new Documentation(data, this));
@@ -398,8 +405,8 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 		this.parentDatalist = response.map(d => {return {name: d.heading, value: d.id, subtitle: d.slug}});
 
-		if(this.container.querySelectorAll('.edit-form').length) {
-			[...this.container.querySelectorAll('.edit-form')].map(x => x.remove());
+		for(const node of this.container.querySelectorAll('.edit-form')) {
+			node.remove();
 		}
 
 		await this.render();
