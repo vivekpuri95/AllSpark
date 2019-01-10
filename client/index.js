@@ -1268,6 +1268,7 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 		this.scripts.push('/js/reports.js');
 		this.scripts.push('/js/settings.js');
 		this.scripts.push('/js/settings-manager.js');
+		this.scripts.push('https://devpreview.tiny.cloud/demo/tinymce.min.js');
 	}
 
 	async main() {
@@ -1436,6 +1437,8 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 					</form>
 				</section>
 			</div>
+
+			<div class="setting-page documentation-page hidden"></div>
 
 			<div class="setting-page privilege-page hidden">
 

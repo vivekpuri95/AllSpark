@@ -158,3 +158,15 @@ main .cached-reports table {
 	.dialog-box-blanket .body.executing-query-info .code-editor {
 		height: 400px;
 	}
+
+main #documentation-form div.body {
+	min-width: 100%;
+}
+main .documentation-page .generate-slug {
+	margin-left: auto;
+	cursor: pointer;
+	font-weight: normal;
+}
+main .documentation-page .generate-slug:hover {
+	text-decoration: underline;
+}

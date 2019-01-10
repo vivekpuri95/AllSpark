@@ -2112,7 +2112,7 @@ class CodeEditor {
  *
  * editor.value = 'test';
  *
- * // asd
+ * // test
  * console.log(editor.value);
  */
 class HTMLEditor {
