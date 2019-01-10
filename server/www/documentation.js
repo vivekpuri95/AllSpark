@@ -50,7 +50,7 @@ class Documentation extends API {
 
 		this.assert(id, "Id is required to update.");
 
-		const parent = this.request.body.parent;
+		let parent = this.request.body.parent;
 
 		parent = parent === '' ? null : parent;
 
