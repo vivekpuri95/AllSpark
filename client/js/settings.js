@@ -383,6 +383,7 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 	async setup() {
 
 		this.container = this.page.querySelector('.documentation-page');
+		this.container.appendChild(this.addForm);
 	}
 
 	async load() {
@@ -397,12 +398,8 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 		this.parentDatalist = response.map(d => {return {name: d.heading, value: d.id, subtitle: d.slug}});
 
-		this.container.textContent = null;
-
-		this.container.appendChild(this.addForm);
-
-		if(this.addForm.querySelector('.body .html-editor')) {
-			this.addForm.querySelector('.body .html-editor').remove();
+		if(this.container.querySelectorAll('.edit-form').length) {
+			[...this.container.querySelectorAll('.edit-form')].map(x => x.remove());
 		}
 
 		await this.render();
@@ -1846,7 +1843,7 @@ class Documentation {
 		}
 
 		const container = this.formElement = document.createElement('section');
-		container.classList.add('section');
+		container.classList.add('section', 'edit-form');
 		container.id = `documentation-form-${this.id}`;
 
 		container.innerHTML = `
