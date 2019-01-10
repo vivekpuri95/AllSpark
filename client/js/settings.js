@@ -397,18 +397,18 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 		this.parentDatalist = response.map(d => {return {name: d.heading, value: d.id, subtitle: d.slug}});
 
+		this.container.textContent = null;
+
+		this.container.appendChild(this.addForm);
+
 		await this.render();
 	}
 
 	async render() {
 
-		this.container.textContent = null;
-
 		this.container.appendChild(this.section);
 
 		const container = this.section.querySelector('table tbody');
-
-		container.textContent = null;
 
 		if(!this.list.size) {
 			container.innerHTML = '<tr><td colspan="7" class="NA">No Documentation Found</td></tr>';
@@ -416,6 +416,10 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 		for(const documentation of this.list.values()) {
 			container.appendChild(documentation.row);
+		}
+
+		for(const documentation of this.list.values()) {
+			this.container.appendChild(documentation.form);
 		}
 
 		await Sections.show('documentation-list');
@@ -469,7 +473,6 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 		const form = this.form = container.querySelector('form');
 
 		container.querySelector('#cancel-form').on('click', () => {
-			container.querySelector('.body .html-editor').remove();
 			Sections.show('documentation-list');
 		});
 
@@ -486,14 +489,14 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 		form.querySelector('.parent').appendChild(this.parentMultiSelect.container);
 
+		this.bodyEditior = new HTMLEditor();
+
 		form.on('submit', e => this.insert(e));
 
 		return container;
 	}
 
 	async add() {
-
-		this.container.appendChild(this.addForm);
 
 		this.form.reset();
 
@@ -505,11 +508,12 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 		this.parentMultiSelect.value = '';
 
-		this.bodyEditior = new HTMLEditor();
+		if(!this.form.querySelector('.body .html-editor')) {
 
-		this.form.querySelector('.body').appendChild(this.bodyEditior.container);
+			this.form.querySelector('.body').appendChild(this.bodyEditior.container);
 
-		await this.bodyEditior.setup();
+			await this.bodyEditior.setup();
+		}
 
 		this.bodyEditior.value = '';
 
@@ -1884,15 +1888,16 @@ class Documentation {
 		});
 
 		container.querySelector('#cancel-form').on('click', () => {
-			container.querySelector('.body .html-editor').remove();
 			Sections.show('documentation-list');
 		});
 
 		this.parentMultiSelect = new MultiSelect({multiple: false});
 
-		this.form.querySelector('.parent').appendChild(this.parentMultiSelect.container);
+		container.querySelector('.parent').appendChild(this.parentMultiSelect.container);
 
-		this.form.querySelector('.form').on('submit', e => {
+		this.bodyEditior = new HTMLEditor();
+
+		container.querySelector('.form').on('submit', e => {
 			this.update(e);
 		});
 
@@ -1901,16 +1906,14 @@ class Documentation {
 
 	async edit() {
 
-		this.page.container.appendChild(this.form);
-
-		await Sections.show(`documentation-form-${this.id}`);
-
 		for(const element of this.form.querySelector('form').elements) {
 
 			if(element.name in this) {
 				element.value = this[element.name];
 			}
 		}
+
+		await Sections.show(`documentation-form-${this.id}`);
 
 		this.form.querySelector('h1').innerHTML = `Edit Documentation for ${this.heading}`;
 
@@ -1922,11 +1925,12 @@ class Documentation {
 
 		this.parentMultiSelect.value = [this.parent];
 
-		this.bodyEditior = new HTMLEditor();
+		if(!this.form.querySelector('.body .html-editor')) {
 
-		this.form.querySelector('.body').appendChild(this.bodyEditior.container);
+			this.form.querySelector('.body').appendChild(this.bodyEditior.container);
 
-		await this.bodyEditior.setup();
+			await this.bodyEditior.setup();
+		}
 
 		this.bodyEditior.value = this.body;
 	}
