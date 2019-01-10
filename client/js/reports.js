@@ -13459,7 +13459,7 @@ class ReportLog {
 		container.innerHTML = `
 			<span class="clock"><i class="fa fa-history"></i></span>
 			<span class="timing" title="${Format.dateTime(this.created_at)}">${(this.operation == 'insert'? 'Created ' : 'Updated ') + Format.ago(this.created_at)}</span>
-			${this.user_name ? `<a href="/user/profile/${this.user_id}" target="_blank">${this.user_name}</a>` : '<span class="NA">Unknown User</span>'}
+			${this.user_name ? `<a href="/user/profile/${this.user_id}" target="_blank">${this.user_name}</a>` : '<a class="NA">Unknown User</a>'}
 		`;
 
 		container.on('click', () => this.load());
