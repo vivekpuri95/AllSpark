@@ -110,7 +110,15 @@ class Sessions {
 		if(this.response)
 			return this.response;
 
-		this.response = await API.call('session-logs/list');
+		const
+			parameters = {
+				user_id: this.user_id,
+			},
+			options = {
+				method: 'GET',
+			};
+
+		this.response = await API.call('session-logs/list', parameters, options);
 
 		return this.response;
 	}
@@ -146,6 +154,11 @@ class Sessions {
 
 		for(const session of this.sessionsList.values())
 			list.appendChild(session.container);
+
+		if(!this.sessionsList.size) {
+
+			list.innerHTML = '<div class="NA">No activity found.</div>'
+		}
 
 		return container;
 	}

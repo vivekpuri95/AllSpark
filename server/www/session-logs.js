@@ -6,7 +6,9 @@ class SessionLogs extends API {
 
 	async list({user_id, inactive, sdate, edate} = {}) {
 
-		if(user_id) {
+		this.assert(user_id, 'User id required!');
+
+		if(user_id != this.user.user_id) {
 
 			this.user.privilege.needs('administrator');
 		}
@@ -42,7 +44,7 @@ class SessionLogs extends API {
 				AND s1.created_at >  now() - interval 5 day
 				AND s1.user_id = ?
 			`,
-			[db, db, user_id || this.user.user_id]
+			[db, db, user_id]
 		)
 	};
 
