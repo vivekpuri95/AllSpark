@@ -218,7 +218,7 @@ class DataSource {
 
 					<span>
 						<span class="label">Added By:</span>
-						<span>${this.added_by_name ? `<a href="/user/profile/${this.added_by}">${this.added_by_name}</a>` : 'Unknown User'}</span>
+						<span>${this.added_by_name ? `<a href="/user/profile/${this.added_by}" target="_blank">${this.added_by_name}</a>` : 'Unknown User'}</span>
 					</span>
 
 					<span>
