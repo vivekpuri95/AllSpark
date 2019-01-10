@@ -5,7 +5,14 @@ class Documentation extends API {
 	async list() {
 
 		const result = await this.mysql.query(
-			`SELECT * FROM tb_documentation`,
+			`SELECT
+				d.*,
+				CONCAT_WS(' ', u.first_name, u.middle_name, u.last_name) as name
+			FROM
+				tb_documentation d
+			JOIN
+				tb_users u
+			on d.added_by = u.user_id`,
 		);
 
 		return result;
@@ -25,7 +32,7 @@ class Documentation extends API {
 				[chapter]
 			);
 
-			this.assert(!response.length, `Duplicate entry found for ${parent}, ${chapter}`);
+			this.assert(!response.length, 'Duplicate entry for chapter found.');
 		}
 
 		const parameters = {
@@ -77,7 +84,7 @@ class Documentation extends API {
 				[parameters.chapter, id]
 			);
 
-			this.assert(!response.length, `Duplicate entry found for ${parameters.parent}, ${parameters.chapter}.`);
+			this.assert(!response.length, 'Duplicate entry for chapter found.');
 		}
 
 		return await this.mysql.query(

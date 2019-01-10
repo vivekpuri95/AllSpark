@@ -165,6 +165,7 @@ main #documentation-form div.body {
 main .documentation-page .generate-slug {
 	margin-left: auto;
 	cursor: pointer;
+	font-weight: normal;
 }
 main .documentation-page .generate-slug:hover {
 	text-decoration: underline;

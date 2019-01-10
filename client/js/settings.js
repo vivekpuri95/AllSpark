@@ -550,6 +550,10 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 		} catch(e) {
 
+			if(e.message.includes('ER_DUP_ENTRY')) {
+				e.message = 'Duplicate entry for chapter found.';
+			}
+
 			new SnackBar({
 				message: 'Request Failed',
 				subtitle: e.message,
@@ -583,6 +587,7 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 					<th>Slug</th>
 					<th>Parent</th>
 					<th>Chapter</th>
+					<th>Added by</th>
 					<th>Edit</th>
 					<th>Delete</th>
 				</thead>
@@ -1826,6 +1831,7 @@ class Documentation {
 			<td>${this.slug}</td>
 			<td>${parent ? parent.name : ''}</td>
 			<td>${this.chapter}</td>
+			<td>${this.name}</td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
@@ -1862,7 +1868,7 @@ class Documentation {
 				</label>
 
 				<label>
-					<span>Slug <span class="red">*</span><a class="generate-slug">Generate</a></span>
+					<span>Slug <span class="red">*</span><a data-tooltip="Auto generate the slug from heading." class="generate-slug">Generate</a></span>
 					<input type="text" name="slug" required>
 				</label>
 
@@ -1965,6 +1971,10 @@ class Documentation {
 			});
 
 		} catch(e) {
+
+			if(e.message.includes('ER_DUP_ENTRY')) {
+				e.message = 'Duplicate entry for chapter found.';
+			}
 
 			new SnackBar({
 				message: 'Request Failed',
