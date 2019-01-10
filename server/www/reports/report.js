@@ -820,7 +820,7 @@ exports.logs = class extends API {
 			LEFT JOIN
 				tb_users u
 			ON
-				h.user_id = u.user_id
+				h.user_id = u.user_id AND u.status = 1
 			WHERE
 				owner = ?
 				AND h.account_id = ?
