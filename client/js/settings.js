@@ -393,7 +393,7 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 		this.container.appendChild(this.addForm);
 	}
 
-	async load() {
+	async load(force) {
 
 		const response = await API.call('documentation/list');
 
@@ -405,9 +405,12 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 		this.parentDatalist = response.map(d => {return {name: d.heading, value: d.id, subtitle: d.slug}});
 
-		for(const node of this.container.querySelectorAll('.edit-form')) {
-			node.remove();
+		if(force) {
+			for(const node of this.container.querySelectorAll('.edit-form')) {
+				node.remove();
+			}
 		}
+
 
 		await this.render();
 	}
@@ -1970,7 +1973,7 @@ class Documentation {
 
 			await API.call('documentation/update', parameter, options);
 
-			await this.page.load();
+			await this.page.load(true);
 
 			new SnackBar({
 				message: `Documentation for ${this.heading} updated`,
