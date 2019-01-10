@@ -78,6 +78,10 @@ class ReportsManger extends Page {
 				rowValue: row => row.description ? [row.description] : [],
 			},
 			{
+				key: 'Created By',
+				rowValue: row =>  row.added_by_name ? [row.added_by_name] : [],
+			},
+			{
 				key: 'Connection name',
 				rowValue: row => {
 					if(page.connections.has(parseInt(row.connection_name)))
@@ -100,31 +104,39 @@ class ReportsManger extends Page {
 				rowValue: row => row.tags ? row.tags.split(',').map(t => t.trim()) : [],
 			},
 			{
-				key: 'Filters Length',
+				key: 'Filter Length',
 				rowValue: row => [row.filters.length]
 			},
 			{
-				key: 'Filters Name',
+				key: 'Filter Name',
 				rowValue: row => row.filters.map(f => f.name),
 			},
 			{
-				key: 'Filters Placeholder',
+				key: 'Filter Placeholder',
 				rowValue: row => row.filters.map(f => f.placeholder),
 			},
 			{
-				key: 'Visualizations Name',
-				rowValue: row => row.visualizations.map(f => f.name),
+				key: 'Visualization Name',
+				rowValue: row => row.visualizations.map(v => v.name),
 			},
 			{
-				key: 'Visualizations Type',
+				key: 'Visualization ID',
+				rowValue: row => row.visualizations.map(v => v.visualization_id),
+			},
+			{
+				key: 'Visualization Type',
 				rowValue: row => {
-					return row.visualizations.map(f => f.type)
+					return row.visualizations.map(v => v.type)
 											 .map(m => MetaData.visualizations.has(m) ?
 											 (MetaData.visualizations.get(m)).name : []);
 				},
 			},
 			{
-				key: 'Visualizations Length',
+				key: 'Visualization Created By',
+				rowValue: row => row.visualizations.map(f => f.added_by_name ? f.added_by_name : []),
+			},
+			{
+				key: 'Visualization Length',
 				rowValue: row => [row.visualizations.length],
 			},
 			{
@@ -1059,9 +1071,8 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 		this.container.querySelector('#added-by').innerHTML = `
 			Added by
-			<strong><a href="/user/profile/${this.report.added_by}" target="_blank">${this.report.added_by_name || 'Unknown User'}</a></strong>
-
-			<strong title="${Format.dateTime(this.report.created_at)}">${Format.ago(this.report.created_at)}</strong>
+			${this.report.added_by_name ? `<a href="/user/profile/${this.report.added_by}" target="_blank">${this.report.added_by_name}</a>` : 'Unknown User'}
+			<span title="${Format.dateTime(this.report.created_at)}">${Format.ago(this.report.created_at)}</span>
 		`;
 
 		if(this.report.is_redis > 0) {
@@ -2060,6 +2071,10 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 			{
 				key: 'Type',
 				rowValue: row => [row.type],
+			},
+			{
+				key: 'Created By',
+				rowValue: row => [row.added_by_name],
 			},
 			{
 				key: 'Tags',
@@ -3167,7 +3182,7 @@ class VisualizationManager {
 			<form id="configure-visualization-form">
 
 				<div class="configuration-section">
-					<h3><i class="fas fa-angle-right"></i> General</h3>
+					<h3><i class="fas fa-angle-right"></i> General <span class="count"></span></h3>
 					<div class="body">
 						<div class="form subform">
 							<label>
@@ -3196,7 +3211,6 @@ class VisualizationManager {
 				</div>
 
 				<div class="options"></div>
-
 			</form>
 		`;
 
@@ -3219,6 +3233,18 @@ class VisualizationManager {
 		}
 
 		container.querySelector('.form.description').appendChild(this.descriptionEditor.container);
+
+		container.querySelector('.configuration-section h3 .count').innerHTML = `
+			<span class="right">
+				Added by
+				${this.added_by_name ? `<a href="/user/profile/${this.added_by}" target="_blank">${this.added_by_name}</a>` : 'Unknown User'}
+				<span title="${Format.dateTime(this.created_at)}">${Format.ago(this.created_at)}</span>
+			</span>
+		`;
+
+		if(container.querySelector('.configuration-section h3 .count a')) {
+			container.querySelector('.configuration-section h3 .count a').on('click', e => e.stopPropagation());
+		}
 
 		this.form.on('submit', e => this.update(e));
 
@@ -3384,7 +3410,7 @@ class QueryLog extends ReportLog {
 			<button class="restore"><i class="fa fa-window-restore"></i> Restore</button>
 			<button class="run"><i class="fas fa-sync"></i> Run</button>
 			<span class="log-title">
-				<a href="/user/profile/${this.user_id}" target="_blank">${this.user_name}</a> &#183; ${Format.dateTime(this.created_at)}
+				${this.user_name ? `<a href="/user/profile/${this.user_id}" target="_blank">${this.user_name}</a>` : 'Unknown User'} &#183; ${Format.dateTime(this.created_at)}
 			</span>
 		`;
 
@@ -6407,7 +6433,8 @@ class ReportTransformations extends Set {
 						</div>
 					</fieldset>
 				</form>
-			</div>`;
+			</div>
+		`;
 
 		const select = this.container.querySelector('.add-transformation select');
 

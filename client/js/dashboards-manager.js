@@ -84,6 +84,10 @@ class DashboardManager extends Page {
 				key: 'Order',
 				rowValue: row => row.order ? [row.order] : [],
 			},
+			{
+				key: 'Created By',
+				rowValue: row => row.added_by_name ? [row.added_by_name] : [],
+			},
 		];
 
 		this.searchBar = new SearchColumnFilters({ filters });
@@ -175,6 +179,10 @@ class DashboardsDashboard {
 
 		if(DashboardsDashboard.container.querySelector('.parent-dashboard .multi-select')) {
 			DashboardsDashboard.container.querySelector('.parent-dashboard .multi-select').remove();
+		}
+
+		if(DashboardsDashboard.container.querySelector('#form .toolbar .right')) {
+			DashboardsDashboard.container.querySelector('#form .toolbar .right').remove();
 		}
 
 		DashboardsDashboard.container.querySelector('.parent-dashboard').appendChild(DashboardsDashboard.multiselect.container);
@@ -275,6 +283,18 @@ class DashboardsDashboard {
 	async edit() {
 
 		DashboardsDashboard.container.querySelector('h1').textContent = 'Edit ' + this.name;
+
+		if(DashboardsDashboard.container.querySelector('#form .toolbar .right')) {
+			DashboardsDashboard.container.querySelector('#form .toolbar .right').remove();
+		}
+
+		DashboardsDashboard.container.querySelector('#form .toolbar').insertAdjacentHTML('beforeend', `
+			<span class="right NA">
+				Added by
+				${this.added_by_name ? `<a href="/user/profile/${this.added_by}" target="_blank">${this.added_by_name}</a>` : 'Unknown User'}
+				<span title="${Format.dateTime(this.created_at)}">${Format.ago(this.created_at)}</span>
+			</span>
+		`);
 
 		this.objectRoles = new ObjectRoles('dashboard', this.id);
 

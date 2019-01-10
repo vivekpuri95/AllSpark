@@ -12,7 +12,20 @@ class Dashboard extends API {
 
 		const possiblePrivileges = [constants.privilege["dashboard.list"], constants.privilege["dashboard"], constants.privilege["administrator"]];
 
-		let query = `SELECT * FROM tb_dashboards WHERE status = 1 AND account_id = ${this.account.account_id}`;
+		let query = `
+			SELECT
+				d.*,
+				CONCAT_WS(' ', u.first_name, u.last_name) AS added_by_name
+			FROM
+				tb_dashboards d
+			LEFT JOIN
+				tb_users u
+			ON
+				d.added_by = u.user_id AND u.status = 1
+			WHERE
+				d.status = 1 AND
+				d.account_id = ${this.account.account_id}
+		`;
 
 		if (this.request.body.search) {
 			query = query.concat(`
