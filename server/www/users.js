@@ -49,6 +49,20 @@ exports.delete = class extends API {
 
 	async delete() {
 
+		const [existingUser] = await this.mysql.query(`
+			select
+				*
+			from
+				tb_users
+			where
+				user_id = ?
+				and status = 1
+		`,
+			[this.request.body.user_id]
+		);
+
+		this.assert(this.user.privilege.has('user.delete', 'ignore') && existingUser.added_by == this.user.user_id);
+
 		this.user.privilege.needs('user.delete', "ignore");
 
 		return await this.mysql.query(`UPDATE tb_users SET status = 0 WHERE user_id = ?`, [this.request.body.user_id], 'write');
