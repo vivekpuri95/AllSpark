@@ -49,7 +49,19 @@ exports.delete = class extends API {
 
 	async delete() {
 
-		this.user.privilege.needs('user.delete', "ignore");
+		const [existingUser] = await this.mysql.query(`
+			select
+				*
+			from
+				tb_users
+			where
+				user_id = ?
+				and status = 1
+		`,
+			[this.request.body.user_id]
+		);
+
+		this.assert(this.user.privilege.has('user.delete', 'ignore') || existingUser.added_by == this.user.user_id);
 
 		return await this.mysql.query(`UPDATE tb_users SET status = 0 WHERE user_id = ?`, [this.request.body.user_id], 'write');
 
@@ -357,11 +369,11 @@ exports.list = class extends API {
 
 			const updateFlag = userUpdateCategories.some(cat => categories.includes(parseInt(cat))) || user.added_by == this.user.user_id || this.user.privilege.has('superadmin');
 
-			user.editable = constants.adminCategory.some(x => userCategories.includes(x)) || updateFlag;
+			user.editable = constants.adminCategory.some(x => userCategories.includes(x) && this.user.privilege.has('user.update', x)) || updateFlag;
 
 			const deleteFlag = deleteUserCategories.some(cat => categories.includes(parseInt(cat))) || user.added_by == this.user.user_id || this.user.privilege.has('superadmin');
 
-			user.deletable = constants.adminCategory.some(x => userCategories.includes(x)) || deleteFlag;
+			user.deletable = constants.adminCategory.some(x => userCategories.includes(x) && this.user.privilege.has('user.delete', x)) || deleteFlag;
 		}
 
 		return userList;
