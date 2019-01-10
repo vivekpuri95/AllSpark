@@ -13463,7 +13463,10 @@ class ReportLog {
 		`;
 
 		container.on('click', () => this.load());
-		container.querySelector('a').on('click', e => e.stopPropagation());
+
+		if(container.querySelector('a')) {
+			container.querySelector('a').on('click', e => e.stopPropagation());
+		}
 
 		return container;
 	}
