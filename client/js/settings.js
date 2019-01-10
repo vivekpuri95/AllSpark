@@ -401,6 +401,10 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 		this.container.appendChild(this.addForm);
 
+		if(this.addForm.querySelector('.body .html-editor')) {
+			this.addForm.querySelector('.body .html-editor').remove();
+		}
+
 		await this.render();
 	}
 
