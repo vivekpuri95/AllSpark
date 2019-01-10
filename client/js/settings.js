@@ -494,9 +494,10 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 	async add() {
 
-		this.form.reset();
 
 		this.container.appendChild(this.addForm);
+
+		this.form.reset();
 
 		Sections.show('documentation-form-add');
 
