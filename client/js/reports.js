@@ -10116,6 +10116,16 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 Visualization.list.set('pie', class Pie extends Visualization {
 
+	constructor(visualization, source) {
+
+		super(visualization, source);
+
+		this.options.nameColumn = this.options.nameColumn || 'name';
+		this.options.valueColumn = this.options.valueColumn || 'value';
+
+		this.options.transformations = this.options.transformations || [];
+	}
+
 	get container() {
 
 		if(this.containerElement) {
@@ -10142,48 +10152,46 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 		await this.source.fetch(options);
 
-		this.process();
+		this.source.originalColumns = new Map(this.source.columns);
+
+		const dataRow = this.source.originalResponse.data[0];
+
+		if((this.options.nameColumn in dataRow) || (this.options.valueColumn in dataRow)) {
+
+			this.options.transformations.push({
+				type: 'pivot', options:{
+					rows: [],
+					values: [{column: this.options.valueColumn, function: "sum"}],
+					columns: [{column: this.options.nameColumn}]
+				}
+			});
+		}
 
 		await this.render(options);
 	}
 
-	process() {
-
-		const
-			response = this.source.originalResponse,
-			newResponse = {};
-
-		if(!response || !response.data || !response.data.length) {
-			return;
-		}
-
-		for(const row of this.source.originalResponse.data) {
-
-			const value = parseFloat(row.value);
-
-			if(!value) {
-				continue;
-			}
-
-			newResponse[row.name] = value;
-		}
-
-		this.source.originalResponse.data = [newResponse];
-
-		this.source.columns.clear();
-		this.source.columns.update();
-		this.source.columns.render();
-
-		const visualizationToggle = this.source.container.querySelector('header .change-visualization');
-
-		if(visualizationToggle) {
-			visualizationToggle.value = this.source.visualizations.indexOf(this);
-		}
-	}
-
 	async render(options = {}) {
 
+		const originalResponse = this.source.originalResponse.data;
+
+		if(!(this.options.nameColumn in originalResponse[0]) && originalResponse.length > 1) {
+
+			return this.source.error('Invalid name column.');
+		}
+
+		if(!(this.options.valueColumn in originalResponse[0]) && originalResponse.length > 1) {
+
+			return this.source.error('Invalid value column.');
+		}
+
 		this.rows = await this.source.response();
+
+		if(!this.rows|| !this.rows.length || !this.rows[0].size) {
+
+			return this.source.error();
+		}
+
+		this.rows = this.rows[0];
 
 		this.height = this.container.clientHeight - 20;
 		this.width = this.container.clientWidth - 20;
@@ -10206,16 +10214,12 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 		container.selectAll('*').remove();
 
-		if(!this.rows || !this.rows.length || !this.rows[0].size) {
-			return this.source.error();
-		}
-
 		const
-			[row] = this.rows,
 			data = [],
-			sum = Array.from(row.values()).reduce((sum, value) => sum + value, 0);
+			sum = Array.from(this.rows.values()).reduce((sum, value) => sum + value, 0);
 
-		for(const [name, value] of this.rows[0]) {
+		for(const [name, value] of this.rows) {
+
 			data.push({name, value, percentage: Math.floor((value / sum) * 10000) / 100});
 		}
 
