@@ -3832,14 +3832,41 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 
 			<label class="add-parameter">
 				<span> Add Parameters</span>
-				<div class="add-form">
+				<div class="add-params-form">
 					<label>
 						<span>Key</span>
-						<input type="text" name="_key">
+						<input type="text" name="params-key">
 					</label>
 					<label>
 						<span>Value</span>
-						<input type="text" name="_value">
+						<input type="text" name="params-value">
+					</label>
+					<label>
+						<span>&nbsp;</span>
+						<button type="button"><i class="fa fa-paper-plane"></i>Add</button>
+					</label>
+				</div>
+			</label>
+
+			<label class="headers">
+				<span>Headers</span>
+				<div class="headings">
+					<span>Key</span>
+					<span>Value</span>
+				</div>
+				<div class="list"></div>
+			</label>
+
+			<label class="add-headers">
+				<span> Add Headers</span>
+				<div class="add-headers-form">
+					<label>
+						<span>Key</span>
+						<input type="text" name="header-key">
+					</label>
+					<label>
+						<span>Value</span>
+						<input type="text" name="header-value">
 					</label>
 					<label>
 						<span>&nbsp;</span>
@@ -3855,15 +3882,30 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 		if(this.report && this.report.definition && this.report.definition.parameters) {
 
 			for(const parameter of this.report.definition.parameters) {
-				this.insetParameters(parameter);
+				this.insetNode(parameter, 'parameters');
+			}
+		}
+
+		if(this.report && this.report.definition && this.report.definition.headers) {
+
+			for(const header of this.report.definition.headers) {
+				this.insetNode(header, 'headers');
 			}
 		}
 
 		super.form.querySelector('.add-parameter button').on('click', () => {
 
 			this.addParameter();
-			super.form._key.value = '';
-			super.form._value.value = '';
+			super.form['params-key'].value = '';
+			super.form['params-value'].value = '';
+		});
+
+		super.form.querySelector('.add-headers button').on('click', () => {
+
+			this.addHeader();
+
+			super.form['header-key'].value = '';
+			super.form['header-value'].value = '';
 		});
 
 		return super.form;
@@ -3872,19 +3914,28 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 	addParameter() {
 
 		const
-			key = this.form._key.value,
-			value = this.form._value.value;
+			key = this.form['params-key'].value,
+			value = this.form['params-value'].value;
 
-		this.insetParameters({key,value});
+		this.insetNode({key,value}, 'parameters');
 	}
 
-	insetParameters(parameter) {
+	addHeader() {
+
+		const
+			key = this.form['header-key'].value,
+			value = this.form['header-value'].value;
+
+		this.insetNode({key,value}, 'headers');
+	}
+
+	insetNode(data, type) {
 
 		const label = document.createElement('label');
 
 		label.innerHTML = `
-			<input type="text" name="key" value="${parameter.key}" readonly>
-			<input type="text" name="value" value="${parameter.value}" readonly>
+			<input type="text" name="key" value="${data.key}" readonly>
+			<input type="text" name="value" value="${data.value}" readonly>
 			<button type="button"><i class="fa fa-trash-alt"></i></button>
 		`;
 
@@ -3893,16 +3944,26 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 			label.remove();
 		});
 
-		this.form.querySelector('.parameters .list').appendChild(label);
+		this.form.querySelector(`.${type} .list`).appendChild(label);
 	}
 
 	get json() {
 
-		const labels = this.form.querySelectorAll('.parameters .list label');
+		const paramsLabels = this.form.querySelectorAll('.parameters .list label');
 		const parameters = [];
 
-		for(const label of labels) {
+		for(const label of paramsLabels) {
 			parameters.push({
+				key: label.querySelector('input[name=key]').value,
+				value: label.querySelector('input[name=value]').value,
+			});
+		};
+
+		const headersLabels = this.form.querySelectorAll('.headers .list label');
+		const headers = [];
+
+		for(const label of headersLabels) {
+			headers.push({
 				key: label.querySelector('input[name=key]').value,
 				value: label.querySelector('input[name=value]').value,
 			});
@@ -3911,7 +3972,8 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 		return {
 			url: this.form.url.value,
 			method: this.form.method.value,
-			parameters
+			parameters,
+			headers,
 		};
 	}
 });

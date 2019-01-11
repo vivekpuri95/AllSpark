@@ -396,7 +396,7 @@ main.preview-left #stages {
 			flex: 1 60%;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
 			height: 100%;
-			grid-template-rows: max-content max-content max-content max-content;
+			grid-template-rows: max-content max-content max-content max-content max-content max-content;
 		}
 			#stage-define-report #define-report-form .ace_editor {
 				height: 100%;
@@ -423,11 +423,13 @@ main.preview-left #stages {
 						grid-template-columns: 250px 250px 50px;
 						grid-gap: calc(var(--gap) * 2);
 					}
+			#stage-define-report #define-report-form .add-headers,
 			#stage-define-report #define-report-form .add-parameter {
 				display: grid;
 				grid-gap: calc(var(--gap) * 2);
 			}
-				#stage-define-report #define-report-form .add-form {
+				#stage-define-report #define-report-form .add-params-form,
+				#stage-define-report #define-report-form .add-headers-form {
 					display: grid;
 					grid-template-columns: max-content max-content 50px;
 					grid-gap: calc(var(--gap) * 2);
