@@ -3821,29 +3821,25 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 				</select>
 			</label>
 
-			<label class="parameters">
+			<label class="parameters" style="display: none !important">
 				<span>Parameters</span>
 				<div class="headings">
 					<span>Key</span>
 					<span>Value</span>
 				</div>
-				<div class="list"></div>
+				<div class="list">No data found.</div>
 			</label>
 
-			<label class="add-parameter">
-				<span> Add Parameters</span>
+			<label class="add-parameter" style="display: none !important">
 				<div class="add-params-form">
 					<label>
-						<span>Key</span>
-						<input type="text" name="params-key">
+						<input type="text" name="parameters-key">
 					</label>
 					<label>
-						<span>Value</span>
-						<input type="text" name="params-value">
+						<input type="text" name="parameters-value">
 					</label>
 					<label>
-						<span>&nbsp;</span>
-						<button type="button"><i class="fa fa-paper-plane"></i>Add</button>
+						<button type="button"><i class="fa fa-paper-plane"></i></button>
 					</label>
 				</div>
 			</label>
@@ -3858,19 +3854,15 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 			</label>
 
 			<label class="add-headers">
-				<span> Add Headers</span>
 				<div class="add-headers-form">
 					<label>
-						<span>Key</span>
 						<input type="text" name="header-key">
 					</label>
 					<label>
-						<span>Value</span>
 						<input type="text" name="header-value">
 					</label>
 					<label>
-						<span>&nbsp;</span>
-						<button type="button"><i class="fa fa-paper-plane"></i>Add</button>
+						<button type="button"><i class="fa fa-paper-plane"></i></button>
 					</label>
 				</div>
 			</label>
@@ -3896,8 +3888,8 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 		super.form.querySelector('.add-parameter button').on('click', () => {
 
 			this.addParameter();
-			super.form['params-key'].value = '';
-			super.form['params-value'].value = '';
+			super.form['parameters-key'].value = '';
+			super.form['parameters-value'].value = '';
 		});
 
 		super.form.querySelector('.add-headers button').on('click', () => {
@@ -3914,11 +3906,22 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 	addParameter() {
 
 		const
-			key = this.form['params-key'].value,
-			value = this.form['params-value'].value;
+			key = this.form['parameters-key'].value,
+			value = this.form['parameters-value'].value;
+
+		const addedParameters = this.parametersJSON;
+
+		if(addedParameters.filter(x => x.key == key && x.value == value).length) {
+
+			return new SnackBar({
+				message: 'Duplicate key value found.',
+				type: 'error',
+			});
+		}
 
 		this.insetNode({key,value}, 'parameters');
 	}
+
 
 	addHeader() {
 
@@ -3926,7 +3929,47 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 			key = this.form['header-key'].value,
 			value = this.form['header-value'].value;
 
+		const addedHeaders = this.headersJSON;
+
+		if(addedHeaders.filter(x => x.key == key).length) {
+
+			return new SnackBar({
+				message: 'Duplicate key found.',
+				type: 'error',
+			})
+		}
+
 		this.insetNode({key,value}, 'headers');
+	}
+
+	get parametersJSON() {
+
+		const paramsLabels = this.form.querySelectorAll('.parameters .list label');
+		const parameters = [];
+
+		for(const label of paramsLabels) {
+			parameters.push({
+				key: label.querySelector('input[name=key]').value,
+				value: label.querySelector('input[name=value]').value,
+			});
+		};
+
+		return parameters;
+	}
+
+	get headersJSON() {
+
+		const headersLabels = this.form.querySelectorAll('.headers .list label');
+		const headers = [];
+
+		for(const label of headersLabels) {
+			headers.push({
+				key: label.querySelector('input[name=key]').value,
+				value: label.querySelector('input[name=value]').value,
+			});
+		};
+
+		return headers;
 	}
 
 	insetNode(data, type) {
@@ -3949,31 +3992,12 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 
 	get json() {
 
-		const paramsLabels = this.form.querySelectorAll('.parameters .list label');
-		const parameters = [];
-
-		for(const label of paramsLabels) {
-			parameters.push({
-				key: label.querySelector('input[name=key]').value,
-				value: label.querySelector('input[name=value]').value,
-			});
-		};
-
-		const headersLabels = this.form.querySelectorAll('.headers .list label');
-		const headers = [];
-
-		for(const label of headersLabels) {
-			headers.push({
-				key: label.querySelector('input[name=key]').value,
-				value: label.querySelector('input[name=value]').value,
-			});
-		};
 
 		return {
 			url: this.form.url.value,
 			method: this.form.method.value,
-			parameters,
-			headers,
+			parameters: this.parametersJSON,
+			headers: this.headersJSON,
 		};
 	}
 });
