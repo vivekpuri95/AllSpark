@@ -97,7 +97,7 @@ class Setup extends API {
 			setupAccount = await this.mysql.query(
 				`INSERT INTO 
 					tb_accounts (name, url, icon, logo, auth_api)
-				VALUES (?, ?, ?, ?)
+				VALUES (?, ?, ?, ?, ?)
 				`,
 				[account.name, account.url, account.icon || '', account.logo || '', account.auth_api],
 				'write'
@@ -118,6 +118,16 @@ class Setup extends API {
 		;
 
 		this.assert(setupUser.insertId, 'User not inserted!');
+
+		let settingValue = [];
+
+		if(account.auth_api) {
+
+			settingValue = [{
+				"key": "external_parameters",
+				"value": account.auth_api_parameters || []
+			}]
+		}
 
 		const [category, roles, privilege, accountFeatures, settings] = await Promise.all([
 			this.mysql.query(
@@ -142,7 +152,7 @@ class Setup extends API {
 			),
 			this.mysql.query(
 				'INSERT INTO tb_settings (account_id, owner, owner_id, profile, value) VALUES (?, "account", ?, "main", ?)',
-				[setupAccount.insertId, setupAccount.insertId, JSON.stringify(account.auth_api_parameters || [])],
+				[setupAccount.insertId, setupAccount.insertId, JSON.stringify(settingValue)],
 				"write"
 			),
 		]);
