@@ -283,7 +283,7 @@ UserOnboard.stages.set('add-connection', class AddConnection extends UserOnboard
 
 			const popUp = document.body.querySelector('.save-pop-up');
 
-			popUp.style.top = `${rect.top - 10}px`;
+			popUp.style.top = `${rect.top - 8}px`;
 			popUp.style.left = `${rect.right}px`;
 
 			submitButton.classList.add('blink');
@@ -388,7 +388,7 @@ UserOnboard.stages.set('add-report', class AddReport extends UserOnboardStage {
 			rect = submitButton.getBoundingClientRect(),
 			popUp = document.body.querySelector('.save-pop-up');
 
-		popUp.style.top = `${rect.top - 10}px`;
+		popUp.style.top = `${rect.top - 8}px`;
 		popUp.style.left = `${rect.right}px`;
 
 		submitButton.classList.add('blink');
@@ -439,7 +439,7 @@ UserOnboard.stages.set('add-report', class AddReport extends UserOnboardStage {
 			rect = submitButton.getBoundingClientRect(),
 			popUp = document.body.querySelector('.save-pop-up');
 
-		popUp.style.top = `${rect.top - 10}px`;
+		popUp.style.top = `${rect.top - 8}px`;
 		popUp.style.left = `${rect.right}px`;
 
 		this.page.stages.selected.report.connection.editor.value = this.stagesObj.onboardData.report.query;
@@ -523,7 +523,7 @@ UserOnboard.stages.set('add-dashboard', class AddDashboard extends UserOnboardSt
 
 			const popUp = document.body.querySelector('.save-pop-up');
 
-			popUp.style.top = `${rect.top - 10}px`;
+			popUp.style.top = `${rect.top - 8}px`;
 			popUp.style.left = `${rect.right}px`;
 
 			submitButton.on('click', () => this.hidePopUp());
@@ -675,7 +675,7 @@ UserOnboard.stages.set('add-visualization', class AddVisualization extends UserO
 
 			document.body.appendChild(popUp);
 
-			popUp.style.top = `${rect.top - 10}px`;
+			popUp.style.top = `${rect.top - 9}px`;
 			popUp.style.left = `${rect.right}px`;
 		}
 
@@ -712,7 +712,7 @@ UserOnboard.stages.set('add-visualization', class AddVisualization extends UserO
 		popUp.textContent = 'Click save to continue';
 		submitButton.classList.add('blink');
 
-		popUp.style.top = `${rect.top - 10}px`;
+		popUp.style.top = `${rect.top - 8}px`;
 		popUp.style.left = `${rect.right}px`;
 		document.body.appendChild(popUp);
 	}
@@ -811,8 +811,8 @@ UserOnboard.stages.set('add-visualization-dashboard', class AddVisualizationDash
 
 		console.log(rect.top, rect.right, rect.bottom);
 
-		popUp.style.top = 0;
-		popUp.style.left = `${rect.right - 10}px`;
+		popUp.style.top = '12px';
+		popUp.style.left = `${rect.right - 22}px`;
 		addDashboardForm.style.position = 'relative';
 
 		submitButton.on('click', async () => {
