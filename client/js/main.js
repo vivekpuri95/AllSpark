@@ -3782,14 +3782,53 @@ class NotificationBar {
 class SortTable {
 
 	constructor({table} = {}) {
-		console.log(table);
+
 		this.table = table;
-		debugger
 	}
 
 	sort() {
 
+		const columns = this.table.querySelectorAll('thead th');
+
+		for(const column of columns) {
+
+			column.on('click', () => {
+
+				this.render();
+			});
+		}
+	}
+
+	render() {
+		console.log(this.table);
 		debugger
+
+		const
+			rows = this.table.querySelector('tbody').rows;
+
+			let arr = [];
+		// var rows = tbody.rows,
+        //         i, j, cells, clen;
+        //     // fill the array with values from the table
+        //     for (i = 0; i < rows.length; i++) {
+        //         cells = rows[i].cells;
+        //         clen = cells.length;
+        //         arr[i] = new Array();
+        //         for (j = 0; j < clen; j++) {
+        //             arr[i][j] = cells[j].innerHTML;
+        //         }
+		// 	}
+
+		for(let i = 0 ; i < rows.length ; i++) {
+
+			const cells = rows[i].cells;
+			arr[i] = new Array;
+			for (let j = 0; j < cells.length; j++) {
+				arr[i][j] = cells[j].innerHTML;
+			}
+		}
+		console.log(arr);
+
 	}
 }
 

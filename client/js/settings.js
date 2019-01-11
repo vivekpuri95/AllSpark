@@ -195,9 +195,7 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 			select.insertAdjacentHTML('beforeend', `<option value="${type.name.toLowerCase()}">${type.name}</option>`);
 		}
 
-		this.sortTable = new SortTable({
-			table: '',
-		});
+		this.sortTable = new SortTable();
 	}
 
 	async load() {
@@ -214,23 +212,7 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 			this.dashboardList = await API.call('dashboards/list');
 		}
 
-		debugger
-		this.sort();
-
 		await this.render();
-	}
-
-	sort() {
-
-		const columns = this.container.querySelectorAll('.global-filters-page #global-filters-list table thead th');
-
-		for(const column of columns) {
-
-			column.on('click', () => {
-
-				this.sortTable.sort();
-			});
-		}
 	}
 
 	async render() {
@@ -248,6 +230,7 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 		}
 
 		this.sortTable.table = this.container.querySelector('#global-filters-list table');
+		this.sortTable.sort();
 
 		await Sections.show('global-filters-list');
 	}
