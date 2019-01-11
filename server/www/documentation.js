@@ -18,6 +18,17 @@ class Documentation extends API {
 		return result;
 	}
 
+	async getDocumentation({slug} = {}) {
+
+		this.assert(slug, 'Please provide slug.');
+
+		const [row] = await this.mysql.query('SELECT id from tb_documentation WHERE slug = ?', slug);
+
+		this.assert(row, `${slug} not found.`);
+
+		return await this.mysql.query('SELECT * FROM tb_documentation WHERE slug = ? or parent = ?', [slug, row.id]);
+	}
+
 	async insert({slug, heading, body = null, parent, chapter, added_by} = {}) {
 
 		this.user.privilege.needs('documentation');
@@ -109,6 +120,7 @@ class Documentation extends API {
 }
 
 exports.list = Documentation;
+exports.getDocumentation = Documentation;
 exports.insert = Documentation;
 exports.update = Documentation;
 exports.delete = Documentation;
