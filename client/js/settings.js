@@ -194,6 +194,10 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 		for(const type of MetaData.filterTypes.values()) {
 			select.insertAdjacentHTML('beforeend', `<option value="${type.name.toLowerCase()}">${type.name}</option>`);
 		}
+
+		this.sortTable = new SortTable({
+			table: '',
+		});
 	}
 
 	async load() {
@@ -210,7 +214,23 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 			this.dashboardList = await API.call('dashboards/list');
 		}
 
+		debugger
+		this.sort();
+
 		await this.render();
+	}
+
+	sort() {
+
+		const columns = this.container.querySelectorAll('.global-filters-page #global-filters-list table thead th');
+
+		for(const column of columns) {
+
+			column.on('click', () => {
+
+				this.sortTable.sort();
+			});
+		}
 	}
 
 	async render() {
@@ -227,6 +247,8 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 			container.appendChild(globalFilter.row);
 		}
 
+		this.sortTable.table = this.container.querySelector('#global-filters-list table');
+
 		await Sections.show('global-filters-list');
 	}
 });
@@ -242,9 +264,10 @@ Settings.list.set('privileges', class Privileges extends SettingPage {
 		this.container = this.page.querySelector('.privilege-page');
 		this.form = this.container.querySelector('section#privileges-form form');
 
-		this.container.querySelector('#privileges-list #add-privilege').on('click', () => SettingsPrivilege.add(this));
-		this.container.querySelector('#privileges-form #cancel-form').on('click', () => Sections.show('privileges-list'));
+		this.container.querySelector('#privileges-list #add-privilege').on('click' (), () => SettingsPrivilege.add(this));
+		this.container.querySelector('#privileges-form #cancel-form').on('click', () 	=> Sections.show('privileges-list'));
 	}
+
 
 	async load() {
 
