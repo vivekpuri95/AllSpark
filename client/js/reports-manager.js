@@ -1422,7 +1422,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		const query = this.report.connection.json.query;
 
-		this.container.querySelector('#stage-define-report button[type=submit]').classList.toggle('not-saved', this.report.definition.query != query);
+		this.container.querySelector('#stage-define-report button[type=submit]').classList.toggle('not-saved', this.report.definition && this.report.definition.query ? this.report.definition.query != query : false);
 	}
 
 	saveReportConfirm() {
