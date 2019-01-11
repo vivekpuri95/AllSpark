@@ -735,6 +735,17 @@ class APIRequest {
 
 		this.prepareQuery();
 
+
+		const headers = {};
+
+		for(const header of this.definition.headers) {
+
+			headers[header.key] = header.value;
+		}
+
+		this.definition.headers = headers;
+
+
 		if (this.definition.method === "GET") {
 
 			return {
