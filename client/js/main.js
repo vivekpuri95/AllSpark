@@ -3397,13 +3397,35 @@ class SnackBar {
 }
 
 /**
- *  Global and advance search bar
+ * Global and advance search UI for any JSON based list.
+ *
+ * Useage:
+ *
+ * const
+ * 	filter = [
+ * 		{
+ * 			key: 'Column Name',
+ * 			rowValue: row => {Extract the relavant data from `row` and return an array of values to execute an OR condition},
+ * 		}
+ * 	],
+ * 	search = new SearchColumnFilters({filters});
+ *
+ * 	container.appendChild(search.globalFilter.container); // Append the global search filter
+ * 	container.appendChild(search.container); // Append the advanced search container (Hidden by default)
+ *
+ * 	search.data = []; // The source data array
+ *
+ * 	const result = search.filterData; // Get the search result in an array
  */
 class SearchColumnFilters extends Set {
 
-	constructor({ filters, advancedSearch = true, data = [] } = {}) {
+	constructor({ filters = [], advancedSearch = true, data = [] } = {}) {
 
 		super();
+
+		if(!filters || !filters.length) {
+			throw new Page.exception('No filters provided to SearchColumnFilters');
+		}
 
 		this.data = data;
 		this.filters = filters;
@@ -3417,8 +3439,9 @@ class SearchColumnFilters extends Set {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -3437,7 +3460,6 @@ class SearchColumnFilters extends Set {
 			this.add(new SearchColumnFilter(this));
 			this.render();
 			container.scrollTop = container.scrollHeight;
-
 		});
 
 		return container;
@@ -3450,12 +3472,14 @@ class SearchColumnFilters extends Set {
 
 		for(const filter of this) {
 
-			if(filter != this.globalSearch)
+			if(filter != this.globalSearch) {
 				filters.appendChild(filter.container);
+			}
 		}
 
-		if(this.size < 2)
+		if(this.size < 2) {
 			filters.innerHTML = '<div class="NA">No Filters Added</div>';
+		}
 	}
 
 	clear() {
@@ -3463,7 +3487,6 @@ class SearchColumnFilters extends Set {
 		for(const filter of this) {
 
 			if(filter != this.globalSearch) {
-
 				this.delete(filter);
 			}
 		}
@@ -3471,10 +3494,18 @@ class SearchColumnFilters extends Set {
 
 	on(event, callback) {
 
-		if(event != 'change')
+		if(event != 'change') {
 			return;
+		}
 
 		this.changeCallback = callback;
+	}
+
+	changed() {
+
+		if(this.changeCallback) {
+			this.changeCallback();
+		}
 	}
 
 	get filterData() {
@@ -3486,8 +3517,9 @@ class SearchColumnFilters extends Set {
 
 			for(const filter of this) {
 
-				if(!filter.checkRow(row))
+				if(!filter.checkRow(row)) {
 					continue outer;
+				}
 			}
 
 			filterData.push(row);
@@ -3506,8 +3538,9 @@ class SearchColumnFilter {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 		container.classList.add('search-column-filter');
@@ -3523,11 +3556,12 @@ class SearchColumnFilter {
 			searchType = container.querySelector('select.searchType'),
 			searchQuery = container.querySelector('.searchQuery');
 
-		searchQuery.on('keyup', () => this.searchColumns.changeCallback());
-		searchQuery.on('search', () => this.searchColumns.changeCallback());
+		searchQuery.on('keyup', () => this.searchColumns.changed());
+		searchQuery.on('search', () => this.searchColumns.changed());
 
-		for(const select of container.querySelectorAll('select'))
-			select.on('change', () => this.searchColumns.changeCallback());
+		for(const select of container.querySelectorAll('select')) {
+			select.on('change', () => this.searchColumns.changed());
+		}
 
 		for(const filter of DataSourceColumnFilter.types) {
 
@@ -3553,7 +3587,7 @@ class SearchColumnFilter {
 
 			this.searchColumns.delete(this);
 
-			this.searchColumns.changeCallback();
+			this.searchColumns.changed();
 
 			this.searchColumns.render();
 		});
@@ -3565,23 +3599,27 @@ class SearchColumnFilter {
 
 		const values = this.json;
 
-		if(!values.query)
+		if(!values.query) {
 			return true;
+		}
 
 		const [columnValue] = this.searchColumns.filters.filter(f => f.key == values.columnName).map(m => m.rowValue(row));
 
-		if(!columnValue || !columnValue.length)
+		if(!columnValue || !columnValue.length) {
 			return false;
+		}
 
 		for(const column of DataSourceColumnFilter.types) {
 
-			if(values.functionName != column.slug)
+			if(values.functionName != column.slug) {
 				continue;
+			}
 
 			for(const value of columnValue) {
 
-				if(value != null && column.apply(values.query, value))
+				if(value != null && column.apply(values.query, value)) {
 					return true;
+				}
 			}
 
 			return false;
