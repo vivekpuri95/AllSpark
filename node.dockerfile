@@ -1,15 +1,13 @@
-FROM node:8.9.4
-RUN apt-get -y update && \
-    apt-get -y upgrade && \
-    apt-get install -y build-essential && \
-    apt-get install -y byobu curl git htop man unzip vim wget libssl-dev net-tools && \
-    apt-get install -y apache2 && apt-get install -y mysql-client && npm install pm2 -g
+FROM vivekpuri/allspark-base
 
-RUN mkdir -p /apps/node-apps/allspark
+RUN mkdir -p /apps/node-apps/allspark /apps/node-apps/allspark/bigquery_files /apps/node-apps/allspark/excel_exports
+
+COPY requirements.txt /apps/node-apps/allspark/requirements.txt
+RUN cd /apps/node-apps/allspark && pip3 install -r requirements.txt
+
+COPY package.json /apps/node-apps/allspark/package.json
+RUN cd /apps/node-apps/allspark && npm install
 
 COPY . /apps/node-apps/allspark
 
 WORKDIR /apps/node-apps/allspark
-
-#CMD bash startpm2.sh staging && pm2 logs
-#CMD NODE_ENV='demo' pm2 start bin/www --name demo && pm2 logs

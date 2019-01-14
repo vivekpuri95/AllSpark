@@ -3859,7 +3859,7 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 		if(this.formElement)
 			return this.formElement;
 
-		super.form.classList.add('form');
+		super.form.classList.add('form', 'api');
 
 		super.form.innerHTML = `
 
@@ -3875,19 +3875,216 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 					<option>POST</option>
 				</select>
 			</label>
+
+			<label class="parameters">
+				<span>Parameters</span>
+				<div class="headings">
+					<span>Key</span>
+					<span>Value</span>
+				</div>
+				<div class="list"><span class="NA">No parameters added.</span></div>
+			</label>
+
+			<label class="add-parameter">
+				<div class="add-parameter-form">
+					<label>
+						<input type="text" name="parameters_key">
+					</label>
+					<label>
+						<input type="text" name="parameters_value">
+					</label>
+					<label>
+						<button type="button" class="add"><i class="fa fa-paper-plane"></i></button>
+					</label>
+				</div>
+			</label>
+
+			<label class="headers">
+				<span>Headers</span>
+				<div class="headings">
+					<span>Key</span>
+					<span>Value</span>
+				</div>
+				<div class="list"><span class="NA">No headers added.</span></div>
+			</label>
+
+			<label class="add-headers">
+				<div class="add-headers-form">
+					<label>
+						<input type="text" name="header_key">
+					</label>
+					<label>
+						<input type="text" name="header_value">
+					</label>
+					<label>
+						<button type="button" class="add"><i class="fa fa-paper-plane"></i></button>
+					</label>
+				</div>
+			</label>
 		`;
 
 		// Set the vlues from report definition
 		this.formJson = this.report.definition || {};
 
+		if(this.report && this.report.definition && this.report.definition.parameters) {
+
+			if(this.report.definition.parameters.length) {
+				super.form.querySelector('.parameters .list').textContent = null;
+			}
+
+			for(const parameter of this.report.definition.parameters) {
+				this.insetNode(parameter, 'parameters');
+			}
+		}
+
+		if(this.report && this.report.definition && this.report.definition.headers) {
+
+			if(this.report.definition.headers.length) {
+				super.form.querySelector('.headers .list').textContent = null;
+			}
+
+			for(const header of this.report.definition.headers) {
+				this.insetNode(header, 'headers');
+			}
+		}
+
+		super.form.querySelector('.add-parameter button').on('click', () => {
+
+			this.addParameter();
+
+			super.form.parameters_key.value = '';
+			super.form.parameters_value.value = '';
+		});
+
+		super.form.querySelector('.add-headers button').on('click', () => {
+
+			this.addHeader();
+
+			super.form.header_key.value = '';
+			super.form.header_value.value = '';
+		});
+
 		return super.form;
+	}
+
+	error(message) {
+
+		return new SnackBar({
+				message,
+				type: 'error',
+			});
+	}
+
+	addParameter() {
+
+		const
+			key = this.form.parameters_key.value,
+			value = this.form.parameters_value.value;
+
+		if(!key.length) {
+			return this.error('Key cannot be empty.');
+		}
+
+		const addedParameters = this.parametersJSON;
+
+		if(addedParameters.filter(x => x.key == key && x.value == value).length) {
+			return this.error('Duplicate key value found.');
+		}
+
+		if(!super.form.querySelectorAll('.parameters .list label').length) {
+			super.form.querySelector('.parameters .list').textContent = null;
+		}
+
+		this.insetNode({key,value}, 'parameters');
+	}
+
+	addHeader() {
+
+		const
+			key = this.form.header_key.value,
+			value = this.form.header_value.value;
+
+		if(!key.length) {
+			return this.error('Key cannot be empty.');
+		}
+
+		const addedHeaders = this.headersJSON;
+
+		if(addedHeaders.filter(x => x.key == key).length) {
+			return this.error('Duplicate key found.');
+		}
+
+		if(!super.form.querySelectorAll('.headers .list label').length) {
+			super.form.querySelector('.headers .list').textContent = null;
+		}
+
+		this.insetNode({key,value}, 'headers');
+	}
+
+	get parametersJSON() {
+
+		const paramsLabels = this.form.querySelectorAll('.parameters .list label');
+		const parameters = [];
+
+		for(const label of paramsLabels) {
+			parameters.push({
+				key: label.querySelector('input[name=key]').value,
+				value: label.querySelector('input[name=value]').value,
+			});
+		};
+
+		return parameters;
+	}
+
+	get headersJSON() {
+
+		const headersLabels = this.form.querySelectorAll('.headers .list label');
+		const headers = [];
+
+		for(const label of headersLabels) {
+			headers.push({
+				key: label.querySelector('input[name=key]').value,
+				value: label.querySelector('input[name=value]').value,
+			});
+		};
+
+		return headers;
+	}
+
+	insetNode(data, type) {
+
+		const label = document.createElement('label');
+
+		label.innerHTML = `
+			<input type="text" name="key" value="${data.key}" readonly>
+			<input type="text" name="value" value="${data.value}" readonly>
+			<button type="button" class="delete"><i class="fa fa-trash-alt"></i></button>
+		`;
+
+		label.querySelector('button').on('click', () => {
+
+			if(!confirm('Are you sure?')) {
+				return;
+			}
+
+			label.remove();
+
+			if(!super.form.querySelectorAll(`.${type} .list label`).length) {
+				super.form.querySelector(`.${type} .list`).innerHTML = `<span class="NA">No ${type} added.</span>`;
+			}
+		});
+
+		this.form.querySelector(`.${type} .list`).appendChild(label);
 	}
 
 	get json() {
 
+
 		return {
 			url: this.form.url.value,
 			method: this.form.method.value,
+			parameters: this.parametersJSON,
+			headers: this.headersJSON,
 		};
 	}
 });

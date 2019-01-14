@@ -251,15 +251,22 @@ class report extends API {
 
 			const date = new Date();
 
-			if (isNaN(parseFloat(filter.offset))) {
-
-				continue;
-			}
+			// if (isNaN(parseFloat(filter.offset))) {
+			//
+			// 	continue;
+			// }
 
 			if (filter.type == 'time') {
 
-				filter.default_value = new Date(date.getTime() + (1000 * filter.offset)).toTimeString().substring(0, 8);
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
+
+				try {
+					filter.default_value = new Date(date.getTime() + (1000 * filter.offset)).toTimeString().substring(0, 8);
+				}
+
+				catch(e) {
+					filter.default_value = filter.value;
+				}
 
 				if (filter.value >= new Date().toISOString().slice(11, 19)) {
 
@@ -269,7 +276,12 @@ class report extends API {
 
 			else if (filter.type == 'date') {
 
-				filter.default_value = new Date(Date.now() + filter.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+				try {
+					filter.default_value = new Date(Date.now() + filter.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+				}
+				catch(e) {
+					filter.default_value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
+				}
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
 
 				if (filter.value >= new Date().toISOString().slice(0, 10)) {
@@ -280,8 +292,16 @@ class report extends API {
 
 			else if (filter.type == 'month') {
 
-				filter.default_value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + filter.offset, 1)).toISOString().substring(0, 7);
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
+
+				try {
+
+					filter.default_value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + filter.offset, 1)).toISOString().substring(0, 7);
+				}
+				catch(e) {
+
+					filter.default_value = filter.value;
+				}
 
 				if (filter.value >= new Date().toISOString().slice(0, 7)) {
 
@@ -291,8 +311,16 @@ class report extends API {
 
 			else if (filter.type == 'year') {
 
-				filter.default_value = date.getFullYear() + parseFloat(filter.offset);
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
+
+				try {
+					filter.default_value = filter.default_value = date.getFullYear() + parseFloat(filter.offset);
+				}
+
+				catch(e) {
+
+					filter.default_value = filter.value;
+				}
 
 				if (filter.value >= new Date().toISOString().slice(0, 4)) {
 
@@ -302,8 +330,16 @@ class report extends API {
 
 			else if (filter.type == 'datetime') {
 
-				filter.default_value = new Date(Date.now() + filter.offset * 60 * 1000).toISOString().replace('T', ' ').substring(0, 19);
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
+
+				try {
+					filter.default_value = new Date(Date.now() + filter.offset * 60 * 1000).toISOString().replace('T', ' ').substring(0, 19);
+
+				}
+				catch(e) {
+
+					filter.default_value = filter.value;
+				}
 
 				if (filter.value >= new Date().toISOString().slice(0, 10)) {
 
@@ -315,7 +351,9 @@ class report extends API {
 
 		for (const filter of this.filters) {
 
-			if(parseFloat(filter.placeholder) == filter.placeholder) {
+			filter.original_placeholder = filter.placeholder;
+
+			if (parseFloat(filter.placeholder) == filter.placeholder) {
 
 				filter.placeholder = `(${filter.placeholder})`;
 			}
@@ -719,14 +757,14 @@ class APIRequest {
 
 		const filterSet = new Set;
 
-		this.filters.forEach(x => filterSet.add(x.placeholder));
+		this.filters.forEach(x => filterSet.add(x.original_placeholder || x.placeholder));
 
 		for (const filter in requestBody) {
 
 			this.filters.push({
 				placeholder: filterSet.has(filter) ? `allspark_${filter}` : filter,
-				value: requestBody[filter],
-				default_value: requestBody[filter]
+				value: requestBody[filter] || requestBody[constants.filterPrefix + filter],
+				default_value: requestBody[filter] || requestBody[constants.filterPrefix + filter],
 			});
 		}
 	}
@@ -735,39 +773,32 @@ class APIRequest {
 
 		this.prepareQuery();
 
+		const headers = {};
+
+		for (const header of this.definition.headers) {
+
+			headers[header.key] = header.value;
+		}
+
+		this.definition.headers = headers;
+
+		delete this.definition.parameters;
+
 		if (this.definition.method === "GET") {
 
 			return {
 				request: [this.url, {...this.definition}],
 				type: "api",
-			}
+			};
 		}
 
 		return {
 			request: [this.url, {body: this.parameters, ...this.definition}],
 			type: "api",
-		}
+		};
 	}
 
 	prepareQuery() {
-
-		let parameters = new URLSearchParams;
-
-		for (const filter of this.filters) {
-
-			if (filter.value.__proto__.constructor.name === "Array") {
-
-				for (const item of filter.value) {
-
-					parameters.append(filter.placeholder, item);
-				}
-			}
-
-			else {
-
-				parameters.append(filter.placeholder, filter.value);
-			}
-		}
 
 		try {
 
@@ -781,11 +812,69 @@ class APIRequest {
 			return err;
 		}
 
+		let parameters = new URLSearchParams;
+
+		const filterObj = {};
+
+		for (const filter of this.filters) {
+
+			filterObj[filter.placeholder] = filter;
+		}
+
+		for (const param of this.definition.parameters || []) {
+
+			const key = param.key;
+
+			if (filterObj.hasOwnProperty(key)) {
+
+				if (filterObj[key].value.__proto__.constructor.name != "Array") {
+
+					filterObj[key].value = [filterObj[key].value];
+				}
+
+				filterObj[key].value.push(param.value);
+				filterObj[key].default_value = filterObj[key].value;
+			}
+
+			else {
+
+				filterObj[key] = {
+					placeholder: key,
+					value: param.value,
+					default_value: param.value,
+				}
+			}
+		}
+
+		for (const filter of Object.values(filterObj)) {
+
+			if (filter.value.__proto__.constructor.name === "Array") {
+
+				for (const item of filter.value) {
+
+					parameters.append(filter.original_placeholder || filter.placeholder, item);
+				}
+			}
+
+			else {
+
+				parameters.append(filter.original_placeholder || filter.placeholder, filter.value);
+			}
+		}
+
 		this.url = this.definition.url;
 
-		if (this.definition.method === 'GET') {
+		if (this.definition.method === "GET") {
 
-			this.url += "?" + parameters;
+			if (this.url.includes("?")) {
+
+				this.url = this.url + "&" + parameters;
+			}
+
+			else {
+
+				this.url += "?" + parameters;
+			}
 		}
 
 		this.parameters = parameters;
@@ -1005,7 +1094,7 @@ class BigqueryLegacy {
 
 			if (Array.isArray(filter.value)) {
 
-				if(filter.type == 'number') {
+				if (filter.type == 'number') {
 
 					this.reportObj.query = this.reportObj.query.replace((new RegExp(`{{${filter.placeholder}}}`, "g")), filter.value.map(x => parseInt(x)).join(', '));
 				}
@@ -1017,7 +1106,7 @@ class BigqueryLegacy {
 
 			else {
 
-				this.reportObj.query = this.reportObj.query.replace((new RegExp(`{{${filter.placeholder}}}`, "g")), filter.type == 'number' ? `${filter.value}` :  `"${filter.value}"`);
+				this.reportObj.query = this.reportObj.query.replace((new RegExp(`{{${filter.placeholder}}}`, "g")), filter.type == 'number' ? `${filter.value}` : `"${filter.value}"`);
 			}
 		}
 	}
@@ -1444,7 +1533,7 @@ class CachedReports extends API {
 			keyInfo = [],
 			keyValues = [];
 
-		for(const key of allKeys) {
+		for (const key of allKeys) {
 
 			keyInfo.push(redis.keyInfo(key));
 			keyValues.push(redis.get(key).catch(x => console.log(x)));
@@ -1454,7 +1543,7 @@ class CachedReports extends API {
 			sizeArray = await commonFun.promiseParallelLimit(5, keyInfo),
 			keyArray = await commonFun.promiseParallelLimit(5, keyValues);
 
-		for(const [index, value] of allKeys.entries()) {
+		for (const [index, value] of allKeys.entries()) {
 
 			const keyDetail = {
 				report_id: parseFloat(value.slice(value.indexOf('report_id') + 10)),
@@ -1466,7 +1555,8 @@ class CachedReports extends API {
 				keyDetail.created_at = new Date(JSON.parse(keyArray[index]).cached.store_time);
 			}
 
-			catch(e) {}
+			catch (e) {
+			}
 
 			keyDetails.push(keyDetail);
 		}
