@@ -88,7 +88,12 @@ class DataSource {
 				filter.submittedValue = filter.value;
 			}
 
-			filter.changed({state: 'submitted'});
+			if(_parameters.userApplied) {
+				filter.changed({state: 'submitted'});
+			}
+			else if(_parameters.clearFilterChanged) {
+				filter.changed({state: 'clear'});
+			}
 		}
 
 		const external_parameters = await Storage.get('external_parameters');
@@ -1347,7 +1352,7 @@ class DataSourceFilters extends Map {
 
 			e.preventDefault();
 
-			this.apply();
+			this.apply({userApplied: true});
 
 			if(this.source) {
 				this.source.container.querySelector('.filters-toggle').click()
@@ -1425,7 +1430,7 @@ class DataSourceFilters extends Map {
 			return;
 		}
 
-		this.source.visualizations.selected.load();
+		this.source.visualizations.selected.load({userApplied: true});
 
 		const toggle = this.source.container.querySelector('.filters-toggle.selected');
 
@@ -1583,7 +1588,6 @@ class DataSourceFilter {
 			input.value = this.value;
 
 			input.on('change', () => this.changed({state: 'changed'}));
-			input.on('keyup', () => this.changed({state: 'changed'}));
 		}
 
 		container.innerHTML = `<span>${this.name}</span>`;
@@ -1892,6 +1896,10 @@ class DataSourceFilter {
 		}
 
 		this.labelContainer.classList.remove('submitted');
+
+		if(state == 'clear') {
+			this.labelContainer.classList.remove('changed');
+		}
 
 		if(state == 'changed' && (!('submittedValue' in this) || JSON.stringify(this.submittedValue) != JSON.stringify(this.value))) {
 			this.labelContainer.classList.add('changed');

@@ -343,7 +343,6 @@ Page.class = class Dashboards extends Page {
 	 * 0 parent means root, ie any dashboard with 0 parent means that dashboard is root dashboard.
 	 flattens dashboard hierarchy and checks if there is single node cycle found.
 	 */
-
 	cycle() {
 
 		const simplifiedTreeMapping = new Map;
@@ -1778,7 +1777,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 				<input type="search" placeholder="Global Filters" class="global-filter-search">
 			</div>
 			<div class="head">
-				<button class="reload icon" title="Fore Refresh"><i class="fas fa-sync"></i></button>
+				<button class="reload icon" title="Force Refresh"><i class="fas fa-sync"></i></button>
 			</div>
 			<div class="NA no-results hidden">No filters found!</div>
 		`;
@@ -1796,9 +1795,8 @@ class DashboardGlobalFilters extends DataSourceFilters {
 			this.apply();
 
 			if(this.source) {
-				this.source.container.querySelector('.filters-toggle').click()
+				this.source.container.querySelector('.filters-toggle').click();
 			}
-
 		});
 
 		container.appendChild(this.container);
@@ -1854,6 +1852,8 @@ class DashboardGlobalFilters extends DataSourceFilters {
 			if (options.dontLoad) {
 				continue;
 			}
+
+			options.clearFilterChanged = true;
 
 			if (found && Array.from(this.page.loadedVisualizations).some(v => v.query == report)) {
 				report.visualizations.selected.load(options);
