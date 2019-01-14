@@ -423,7 +423,7 @@ main.preview-left #stages {
 					display: grid;
 					grid-gap: calc(var(--gap) * 2);
 				}
-					#stage-define-report #define-report-form .list:hover button.delete {
+					#stage-define-report #define-report-form .list button.delete:hover {
 						background: var(--color-red);
 						cursor: pointer;
 					}
