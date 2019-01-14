@@ -3821,16 +3821,16 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 				</select>
 			</label>
 
-			<label class="parameters" style="display: none !important">
+			<label class="parameters">
 				<span>Parameters</span>
 				<div class="headings">
 					<span>Key</span>
 					<span>Value</span>
 				</div>
-				<div class="list">No data found.</div>
+				<div class="list"><span class="NA">No parameters added.</span></div>
 			</label>
 
-			<label class="add-parameter" style="display: none !important">
+			<label class="add-parameter">
 				<div class="add-params-form">
 					<label>
 						<input type="text" name="parameters-key">
@@ -3850,7 +3850,7 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 					<span>Key</span>
 					<span>Value</span>
 				</div>
-				<div class="list"></div>
+				<div class="list"><span class="NA">No headers added.</span></div>
 			</label>
 
 			<label class="add-headers">
@@ -3873,6 +3873,10 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 
 		if(this.report && this.report.definition && this.report.definition.parameters) {
 
+			if(this.report.definition.parameters.length) {
+				super.form.querySelector('.parameters .list').textContent = null;
+			}
+
 			for(const parameter of this.report.definition.parameters) {
 				this.insetNode(parameter, 'parameters');
 			}
@@ -3880,14 +3884,20 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 
 		if(this.report && this.report.definition && this.report.definition.headers) {
 
+			if(this.report.definition.headers.length) {
+				super.form.querySelector('.headers .list').textContent = null;
+			}
+
 			for(const header of this.report.definition.headers) {
 				this.insetNode(header, 'headers');
 			}
+
 		}
 
 		super.form.querySelector('.add-parameter button').on('click', () => {
 
 			this.addParameter();
+
 			super.form['parameters-key'].value = '';
 			super.form['parameters-value'].value = '';
 		});
@@ -3919,9 +3929,12 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 			});
 		}
 
+		if(!super.form.querySelectorAll('.parameters .list label').length) {
+			super.form.querySelector('.parameters .list').textContent = null;
+		}
+
 		this.insetNode({key,value}, 'parameters');
 	}
-
 
 	addHeader() {
 
@@ -3937,6 +3950,10 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 				message: 'Duplicate key found.',
 				type: 'error',
 			})
+		}
+
+		if(!super.form.querySelectorAll('.headers .list label').length) {
+			super.form.querySelector('.headers .list').textContent = null;
 		}
 
 		this.insetNode({key,value}, 'headers');
@@ -3985,6 +4002,10 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 		label.querySelector('button').on('click', () => {
 
 			label.remove();
+
+			if(!super.form.querySelectorAll(`.${type} .list label`).length) {
+				super.form.querySelector(`.${type} .list`).innerHTML = `<span class="NA">No ${type} added.</span>`;
+			}
 		});
 
 		this.form.querySelector(`.${type} .list`).appendChild(label);
