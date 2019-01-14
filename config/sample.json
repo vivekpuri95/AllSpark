@@ -1,7 +1,7 @@
 {
   "port": 8080,
   "http": false,
-  "bigquery_files_destination": "../../bigquery_files/",
+  "bigquery_files_destination": "bigquery_files/",
   "secret_key": "<secret-key>",
   "ga_id": "",
   "sql_db": {

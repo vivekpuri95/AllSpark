@@ -209,22 +209,18 @@ Page.class = class Dashboards extends Page {
 		}
 	}
 
-	tagSearch(e) {
+	tagSearch(e, tag) {
 
 		e.stopPropagation();
-
-		const value = e.currentTarget.textContent;
 
 		for(const filter of this.searchBarFilter.values()) {
 
 			const values = filter.json;
 
-			if(values.functionName == 'equalto' && values.query == value && values.searchValue == 'Tags') {
+			if(values.functionName == 'equalto' && values.query == tag.trim() && values.searchValue == 'Tags') {
 				return;
 			}
 		}
-
-		this.searchBarFilter.container.classList.remove('hidden');
 
 		const tagFilter = new SearchColumnFilter(this.searchBarFilter);
 
@@ -233,12 +229,13 @@ Page.class = class Dashboards extends Page {
 		this.searchBarFilter.render();
 
 		tagFilter.json = {
-			searchQuery: value,
+			searchQuery: tag.trim(),
 			searchValue: 'Tags',
 			searchType: 'equalto',
 		};
 
-		this.renderList();
+		this.searchBarFilter.globalSearch.container.querySelector('.advanced').click();
+		this.searchBarFilter.changeCallback();
 	}
 
 	renderList() {
@@ -307,7 +304,7 @@ Page.class = class Dashboards extends Page {
 				a.classList.add('tag');
 				a.textContent = tag.trim();
 
-				a.on('click', e => this.tagSearch(e));
+				a.on('click', e => this.tagSearch(e, tag));
 
 				return a;
 			});

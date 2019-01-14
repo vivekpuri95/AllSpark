@@ -1996,6 +1996,10 @@ class DataSourceRow extends Map {
 			else if(column.type.name == 'number') {
 				value = Format.number(value);
 			}
+
+			else if(column.type.name == 'si') {
+				value = d3.format(".3s")(value);
+			}
 		}
 
 		if(column.prefix) {
@@ -2340,6 +2344,7 @@ class DataSourceColumn {
 					<option value="string">String</option>
 					<optgroup label="Numerical">
 						<option value="number">Number</option>
+						<option value="si">SI</option>
 						<option value="customNumber">Custom</option>
 					</optgroup>
 					<optgroup label="Timing">
