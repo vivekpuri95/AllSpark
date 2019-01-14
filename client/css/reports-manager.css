@@ -398,6 +398,9 @@ main.preview-left #stages {
 			height: 100%;
 			grid-template-rows: max-content max-content max-content max-content max-content max-content;
 		}
+		#stage-define-report #define-report-form.api {
+			overflow: auto;
+		}
 			#stage-define-report #define-report-form .ace_editor {
 				height: 100%;
 			}

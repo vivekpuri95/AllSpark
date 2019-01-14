@@ -3804,7 +3804,7 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 		if(this.formElement)
 			return this.formElement;
 
-		super.form.classList.add('form');
+		super.form.classList.add('form', 'api');
 
 		super.form.innerHTML = `
 
