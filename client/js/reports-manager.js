@@ -3831,15 +3831,15 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 			</label>
 
 			<label class="add-parameter">
-				<div class="add-params-form">
+				<div class="add-parameter-form">
 					<label>
-						<input type="text" name="parameters-key">
+						<input type="text" name="parameters_key">
 					</label>
 					<label>
-						<input type="text" name="parameters-value">
+						<input type="text" name="parameters_value">
 					</label>
 					<label>
-						<button type="button"><i class="fa fa-paper-plane"></i></button>
+						<button type="button" class="add"><i class="fa fa-paper-plane"></i></button>
 					</label>
 				</div>
 			</label>
@@ -3856,13 +3856,13 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 			<label class="add-headers">
 				<div class="add-headers-form">
 					<label>
-						<input type="text" name="header-key">
+						<input type="text" name="header_key">
 					</label>
 					<label>
-						<input type="text" name="header-value">
+						<input type="text" name="header_value">
 					</label>
 					<label>
-						<button type="button"><i class="fa fa-paper-plane"></i></button>
+						<button type="button" class="add"><i class="fa fa-paper-plane"></i></button>
 					</label>
 				</div>
 			</label>
@@ -3891,42 +3891,49 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 			for(const header of this.report.definition.headers) {
 				this.insetNode(header, 'headers');
 			}
-
 		}
 
 		super.form.querySelector('.add-parameter button').on('click', () => {
 
 			this.addParameter();
 
-			super.form['parameters-key'].value = '';
-			super.form['parameters-value'].value = '';
+			super.form.parameters_key.value = '';
+			super.form.parameters_value.value = '';
 		});
 
 		super.form.querySelector('.add-headers button').on('click', () => {
 
 			this.addHeader();
 
-			super.form['header-key'].value = '';
-			super.form['header-value'].value = '';
+			super.form.header_key.value = '';
+			super.form.header_value.value = '';
 		});
 
 		return super.form;
 	}
 
+	error(message) {
+
+		return new SnackBar({
+				message,
+				type: 'error',
+			});
+	}
+
 	addParameter() {
 
 		const
-			key = this.form['parameters-key'].value,
-			value = this.form['parameters-value'].value;
+			key = this.form.parameters_key.value,
+			value = this.form.parameters_value.value;
+
+		if(!key.length) {
+			return this.error('Key cannot be empty.');
+		}
 
 		const addedParameters = this.parametersJSON;
 
 		if(addedParameters.filter(x => x.key == key && x.value == value).length) {
-
-			return new SnackBar({
-				message: 'Duplicate key value found.',
-				type: 'error',
-			});
+			return this.error('Duplicate key value found.');
 		}
 
 		if(!super.form.querySelectorAll('.parameters .list label').length) {
@@ -3939,17 +3946,17 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 	addHeader() {
 
 		const
-			key = this.form['header-key'].value,
-			value = this.form['header-value'].value;
+			key = this.form.header_key.value,
+			value = this.form.header_value.value;
+
+		if(!key.length) {
+			return this.error('Key cannot be empty.');
+		}
 
 		const addedHeaders = this.headersJSON;
 
 		if(addedHeaders.filter(x => x.key == key).length) {
-
-			return new SnackBar({
-				message: 'Duplicate key found.',
-				type: 'error',
-			})
+			return this.error('Duplicate key found.');
 		}
 
 		if(!super.form.querySelectorAll('.headers .list label').length) {
@@ -3996,10 +4003,14 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 		label.innerHTML = `
 			<input type="text" name="key" value="${data.key}" readonly>
 			<input type="text" name="value" value="${data.value}" readonly>
-			<button type="button"><i class="fa fa-trash-alt"></i></button>
+			<button type="button" class="delete"><i class="fa fa-trash-alt"></i></button>
 		`;
 
 		label.querySelector('button').on('click', () => {
+
+			if(!confirm('Are you sure?')) {
+				return;
+			}
 
 			label.remove();
 

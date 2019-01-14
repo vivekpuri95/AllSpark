@@ -423,6 +423,9 @@ main.preview-left #stages {
 					display: grid;
 					grid-gap: calc(var(--gap) * 2);
 				}
+					#stage-define-report #define-report-form .list button.delete {
+						background: var(--color-red);
+					}
 					#stage-define-report #define-report-form .list i {
 						margin-left: 5px;
 					}
@@ -436,13 +439,17 @@ main.preview-left #stages {
 				display: grid;
 				grid-gap: calc(var(--gap) * 2);
 			}
-				#stage-define-report #define-report-form .add-params-form,
+				#stage-define-report #define-report-form .add-parameter-form,
 				#stage-define-report #define-report-form .add-headers-form {
 					display: grid;
 					grid-template-columns: 200px 200px 50px;
 					grid-gap: calc(var(--gap) * 2);
 				}
-					#stage-define-report #define-report-form .add-params-form label span,
+					#stage-define-report #define-report-form .add-parameter-form button.add,
+					#stage-define-report #define-report-form .add-headers-form button.add {
+						background: var(--color-secondary);
+					}
+					#stage-define-report #define-report-form .add-parameter-form label span,
 					#stage-define-report #define-report-form .add-headers-form label span {
 						justify-content: center;
 						color: var(--color-grey);
