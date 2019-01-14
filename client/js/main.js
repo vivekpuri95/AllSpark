@@ -3788,11 +3788,16 @@ class SortTable {
 
 	sort() {
 
-		const columns = this.table.querySelectorAll('thead th');
+		const headers = this.table.querySelectorAll('thead th');
 
-		for(const column of columns) {
+		for(const [key, header] of headers.entries()) {
 
-			column.on('click', () => {
+			header.on('click', () => {
+
+				this.sort = {
+					key,
+					order: !this.sort.order,
+				};
 
 				this.render();
 			});
@@ -3800,35 +3805,66 @@ class SortTable {
 	}
 
 	render() {
-		console.log(this.table);
-		debugger
 
 		const
-			rows = this.table.querySelector('tbody').rows;
+			tbody = this.table.querySelector('tbody'),
+			rows = this.table.querySelectorAll('tbody tr')
 
-			let arr = [];
-		// var rows = tbody.rows,
-        //         i, j, cells, clen;
-        //     // fill the array with values from the table
-        //     for (i = 0; i < rows.length; i++) {
-        //         cells = rows[i].cells;
-        //         clen = cells.length;
-        //         arr[i] = new Array();
-        //         for (j = 0; j < clen; j++) {
-        //             arr[i][j] = cells[j].innerHTML;
-        //         }
-		// 	}
+		const elements = [];
 
-		for(let i = 0 ; i < rows.length ; i++) {
+		for(const [key, row] of rows.entries()){
 
-			const cells = rows[i].cells;
-			arr[i] = new Array;
-			for (let j = 0; j < cells.length; j++) {
-				arr[i][j] = cells[j].innerHTML;
+			const cells = rows[key].cells;
+
+			elements[key] = [];
+
+			for(let i = 0; i < cells.length ; i++){
+
+				elements[key][i] = cells[i].textContent;
 			}
 		}
-		console.log(arr);
 
+		elements.sort((a, b) => {
+
+			a = a[this.sort.key];
+			b = b[this.sort.key];
+
+			if(parseFloat(a)) {
+				a = parseFloat(a);
+			}
+			else {
+				a = a.toUpperCase();
+			}
+
+			if(parseFloat(b)) {
+				b = parseFloat(b);
+			}
+			else {
+				b = b.toUpperCase();
+			}
+
+			let result = 0;
+
+			if(a < b) {
+				result = -1;
+			}
+
+			else if(a > b) {
+				result = 1;
+			}
+
+			if(this.sort.order) {
+				result *= -1;
+			}
+
+			return result;
+		});
+
+		for(let i = 0; i < rows.length; i++){
+			elements[i] = "<td>"+elements[i].join("</td><td>")+"</td>";
+		}
+
+		tbody.innerHTML = "<tr>"+elements.join("</tr><tr>")+"</tr>";
 	}
 }
 
