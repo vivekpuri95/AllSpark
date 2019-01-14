@@ -3800,16 +3800,9 @@ class SortTable {
 
 				const
 					tbody = this.table.querySelector('tbody'),
-					rows = this.table.querySelectorAll('tbody tr');
+					rows = Array.from(this.table.querySelectorAll('tbody tr'));
 
-				const elements = [];
-
-				for(const row of rows) {
-
-					elements.push(row);
-				}
-
-				elements.sort((a, b) => {
+				rows.sort((a, b) => {
 
 					a = a.children[index].textContent;
 					b = b.children[index].textContent;
@@ -3833,9 +3826,9 @@ class SortTable {
 					return result;
 				});
 
-				for(const element of elements) {
+				for(const row of rows) {
 
-					tbody.appendChild(element);
+					tbody.appendChild(row);
 				}
 			});
 		}
