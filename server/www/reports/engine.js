@@ -315,7 +315,7 @@ class report extends API {
 
 		for (const filter of this.filters) {
 
-			if(parseFloat(filter.placeholder) == filter.placeholder) {
+			if (parseFloat(filter.placeholder) == filter.placeholder) {
 
 				filter.placeholder = `(${filter.placeholder})`;
 			}
@@ -738,13 +738,12 @@ class APIRequest {
 
 		const headers = {};
 
-		for(const header of this.definition.headers) {
+		for (const header of this.definition.headers) {
 
 			headers[header.key] = header.value;
 		}
 
 		this.definition.headers = headers;
-
 
 		if (this.definition.method === "GET") {
 
@@ -762,9 +761,51 @@ class APIRequest {
 
 	prepareQuery() {
 
+		try {
+
+			this.definition = JSON.parse(this.reportObj.definition);
+		}
+
+		catch (e) {
+
+			const err = Error("url options is not JSON");
+			err.status = 400;
+			return err;
+		}
+
 		let parameters = new URLSearchParams;
 
+		const filterObj = {};
+
 		for (const filter of this.filters) {
+
+			filterObj[filter.placeholder] = filter;
+		}
+
+		for (const param of this.definition.parameters || []) {
+
+			if (filterObj.hasOwnProperty(param.key)) {
+
+				if (filterObj[param.key].value.__proto__.constructor.name != "Array") {
+
+					filterObj[param.key].value = [filterObj[param.key].value];
+				}
+
+				filterObj[param.key].value.push(param.value);
+				filterObj[param.key].default_value = filterObj[param.key].value;
+			}
+
+			else {
+
+				filterObj[param.key] = {
+					placeholder: param.key,
+					value: param.value,
+					default_value: param.value,
+				}
+			}
+		}
+
+		for (const filter of Object.values(filterObj)) {
 
 			if (filter.value.__proto__.constructor.name === "Array") {
 
@@ -780,23 +821,19 @@ class APIRequest {
 			}
 		}
 
-		try {
-
-			this.definition = JSON.parse(this.reportObj.definition);
-		}
-
-		catch (e) {
-
-			const err = Error("url options is not JSON");
-			err.status = 400;
-			return err;
-		}
-
 		this.url = this.definition.url;
 
-		if (this.definition.method === 'GET') {
+		if (this.definition.method === "GET") {
 
-			this.url += "?" + parameters;
+			if (this.url.includes("?")) {
+
+				this.url = this.url + "&" + parameters;
+			}
+
+			else {
+
+				this.url += "?" + parameters;
+			}
 		}
 
 		this.parameters = parameters;
@@ -1016,7 +1053,7 @@ class BigqueryLegacy {
 
 			if (Array.isArray(filter.value)) {
 
-				if(filter.type == 'number') {
+				if (filter.type == 'number') {
 
 					this.reportObj.query = this.reportObj.query.replace((new RegExp(`{{${filter.placeholder}}}`, "g")), filter.value.map(x => parseInt(x)).join(', '));
 				}
@@ -1028,7 +1065,7 @@ class BigqueryLegacy {
 
 			else {
 
-				this.reportObj.query = this.reportObj.query.replace((new RegExp(`{{${filter.placeholder}}}`, "g")), filter.type == 'number' ? `${filter.value}` :  `"${filter.value}"`);
+				this.reportObj.query = this.reportObj.query.replace((new RegExp(`{{${filter.placeholder}}}`, "g")), filter.type == 'number' ? `${filter.value}` : `"${filter.value}"`);
 			}
 		}
 	}
@@ -1455,7 +1492,7 @@ class CachedReports extends API {
 			keyInfo = [],
 			keyValues = [];
 
-		for(const key of allKeys) {
+		for (const key of allKeys) {
 
 			keyInfo.push(redis.keyInfo(key));
 			keyValues.push(redis.get(key).catch(x => console.log(x)));
@@ -1465,7 +1502,7 @@ class CachedReports extends API {
 			sizeArray = await commonFun.promiseParallelLimit(5, keyInfo),
 			keyArray = await commonFun.promiseParallelLimit(5, keyValues);
 
-		for(const [index, value] of allKeys.entries()) {
+		for (const [index, value] of allKeys.entries()) {
 
 			const keyDetail = {
 				report_id: parseFloat(value.slice(value.indexOf('report_id') + 10)),
@@ -1477,7 +1514,8 @@ class CachedReports extends API {
 				keyDetail.created_at = new Date(JSON.parse(keyArray[index]).cached.store_time);
 			}
 
-			catch(e) {}
+			catch (e) {
+			}
 
 			keyDetails.push(keyDetail);
 		}
