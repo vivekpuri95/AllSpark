@@ -3840,7 +3840,6 @@ class SortTable {
 			});
 		}
 	}
-
 }
 
 class FormatSQL {

@@ -247,8 +247,8 @@ Settings.list.set('privileges', class Privileges extends SettingPage {
 		this.container = this.page.querySelector('.privilege-page');
 		this.form = this.container.querySelector('section#privileges-form form');
 
-		this.container.querySelector('#privileges-list #add-privilege').on('click' (), () => SettingsPrivilege.add(this));
-		this.container.querySelector('#privileges-form #cancel-form').on('click', () 	=> Sections.show('privileges-list'));
+		this.container.querySelector('#privileges-list #add-privilege').on('click', () => SettingsPrivilege.add(this));
+		this.container.querySelector('#privileges-form #cancel-form').on('click', () => Sections.show('privileges-list'));
 	}
 
 
