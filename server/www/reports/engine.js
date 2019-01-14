@@ -721,7 +721,7 @@ class APIRequest {
 
 		const filterSet = new Set;
 
-		this.filters.forEach(x => filterSet.add(x.placeholder));
+		this.filters.forEach(x => filterSet.add(x.original_placeholder || x.placeholder));
 
 		for (const filter in requestBody) {
 
