@@ -726,7 +726,7 @@ class APIRequest {
 			this.filters.push({
 				placeholder: filterSet.has(filter) ? `allspark_${filter}` : filter,
 				value: requestBody[filter],
-				default_value: requestBody[filter]
+				default_value: requestBody[filter],
 			});
 		}
 	}
@@ -734,7 +734,6 @@ class APIRequest {
 	get finalQuery() {
 
 		this.prepareQuery();
-
 
 		const headers = {};
 
@@ -752,13 +751,13 @@ class APIRequest {
 			return {
 				request: [this.url, {...this.definition}],
 				type: "api",
-			}
+			};
 		}
 
 		return {
 			request: [this.url, {body: this.parameters, ...this.definition}],
 			type: "api",
-		}
+		};
 	}
 
 	prepareQuery() {
@@ -786,21 +785,23 @@ class APIRequest {
 
 		for (const param of this.definition.parameters || []) {
 
-			if (filterObj.hasOwnProperty(param.key)) {
+			const key = param.key;
 
-				if (filterObj[param.key].value.__proto__.constructor.name != "Array") {
+			if (filterObj.hasOwnProperty(key)) {
 
-					filterObj[param.key].value = [filterObj[param.key].value];
+				if (filterObj[key].value.__proto__.constructor.name != "Array") {
+
+					filterObj[key].value = [filterObj[key].value];
 				}
 
-				filterObj[param.key].value.push(param.value);
-				filterObj[param.key].default_value = filterObj[param.key].value;
+				filterObj[key].value.push(param.value);
+				filterObj[key].default_value = filterObj[key].value;
 			}
 
 			else {
 
-				filterObj[param.key] = {
-					placeholder: param.key,
+				filterObj[key] = {
+					placeholder: key,
 					value: param.value,
 					default_value: param.value,
 				}
@@ -813,13 +814,13 @@ class APIRequest {
 
 				for (const item of filter.value) {
 
-					parameters.append(filter.placeholder, item);
+					parameters.append(filter.placeholder.replace(constants.filterPrefix, ''), item);
 				}
 			}
 
 			else {
 
-				parameters.append(filter.placeholder, filter.value);
+				parameters.append(filter.placeholder.replace(constants.filterPrefix, ''), filter.value);
 			}
 		}
 
