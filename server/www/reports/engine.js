@@ -251,15 +251,22 @@ class report extends API {
 
 			const date = new Date();
 
-			if (isNaN(parseFloat(filter.offset))) {
-
-				continue;
-			}
+			// if (isNaN(parseFloat(filter.offset))) {
+			//
+			// 	continue;
+			// }
 
 			if (filter.type == 'time') {
 
-				filter.default_value = new Date(date.getTime() + (1000 * filter.offset)).toTimeString().substring(0, 8);
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
+
+				try {
+					filter.default_value = new Date(date.getTime() + (1000 * filter.offset)).toTimeString().substring(0, 8);
+				}
+
+				catch(e) {
+					filter.default_value = filter.value;
+				}
 
 				if (filter.value >= new Date().toISOString().slice(11, 19)) {
 
@@ -269,7 +276,12 @@ class report extends API {
 
 			else if (filter.type == 'date') {
 
-				filter.default_value = new Date(Date.now() + filter.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+				try {
+					filter.default_value = new Date(Date.now() + filter.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+				}
+				catch(e) {
+					filter.default_value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
+				}
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
 
 				if (filter.value >= new Date().toISOString().slice(0, 10)) {
@@ -280,8 +292,16 @@ class report extends API {
 
 			else if (filter.type == 'month') {
 
-				filter.default_value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + filter.offset, 1)).toISOString().substring(0, 7);
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
+
+				try {
+
+					filter.default_value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + filter.offset, 1)).toISOString().substring(0, 7);
+				}
+				catch(e) {
+
+					filter.default_value = filter.value;
+				}
 
 				if (filter.value >= new Date().toISOString().slice(0, 7)) {
 
@@ -291,8 +311,16 @@ class report extends API {
 
 			else if (filter.type == 'year') {
 
-				filter.default_value = date.getFullYear() + parseFloat(filter.offset);
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
+
+				try {
+					filter.default_value = filter.default_value = date.getFullYear() + parseFloat(filter.offset);
+				}
+
+				catch(e) {
+
+					filter.default_value = filter.value;
+				}
 
 				if (filter.value >= new Date().toISOString().slice(0, 4)) {
 
@@ -302,8 +330,16 @@ class report extends API {
 
 			else if (filter.type == 'datetime') {
 
-				filter.default_value = new Date(Date.now() + filter.offset * 60 * 1000).toISOString().replace('T', ' ').substring(0, 19);
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
+
+				try {
+					filter.default_value = new Date(Date.now() + filter.offset * 60 * 1000).toISOString().replace('T', ' ').substring(0, 19);
+
+				}
+				catch(e) {
+
+					filter.default_value = filter.value;
+				}
 
 				if (filter.value >= new Date().toISOString().slice(0, 10)) {
 
@@ -727,8 +763,8 @@ class APIRequest {
 
 			this.filters.push({
 				placeholder: filterSet.has(filter) ? `allspark_${filter}` : filter,
-				value: requestBody[filter],
-				default_value: requestBody[filter],
+				value: requestBody[filter] || requestBody[constants.filterPrefix + filter],
+				default_value: requestBody[filter] || requestBody[constants.filterPrefix + filter],
 			});
 		}
 	}
@@ -816,13 +852,13 @@ class APIRequest {
 
 				for (const item of filter.value) {
 
-					parameters.append(filter.placeholder, item);
+					parameters.append(filter.original_placeholder || filter.placeholder, item);
 				}
 			}
 
 			else {
 
-				parameters.append(filter.placeholder, filter.value);
+				parameters.append(filter.original_placeholder || filter.placeholder, filter.value);
 			}
 		}
 
