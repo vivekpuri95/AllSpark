@@ -2,11 +2,11 @@ version: '3.5'
 
 services:
   node:
-    container_name: node-test
+    container_name: <node-test>
     build:
       context: .
-      dockerfile: node.dockerfile
-    command: bash startpm2.sh staging
+      dockerfile: nodeupdate.dockerfile
+    command: bash startpm2.sh <env variable>
     ports:
        - "3001:3001"
        - "8001:8001"

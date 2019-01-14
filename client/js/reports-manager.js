@@ -5788,11 +5788,28 @@ ConfigureVisualization.types.set('pie', class PieOptions extends ReportVisualiza
 
 		const container = this.formContainer = document.createElement('div');
 
+		let selectOptions = '';
+
+		for(const [key, column] of this.page.preview.report.originalColumns) {
+
+			selectOptions = selectOptions.concat(`<option value="${key}">${column.name}</option>`);
+		}
+
 		container.innerHTML = `
 			<div class="configuration-section">
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="body">
 					<div class="form subform">
+					
+						<label>
+							<span>Name Column</span>
+							<select name="nameColumn">${selectOptions}</select>
+						</label>
+						
+						<label>
+							<span>Value Column</span>
+							<select name="valueColumn">${selectOptions}</select>
+						</label>
 
 						<label>
 							<span>Label Position</span>
@@ -5836,8 +5853,12 @@ ConfigureVisualization.types.set('pie', class PieOptions extends ReportVisualiza
 			</div>
 		`;
 
-		for(const element of this.formContainer.querySelectorAll('select, input'))
+		for(const element of this.formContainer.querySelectorAll('select, input')) {
+
 			element[element.type == 'checkbox' ? 'checked' : 'value'] = this.visualization.options && this.visualization.options[element.name];
+		}
+
+		container.querySelector('select[name=labelPosition]').value = this.visualization.options.labelPosition || 'inside';
 
 		return container;
 	}
