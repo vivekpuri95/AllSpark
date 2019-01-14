@@ -745,6 +745,8 @@ class APIRequest {
 
 		this.definition.headers = headers;
 
+		delete this.definition.parameters;
+
 		if (this.definition.method === "GET") {
 
 			return {

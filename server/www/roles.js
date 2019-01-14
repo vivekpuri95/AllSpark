@@ -60,6 +60,10 @@ exports.test = class extends API {
 
 	async test() {
 
-		return this.request.body || this.request.query;
+		return[
+			this.request.body,
+			this.request.query,
+			this.request.headers
+		]
 	}
 }
