@@ -3790,82 +3790,57 @@ class SortTable {
 
 		const headers = this.table.querySelectorAll('thead th');
 
-		for(const [key, header] of headers.entries()) {
+		for(const [index, header] of headers.entries()) {
+
+			const order = false;
+
+			header.order = !order;
 
 			header.on('click', () => {
 
-				this.sort = {
-					key,
-					order: !this.sort.order,
-				};
+				const
+					tbody = this.table.querySelector('tbody'),
+					rows = this.table.querySelectorAll('tbody tr');
 
-				this.render();
+				const elements = [];
+
+				for(const row of rows) {
+
+					elements.push(row);
+				}
+
+				elements.sort((a, b) => {
+
+					a = a.children[index].textContent;
+					b = b.children[index].textContent;
+
+					let result = 0;
+
+					if(a < b) {
+						result = -1;
+					}
+
+					else if(a > b) {
+						result = 1;
+					}
+
+					if(header.order) {
+						result *= -1;
+					}
+
+					header.order = !header.order;
+
+					return result;
+				});
+
+				for(const element of elements) {
+
+					tbody.appendChild(element);
+				}
 			});
 		}
 	}
 
-	render() {
-
-		const
-			tbody = this.table.querySelector('tbody'),
-			rows = this.table.querySelectorAll('tbody tr');
-
-		const elements = [];
-
-		for(const [key, row] of rows.entries()){
-
-			const cells = rows[key].cells;
-
-			elements[key] = [];
-
-			for(let i = 0; i < cells.length ; i++){
-
-				elements[key][i] = cells[i].textContent;
-			}
-		}
-
-		elements.sort((a, b) => {
-
-			a = a[this.sort.key];
-			b = b[this.sort.key];
-
-			if(parseFloat(a)) {
-				a = parseFloat(a);
-			}
-			else {
-				a = a.toUpperCase();
-			}
-
-			if(parseFloat(b)) {
-				b = parseFloat(b);
-			}
-			else {
-				b = b.toUpperCase();
-			}
-
-			let result = 0;
-
-			if(a < b) {
-				result = -1;
-			}
-
-			else if(a > b) {
-				result = 1;
-			}
-
-			if(this.sort.order) {
-				result *= -1;
-			}
-
-			return result;
-		});
-
-		for(let i = 0; i < rows.length; i++){
-			elements[i] = "<td>"+elements[i].join("</td><td>")+"</td>";
-		}
-
-		tbody.innerHTML = "<tr>"+elements.join("</tr><tr>")+"</tr>";
-	}
 }
 
 class FormatSQL {

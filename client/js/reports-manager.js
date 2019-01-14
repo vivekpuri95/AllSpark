@@ -840,7 +840,6 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 		if(this.sort.column) {
 
-			debugger
 			reports = reports.sort((a, b) => {
 
 				a = a[this.sort.column] || '';
