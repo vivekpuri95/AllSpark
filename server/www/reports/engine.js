@@ -315,6 +315,8 @@ class report extends API {
 
 		for (const filter of this.filters) {
 
+			filter.original_placeholder = filter.placeholder;
+
 			if (parseFloat(filter.placeholder) == filter.placeholder) {
 
 				filter.placeholder = `(${filter.placeholder})`;
@@ -814,13 +816,13 @@ class APIRequest {
 
 				for (const item of filter.value) {
 
-					parameters.append(filter.placeholder.replace(constants.filterPrefix, ''), item);
+					parameters.append(filter.placeholder, item);
 				}
 			}
 
 			else {
 
-				parameters.append(filter.placeholder.replace(constants.filterPrefix, ''), filter.value);
+				parameters.append(filter.placeholder, filter.value);
 			}
 		}
 
