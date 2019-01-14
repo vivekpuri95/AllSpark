@@ -3808,7 +3808,7 @@ class SortTable {
 
 		const
 			tbody = this.table.querySelector('tbody'),
-			rows = this.table.querySelectorAll('tbody tr')
+			rows = this.table.querySelectorAll('tbody tr');
 
 		const elements = [];
 
