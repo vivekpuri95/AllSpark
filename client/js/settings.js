@@ -251,7 +251,6 @@ Settings.list.set('privileges', class Privileges extends SettingPage {
 		this.container.querySelector('#privileges-form #cancel-form').on('click', () => Sections.show('privileges-list'));
 	}
 
-
 	async load() {
 
 		Privileges.response = await API.call('privileges/list');
