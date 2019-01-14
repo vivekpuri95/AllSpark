@@ -2526,8 +2526,8 @@ class MultiSelect {
 			}
 		}
 
-		this.fireCallback('change');
 		this.recalculate();
+		this.fireCallback('change');
 	}
 
 	/**
@@ -2649,8 +2649,8 @@ class MultiSelect {
 					input.checked ? this.selectedValues.add(input.value.toString()) : this.selectedValues.delete(input.value.toString());
 				}
 
-				this.fireCallback('change');
 				this.recalculate();
+				this.fireCallback('change');
 			});
 
 			row.input = input;
@@ -2735,8 +2735,6 @@ class MultiSelect {
 		`;
 
 		this.options.querySelector('.no-matches').classList.toggle('hidden', total != hidden);
-
-		this.fireCallback('change');
 	}
 
 	/**
@@ -2774,6 +2772,7 @@ class MultiSelect {
 		}
 
 		this.recalculate();
+		this.fireCallback('change');
 	}
 
 	/**
@@ -2787,6 +2786,7 @@ class MultiSelect {
 		this.selectedValues.clear();
 
 		this.recalculate();
+		this.fireCallback('change');
 	}
 }
 

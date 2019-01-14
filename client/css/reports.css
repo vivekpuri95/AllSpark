@@ -297,7 +297,7 @@ button[disabled] {
 		.data-source .overlay .filters label.changed.submitted > input,
 		.data-source .overlay .filters label.changed.submitted > select,
 		.data-source .overlay .filters label.changed.submitted > .multi-select {
-			box-shadow: 0 0 2px 3px var(--color-red);
+			box-shadow: 0 0 2px 3px var(--color-green);
 		}
 	.data-source > .description {
 		display: grid;

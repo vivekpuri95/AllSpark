@@ -1786,17 +1786,11 @@ class DashboardGlobalFilters extends DataSourceFilters {
 			this.container.removeEventListener('submit', Dashboard.globalFilterSubmitListener);
 		}
 
-		this.container.on('submit', (e) => {
+		this.container.on('submit', e => {
 
 			e.preventDefault();
 
 			Dashboard.filtersAppliedByUser = true;
-
-			this.apply();
-
-			if(this.source) {
-				this.source.container.querySelector('.filters-toggle').click();
-			}
 		});
 
 		container.appendChild(this.container);
@@ -1846,18 +1840,21 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 				found = true;
 
-				matchingFilter.changed({state: 'submitted'});
+				if(options.userApplied) {
+					matchingFilter.changed({state: 'submitted'});
+				} else {
+					matchingFilter.changed({state: 'clear'});
+				}
 			}
 
 			if (options.dontLoad) {
 				continue;
 			}
 
-			options.clearFilterChanged = true;
-
 			if (found && Array.from(this.page.loadedVisualizations).some(v => v.query == report)) {
-				report.visualizations.selected.load(options);
+				report.visualizations.selected.load({clearFilterChanged: true});
 			}
+
 			report.visualizations.selected.subReportDialogBox = null;
 			report.container.style.opacity = found ? 1 : 0.4;
 		}
