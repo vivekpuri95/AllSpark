@@ -775,7 +775,7 @@ class APIRequest {
 
 		const headers = {};
 
-		for (const header of this.definition.headers) {
+		for (const header of this.definition.headers || []) {
 
 			headers[header.key] = header.value;
 		}
