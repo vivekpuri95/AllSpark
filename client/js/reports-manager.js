@@ -6002,12 +6002,12 @@ ConfigureVisualization.types.set('pie', class PieOptions extends ReportVisualiza
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="body">
 					<div class="form subform">
-					
+
 						<label>
 							<span>Name Column</span>
 							<select name="nameColumn">${selectOptions}</select>
 						</label>
-						
+
 						<label>
 							<span>Value Column</span>
 							<select name="valueColumn">${selectOptions}</select>
@@ -6208,14 +6208,6 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 						<label>
 							<span>Font Size <span class="NA right">percentage</span></span>
 							<input type="number" name="fontSize" min="0.1" max="3000" step="0.01" placeholder="815">
-						</label>
-
-						<label>
-							<span>Format<span class="right" data-tooltip="This format takes precedence over column's type format.">?</span></span>
-							<select name="format">
-								<option value="">None</option>
-								<option value="s">SI</option>
-							</select>
 						</label>
 					</div>
 				</div>
