@@ -701,19 +701,21 @@ class DataSource {
 
 		menu.insertBefore(this.postProcessors.container, menu.querySelector('.change-visualization').parentElement);
 
-		menu.querySelector('.csv-download').on('click', (e) => this.download(e, {mode: 'csv'}));
-		menu.querySelector('.filtered-csv-download').on('click', (e) => this.download(e, {mode: 'filtered-csv'}));
-		menu.querySelector('.json-download').on('click', (e) => this.download(e, {mode: 'json'}));
-		menu.querySelector('.filtered-json-download').on('click', (e) => this.download(e, {mode: 'filtered-json'}));
-		menu.querySelector('.xlsx-download').on('click', (e) => this.download(e, {mode: 'xlsx'}));
-		menu.querySelector('.expand-toggle').on('click', () => {
+		menu.querySelector('.csv-download').on('click', e => this.download(e, {mode: 'csv'}));
+		menu.querySelector('.filtered-csv-download').on('click', e => this.download(e, {mode: 'filtered-csv'}));
+		menu.querySelector('.json-download').on('click', e => this.download(e, {mode: 'json'}));
+		menu.querySelector('.filtered-json-download').on('click', e => this.download(e, {mode: 'filtered-json'}));
+		menu.querySelector('.xlsx-download').on('click', e => this.download(e, {mode: 'xlsx'}));
+
+		menu.querySelector('.expand-toggle').on('click', e => {
+
+			let url = '/report/' + this.query_id;
 
 			if(this.visualizations.selected.visualization_id) {
-				window.location = `/visualization/${this.visualizations.selected.visualization_id}`
+				url = '/visualization/' + this.visualizations.selected.visualization_id;
 			}
-			else {
-				window.location = `/report/${this.query_id}`;
-			}
+
+			window.open(url, e.ctrlKey || e.metaKey ? '_blank' : '_self')
 		});
 
 		if(this.visualizations.length) {
