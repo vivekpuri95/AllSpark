@@ -736,6 +736,14 @@ class ProfileInfo {
 	constructor(page) {
 
 		Object.assign(this, page);
+
+		this.sortPrivilegesTable = new SortTable({
+			table: this.container.querySelector('table.privileges'),
+		});
+
+		this.sortRolesTable = new SortTable({
+			table: this.container.querySelector('table.roles'),
+		});
 	}
 
 	render() {
@@ -753,8 +761,11 @@ class ProfileInfo {
 			`);
 		}
 
-		if(!this.data.privileges || !this.data.privileges.length)
+		if(!this.data.privileges || !this.data.privileges.length) {
 			privileges.innerHTML = `<tr class="NA"><td colspan="2">No Privileges assigned!</td></tr>`;
+		}
+
+		this.sortPrivilegesTable.sort();
 
 		const roles = this.container.querySelector('.roles tbody');
 
@@ -769,7 +780,10 @@ class ProfileInfo {
 			`);
 		}
 
-		if(!this.data.roles || !this.data.roles.length)
+		if(!this.data.roles || !this.data.roles.length) {
 			roles.innerHTML = `<tr class="NA"><td colspan="2">No Roles assigned!</td></tr>`;
+		}
+
+		this.sortRolesTable.sort();
 	}
 }

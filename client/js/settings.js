@@ -121,8 +121,9 @@ Settings.list.set('accounts', class Accounts extends SettingPage {
 		this.container.querySelector('#accounts-list #add-account').on('click', () => SettingsAccount.add(this));
 		this.container.querySelector('#accounts-form #cancel-form').on('click', () => Sections.show('accounts-list'));
 
-		this.sortTable = new SortTable();
-		this.sortTable.table = this.container.querySelector('#accounts-list table');
+		this.sortTable = new SortTable({
+			table: this.container.querySelector('#accounts-list table'),
+		});
 	}
 
 	async load() {
@@ -200,8 +201,9 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 			select.insertAdjacentHTML('beforeend', `<option value="${type.name.toLowerCase()}">${type.name}</option>`);
 		}
 
-		this.sortTable = new SortTable();
-		this.sortTable.table = this.container.querySelector('#global-filters-list table');
+		this.sortTable = new SortTable({
+			table: this.container.querySelector('#global-filters-list table'),
+		});
 	}
 
 	async load() {
@@ -255,8 +257,9 @@ Settings.list.set('privileges', class Privileges extends SettingPage {
 		this.container.querySelector('#privileges-list #add-privilege').on('click', () => SettingsPrivilege.add(this));
 		this.container.querySelector('#privileges-form #cancel-form').on('click', () => Sections.show('privileges-list'));
 
-		this.sortTable = new SortTable();
-		this.sortTable.table = this.container.querySelector('#privileges-list table');
+		this.sortTable = new SortTable({
+			table: this.container.querySelector('#privileges-list table'),
+		});
 	}
 
 	async load() {
@@ -306,8 +309,9 @@ Settings.list.set('roles', class Roles extends SettingPage {
 		this.container.querySelector('#roles-list #add-role').on('click', () => SettingsRole.add(this));
 		this.container.querySelector('#roles-form #back').on('click', () => Sections.show('roles-list'));
 
-		this.sortTable = new SortTable();
-		this.sortTable.table = this.container.querySelector('#roles-list table');
+		this.sortTable = new SortTable({
+			table: this.container.querySelector('#roles-list table'),
+		});
 	}
 
 	async load() {
@@ -360,8 +364,9 @@ Settings.list.set('categories', class Categories extends SettingPage {
 			this.container.querySelector('#category-list #add-category').disabled = true;
 		}
 
-		this.sortTable = new SortTable();
-		this.sortTable.table = this.container.querySelector('#category-list table');
+		this.sortTable = new SortTable({
+			table: this.container.querySelector('#category-list table'),
+		});
 
 		this.container.querySelector('#category-edit #back').on('click', () => Sections.show('category-list'));
 	}
@@ -417,8 +422,9 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 		this.container = this.page.querySelector('.documentation-page');
 		this.container.appendChild(this.addForm);
 
-		this.sortTable = new SortTable();
-		this.sortTable.table = this.section.querySelector('table');
+		this.sortTable = new SortTable({
+			table: this.section.querySelector('table'),
+		});
 	}
 
 	async load(force) {
@@ -653,8 +659,9 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 			this.page.querySelector('.executing-reports').remove();
 		}
 
-		this.sortTable = new SortTable();
-		this.sortTable.table = this.container.querySelector('#executing-reports table');
+		this.sortTable = new SortTable({
+			table: this.container.querySelector('#executing-reports table'),
+		});
 
 		this.page.appendChild(this.container);
 	}
@@ -781,8 +788,9 @@ Settings.list.set('cachedReports', class CachedReports extends SettingPage {
 			this.page.querySelector('.cached-reports').remove();
 		}
 
-		this.sortTable = new SortTable();
-		this.sortTable.table = this.container.querySelector('#cached-reports table');
+		this.sortTable = new SortTable({
+			table: this.container.querySelector('#cached-reports table'),
+		});
 
 		this.page.appendChild(this.container);
 	}

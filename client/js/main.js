@@ -2862,6 +2862,8 @@ class ObjectRoles {
 
 		this.alreadyVisible = [];
 		this.allowedTargets = [...this.allowedTargets];
+
+		this.sortTable = new SortTable();
 	}
 
 	async load() {
@@ -3081,7 +3083,6 @@ class ObjectRoles {
 				<td title="Delete" class="action red"><i class="far fa-trash-alt"></i></td>
 			`;
 
-
 			if (this.targets[row.target].multiple) {
 
 				const targetMultiSelect = new MultiSelect({
@@ -3119,6 +3120,10 @@ class ObjectRoles {
 
 			tbody.innerHTML = '<tr class="NA"><td colspan="4">Not shared with anyone yet!</td></tr>'
 		}
+
+		this.sortTable.table = table;
+
+		this.sortTable.sort();
 
 		return table;
 	}
