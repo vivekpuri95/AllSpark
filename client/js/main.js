@@ -3595,8 +3595,9 @@ class SearchColumnFilter {
 
 		const values = this.json;
 
-		if(!values.query)
-			return;
+		if(!values.query) {
+			return true;
+		}
 
 		const [columnValue] = this.searchColumns.filters.filter(f => f.key == values.columnName).map(m => m.rowValue(row));
 

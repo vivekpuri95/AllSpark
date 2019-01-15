@@ -3847,7 +3847,7 @@ class DataSourceColumnFilter {
 
 		Object.assign(this, filter);
 
-		 this.filters = filters;
+		this.filters = filters;
 	}
 
 	get container() {
@@ -3893,13 +3893,22 @@ class DataSourceColumnFilter {
 		});
 
 		if(this.slug) {
-			container.querySelector('select').value = this.slug;
+			container.querySelector('.searchType').value = this.slug;
 		}
 
-		container.querySelector('input').value = this.value;
+		container.querySelector('.searchQuery').value = this.value;
+
+		{
+			const disabled = ['empty', 'notempty'].includes(searchType.value);
+
+			searchQuery.disabled = disabled;
+
+			if(disabled) {
+				searchQuery.value = '';
+			}
+		}
 
 		container.querySelector('.delete').on('click', () => {
-
 			this.filters.delete(this);
 			this.filters.render();
 		});

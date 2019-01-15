@@ -7257,6 +7257,16 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 			functionSelect.value = filter.function;
 		}
 
+		{
+			const disabled = ['empty', 'notempty'].includes(functionSelect.value);
+
+			valueInput.disabled = disabled;
+
+			if(disabled) {
+				valueInput.value = '';
+			}
+		}
+
 		functionSelect.on('change', () => {
 
 			const disabled = ['empty', 'notempty'].includes(functionSelect.value);
