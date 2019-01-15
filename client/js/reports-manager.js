@@ -3529,14 +3529,6 @@ class ReportConnection {
 
 			this.editor.value = json.query;
 		}
-
-		if(json.parameters) {
-			this.parameters = json.parameters;
-		}
-
-		if(json.headers) {
-			this.headers = json.headers;
-		}
 	}
 
 	get json() {
