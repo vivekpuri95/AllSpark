@@ -3882,7 +3882,7 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 					<span>Key</span>
 					<span>Value</span>
 				</div>
-				<div class="list"><span class="NA">No parameters added.</span></div>
+				<div class="list"><span class="NA">No parameters added.</div>
 			</label>
 
 			<label class="add-parameter">
@@ -3905,7 +3905,7 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 					<span>Key</span>
 					<span>Value</span>
 				</div>
-				<div class="list"><span class="NA">No headers added.</span></div>
+				<div class="list"><span class="NA">No headers added.</div>
 			</label>
 
 			<label class="add-headers">
@@ -3923,29 +3923,17 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 			</label>
 		`;
 
-		// Set the vlues from report definition
+		// Set the values from report definition
 		this.formJson = this.report.definition || {};
 
 		if(this.report && this.report.definition && this.report.definition.parameters) {
 
-			if(this.report.definition.parameters.length) {
-				super.form.querySelector('.parameters .list').textContent = null;
-			}
-
-			for(const parameter of this.report.definition.parameters) {
-				this.insetNode(parameter, 'parameters');
-			}
+			this.parameters = this.report.definition.parameters;
 		}
 
 		if(this.report && this.report.definition && this.report.definition.headers) {
 
-			if(this.report.definition.headers.length) {
-				super.form.querySelector('.headers .list').textContent = null;
-			}
-
-			for(const header of this.report.definition.headers) {
-				this.insetNode(header, 'headers');
-			}
+			this.headers = this.report.definition.headers;
 		}
 
 		super.form.querySelector('.add-parameter button').on('click', () => {
@@ -3967,6 +3955,32 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 		return super.form;
 	}
 
+	set parameters(parameters) {
+
+		super.form.querySelector('.parameters .list').textContent = null;
+
+		if(!parameters.length) {
+			super.form.querySelector('.parameters .list').innerHTML = '<span class="NA">No parameters added.</span>';
+		}
+
+		for(const parameter of parameters) {
+			this.insetNode(parameter, 'parameters');
+		}
+	}
+
+	set headers(headers) {
+
+		super.form.querySelector('.headers .list').textContent = null;
+
+		if(!headers.length) {
+			super.form.querySelector('.headers .list').innerHTML = '<span class="NA">No headers added.</span>';
+		}
+
+		for(const header of headers) {
+			this.insetNode(header, 'headers');
+		}
+	}
+
 	error(message) {
 
 		return new SnackBar({
@@ -3985,7 +3999,7 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 			return this.error('Key cannot be empty.');
 		}
 
-		const addedParameters = this.parametersJSON;
+		const addedParameters = this.json.parameters;
 
 		if(addedParameters.filter(x => x.key == key && x.value == value).length) {
 			return this.error('Duplicate key value found.');
@@ -4008,7 +4022,7 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 			return this.error('Key cannot be empty.');
 		}
 
-		const addedHeaders = this.headersJSON;
+		const addedHeaders = this.json.headers;
 
 		if(addedHeaders.filter(x => x.key == key).length) {
 			return this.error('Duplicate key found.');
@@ -4019,36 +4033,6 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 		}
 
 		this.insetNode({key,value}, 'headers');
-	}
-
-	get parametersJSON() {
-
-		const paramsLabels = this.form.querySelectorAll('.parameters .list label');
-		const parameters = [];
-
-		for(const label of paramsLabels) {
-			parameters.push({
-				key: label.querySelector('input[name=key]').value,
-				value: label.querySelector('input[name=value]').value,
-			});
-		};
-
-		return parameters;
-	}
-
-	get headersJSON() {
-
-		const headersLabels = this.form.querySelectorAll('.headers .list label');
-		const headers = [];
-
-		for(const label of headersLabels) {
-			headers.push({
-				key: label.querySelector('input[name=key]').value,
-				value: label.querySelector('input[name=value]').value,
-			});
-		};
-
-		return headers;
 	}
 
 	insetNode(data, type) {
@@ -4077,14 +4061,46 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 		this.form.querySelector(`.${type} .list`).appendChild(label);
 	}
 
+	set formJson(json) {
+
+		super.formJson = json;
+
+		if(json.headers) {
+			this.headers = json.headers;
+		}
+
+		if(json.parameters) {
+			this.parameters = json.parameters;
+		}
+	}
+
 	get json() {
 
+		const paramsLabels = this.form.querySelectorAll('.parameters .list label');
+		const parameters = [];
+
+		for(const label of paramsLabels) {
+			parameters.push({
+				key: label.querySelector('input[name=key]').value,
+				value: label.querySelector('input[name=value]').value,
+			});
+		};
+
+		const headers = [];
+		const headersLabels = this.form.querySelectorAll('.headers .list label');
+
+		for(const label of headersLabels) {
+			headers.push({
+				key: label.querySelector('input[name=key]').value,
+				value: label.querySelector('input[name=value]').value,
+			});
+		};
 
 		return {
 			url: this.form.url.value,
 			method: this.form.method.value,
-			parameters: this.parametersJSON,
-			headers: this.headersJSON,
+			parameters,
+			headers,
 		};
 	}
 });
