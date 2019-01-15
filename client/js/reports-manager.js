@@ -3952,7 +3952,7 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 			return this.error('Key cannot be empty.');
 		}
 
-		const addedParameters = this.parametersJSON;
+		const addedParameters = this.json.parameters;
 
 		if(addedParameters.filter(x => x.key == key && x.value == value).length) {
 			return this.error('Duplicate key value found.');
@@ -3975,7 +3975,7 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 			return this.error('Key cannot be empty.');
 		}
 
-		const addedHeaders = this.headersJSON;
+		const addedHeaders = this.json.headers;
 
 		if(addedHeaders.filter(x => x.key == key).length) {
 			return this.error('Duplicate key found.');
@@ -3986,36 +3986,6 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 		}
 
 		this.insetNode({key,value}, 'headers');
-	}
-
-	get parametersJSON() {
-
-		const paramsLabels = this.form.querySelectorAll('.parameters .list label');
-		const parameters = [];
-
-		for(const label of paramsLabels) {
-			parameters.push({
-				key: label.querySelector('input[name=key]').value,
-				value: label.querySelector('input[name=value]').value,
-			});
-		};
-
-		return parameters;
-	}
-
-	get headersJSON() {
-
-		const headersLabels = this.form.querySelectorAll('.headers .list label');
-		const headers = [];
-
-		for(const label of headersLabels) {
-			headers.push({
-				key: label.querySelector('input[name=key]').value,
-				value: label.querySelector('input[name=value]').value,
-			});
-		};
-
-		return headers;
 	}
 
 	insetNode(data, type) {
@@ -4044,8 +4014,40 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 		this.form.querySelector(`.${type} .list`).appendChild(label);
 	}
 
+	set formJson(json) {
+
+		super.formJson = json;
+
+		if(json.headers) {
+			this.headers = json.headers;
+		}
+
+		if(json.parameters) {
+			this.parameters = json.parameters;
+		}
+	}
+
 	get json() {
 
+		const paramsLabels = this.form.querySelectorAll('.parameters .list label');
+		const parameters = [];
+
+		for(const label of paramsLabels) {
+			parameters.push({
+				key: label.querySelector('input[name=key]').value,
+				value: label.querySelector('input[name=value]').value,
+			});
+		};
+
+		const headers = [];
+		const headersLabels = this.form.querySelectorAll('.headers .list label');
+
+		for(const label of headersLabels) {
+			headers.push({
+				key: label.querySelector('input[name=key]').value,
+				value: label.querySelector('input[name=value]').value,
+			});
+		};
 
 		return {
 			url: this.form.url.value,
