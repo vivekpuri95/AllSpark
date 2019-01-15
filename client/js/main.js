@@ -117,8 +117,9 @@ class Page {
 		this.webWorker = new Page.webWorker(this);
 		this.header = new PageHeader(this);
 
-		if(container)
+		if(container) {
 			return;
+		}
 
 		this.renderPage();
 		this.setupShortcuts();
@@ -180,12 +181,14 @@ class Page {
 			}
 
 			// Alt + L
-			if(e.keyCode == 76)
+			if(e.keyCode == 76) {
 				User.logout();
+			}
 
 			// Alt + O
-			if(e.keyCode == 79)
+			if(e.keyCode == 79) {
 				await Page.clearCache();
+			}
 
 		});
 

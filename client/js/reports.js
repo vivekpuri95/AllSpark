@@ -8543,6 +8543,10 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					continue;
 				}
 
+				if(!row.has(key) || row.get(key) == '' || row.get(key) == null) {
+					continue;
+				}
+
 				tooltip.push(`
 					<li class="${row.size > 2 && that.hoverColumn && that.hoverColumn.key == key ? 'hover' : ''}">
 						<span class="circle" style="background:${column.color}"></span>
@@ -10901,14 +10905,7 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 			return this.source.error();
 		}
 
-		let value = response[0].get(this.options.column);
-
-		if(this.options.format) {
-			value = d3.format('.4' + this.options.format)(value) || 0;
-		}
-		else {
-			value = response[0].getTypedValue(this.options.column);
-		}
+		let value = response[0].getTypedValue(this.options.column);
 
 		this.container.querySelector('.container').innerHTML = `<div class="value">${value}</div>`;
 
