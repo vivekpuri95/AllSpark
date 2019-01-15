@@ -3802,6 +3802,8 @@ class SortTable {
 					return;
 				}
 
+				header.order = !header.order;
+
 				const
 					tbody = this.table.querySelector('tbody'),
 					rows = Array.from(this.table.querySelectorAll('tbody tr'));
@@ -3811,23 +3813,11 @@ class SortTable {
 					a = a.children[index].attributes['data-sortby'] ? a.children[index].attributes['data-sortby'].value : a.children[index].textContent;
 					b = b.children[index].attributes['data-sortby'] ? b.children[index].attributes['data-sortby'].value : b.children[index].textContent;
 
-					let result = 0;
-
-					if(a < b) {
-						result = -1;
-					}
-
-					else if(a > b) {
-						result = 1;
-					}
-
 					if(header.order) {
-						result *= -1;
+						return a.localeCompare(b, undefined, { ignorePunctuation: true, numeric: true });
 					}
 
-					header.order = !header.order;
-
-					return result;
+					return -1;
 				});
 
 				for(const row of rows) {
