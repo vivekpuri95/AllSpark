@@ -1338,9 +1338,15 @@ class DataSourceFilters extends Map {
 			container.appendChild(filter.label);
 		}
 
-		container.on('submit', window.globalFilterSubmitListener =  e => {
+		container.on('submit', e => {
 
 			e.preventDefault();
+
+			try {
+
+				Dashboard.filtersAppliedByUser = true;
+			}
+			catch(e) {}
 
 			this.apply();
 

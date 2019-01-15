@@ -1783,24 +1783,6 @@ class DashboardGlobalFilters extends DataSourceFilters {
 			<div class="NA no-results hidden">No filters found!</div>
 		`;
 
-		if(window.globalFilterSubmitListener) {
-			this.container.removeEventListener('submit', Dashboard.globalFilterSubmitListener);
-		}
-
-		this.container.on('submit', (e) => {
-
-			e.preventDefault();
-
-			Dashboard.filtersAppliedByUser = true;
-
-			this.apply();
-
-			if(this.source) {
-				this.source.container.querySelector('.filters-toggle').click()
-			}
-
-		});
-
 		container.appendChild(this.container);
 
 		const searchInput = container.querySelector('.global-filter-search');
