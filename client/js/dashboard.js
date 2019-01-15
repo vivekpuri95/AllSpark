@@ -1786,11 +1786,19 @@ class DashboardGlobalFilters extends DataSourceFilters {
 			this.container.removeEventListener('submit', Dashboard.globalFilterSubmitListener);
 		}
 
+		this.container.removeEventListener('submit', this.submitListener);
+
 		this.container.on('submit', e => {
 
 			e.preventDefault();
 
 			Dashboard.filtersAppliedByUser = true;
+
+			this.apply({userApplied: true});
+
+			if(this.source) {
+				this.source.container.querySelector('.filters-toggle').click()
+			}
 		});
 
 		container.appendChild(this.container);

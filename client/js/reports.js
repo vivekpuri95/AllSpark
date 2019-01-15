@@ -1348,7 +1348,7 @@ class DataSourceFilters extends Map {
 			container.appendChild(filter.label);
 		}
 
-		container.on('submit', window.globalFilterSubmitListener =  e => {
+		container.on('submit', this.submitListener = e => {
 
 			e.preventDefault();
 
