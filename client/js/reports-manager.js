@@ -3529,6 +3529,14 @@ class ReportConnection {
 
 			this.editor.value = json.query;
 		}
+
+		if(json.parameters) {
+			this.parameters = json.parameters;
+		}
+
+		if(json.headers) {
+			this.headers = json.headers;
+		}
 	}
 
 	get json() {
@@ -3827,7 +3835,7 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 					<span>Key</span>
 					<span>Value</span>
 				</div>
-				<div class="list"><span class="NA">No parameters added.</span></div>
+				<div class="list"></div>
 			</label>
 
 			<label class="add-parameter">
@@ -3850,7 +3858,7 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 					<span>Key</span>
 					<span>Value</span>
 				</div>
-				<div class="list"><span class="NA">No headers added.</span></div>
+				<div class="list"></div>
 			</label>
 
 			<label class="add-headers">
@@ -3868,29 +3876,17 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 			</label>
 		`;
 
-		// Set the vlues from report definition
+		// Set the values from report definition
 		this.formJson = this.report.definition || {};
 
 		if(this.report && this.report.definition && this.report.definition.parameters) {
 
-			if(this.report.definition.parameters.length) {
-				super.form.querySelector('.parameters .list').textContent = null;
-			}
-
-			for(const parameter of this.report.definition.parameters) {
-				this.insetNode(parameter, 'parameters');
-			}
+			this.parameters = this.report.definition.parameters;
 		}
 
 		if(this.report && this.report.definition && this.report.definition.headers) {
 
-			if(this.report.definition.headers.length) {
-				super.form.querySelector('.headers .list').textContent = null;
-			}
-
-			for(const header of this.report.definition.headers) {
-				this.insetNode(header, 'headers');
-			}
+			this.headers = this.report.definition.headers;
 		}
 
 		super.form.querySelector('.add-parameter button').on('click', () => {
@@ -3910,6 +3906,32 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 		});
 
 		return super.form;
+	}
+
+	set parameters(parameters) {
+
+		super.form.querySelector('.parameters .list').textContent = null;
+
+		if(!parameters.length) {
+			super.form.querySelector('.parameters .list').innerHTML = '<span class="NA">No parameters added.</span>';
+		}
+
+		for(const parameter of parameters) {
+			this.insetNode(parameter, 'parameters');
+		}
+	}
+
+	set headers(headers) {
+
+		super.form.querySelector('.headers .list').textContent = null;
+
+		if(!headers.length) {
+			super.form.querySelector('.headers .list').innerHTML = '<span class="NA">No headers added.</span>';
+		}
+
+		for(const header of headers) {
+			this.insetNode(header, 'headers');
+		}
 	}
 
 	error(message) {

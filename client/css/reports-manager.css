@@ -410,7 +410,7 @@ main.preview-left #stages {
 			}
 			#stage-define-report #define-report-form .parameters {
 				display: grid;
-				grid-gap: calc(var(--gap) * 2);
+				grid-gap: var(--gap);
 			}
 				#stage-define-report #define-report-form .headings {
 					display: grid;
