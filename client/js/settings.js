@@ -196,6 +196,7 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 		}
 
 		this.sortTable = new SortTable();
+		this.sortTable.table = this.container.querySelector('#global-filters-list table');
 	}
 
 	async load() {
@@ -229,7 +230,6 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 			container.appendChild(globalFilter.row);
 		}
 
-		this.sortTable.table = this.container.querySelector('#global-filters-list table');
 		this.sortTable.sort();
 
 		await Sections.show('global-filters-list');

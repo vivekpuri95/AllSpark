@@ -3792,11 +3792,15 @@ class SortTable {
 
 		for(const [index, header] of headers.entries()) {
 
-			const order = false;
+			if(header.clickListener) {
+				header.removeEventListener('click', header.clickListener);
+			}
 
-			header.order = !order;
+			header.on('click', header.clickListener = () => {
 
-			header.on('click', () => {
+				if(header.classList.contains('action')) {
+					return;
+				}
 
 				const
 					tbody = this.table.querySelector('tbody'),
@@ -3804,8 +3808,8 @@ class SortTable {
 
 				rows.sort((a, b) => {
 
-					a = a.children[index].textContent;
-					b = b.children[index].textContent;
+					a = a.children[index].attributes['data-sortby'] ? a.children[index].attributes['data-sortby'].value : a.children[index].textContent;
+					b = b.children[index].attributes['data-sortby'] ? b.children[index].attributes['data-sortby'].value : b.children[index].textContent;
 
 					let result = 0;
 
