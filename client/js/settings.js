@@ -848,7 +848,7 @@ Settings.list.set('cachedReports', class CachedReports extends SettingPage {
 		if(!this.reports.size) {
 			tbody.innerHTML = '<tr><td class="NA" colspan="4">No redis reports at this time.</td></tr>';
 		}
-		debugger
+
 		for(const report of this.reports.values()) {
 			tbody.appendChild(report.row);
 		}
