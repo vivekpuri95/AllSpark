@@ -4044,8 +4044,8 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 		return {
 			url: this.form.url.value,
 			method: this.form.method.value,
-			parameters: this.parametersJSON,
-			headers: this.headersJSON,
+			parameters,
+			headers,
 		};
 	}
 });
