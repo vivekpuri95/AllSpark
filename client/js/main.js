@@ -3593,11 +3593,14 @@ class SearchColumnFilter {
 
 	checkRow(row) {
 
-		const
-			values = this.json,
-			[columnValue] = this.searchColumns.filters.filter(f => f.key == values.columnName).map(m => m.rowValue(row));
+		const values = this.json;
 
-		if(!columnValue) {
+		if(!values.query)
+			return;
+
+		const [columnValue] = this.searchColumns.filters.filter(f => f.key == values.columnName).map(m => m.rowValue(row));
+
+		if(!columnValue || !columnValue.length) {
 			return false;
 		}
 
