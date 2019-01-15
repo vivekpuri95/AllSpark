@@ -21,8 +21,9 @@ if(typeof window != 'undefined') {
 			`, 'color: #f33; font-weight: bold;', 'color: #777');
 		}
 
-		if(!Page.class)
+		if(!Page.class) {
 			return;
+		}
 
 		window.page = new (Page.class)();
 	});
@@ -36,8 +37,9 @@ class Page {
 
 		await Page.load();
 
-		if(await Storage.get('disable-custom-theme'))
+		if(await Storage.get('disable-custom-theme')) {
 			document.querySelector('html > head link[href^="/css/custom.css"]').remove();
+		}
 	}
 
 	static async load() {
@@ -58,8 +60,9 @@ class Page {
 
 					const parameters_ = {};
 
-					for(const [key, value] of parameters)
+					for(const [key, value] of parameters) {
 						parameters_[key] = value;
+					}
 
 					await Storage.set('external_parameters', parameters_);
 				}});
@@ -84,8 +87,10 @@ class Page {
 		await Storage.clear();
 
 		if(navigator.serviceWorker) {
-			for(const registration of await navigator.serviceWorker.getRegistrations())
+
+			for(const registration of await navigator.serviceWorker.getRegistrations()) {
 				registration.unregister();
+			}
 		}
 
 		Storage.set('refresh_token', refresh_token);
@@ -117,8 +122,9 @@ class Page {
 		this.webWorker = new Page.webWorker(this);
 		this.header = new PageHeader(this);
 
-		if(container)
+		if(container) {
 			return;
+		}
 
 		this.renderPage();
 		this.setupShortcuts();
@@ -131,11 +137,13 @@ class Page {
 	*/
 	branchAlert() {
 
-		if(!window.environment)
+		if(!window.environment) {
 			return;
+		}
 
-		if(!user.privileges.has('superadmin') || environment.branch == 'master' || !environment.name.includes('production'))
+		if(!user.privileges.has('superadmin') || environment.branch == 'master' || !environment.name.includes('production')) {
 			return;
+		}
 
 		const message = new NotificationBar({
 			message: `${environment.branch} is deployed on ${environment.name}. Please note.`,
@@ -145,15 +153,17 @@ class Page {
 
 	renderPage() {
 
-		if(!this.account || !this.user)
+		if(!this.account || !this.user) {
 			return;
+		}
 
 		document.body.insertBefore(this.header.container, this.container);
 
 		if(window.account) {
 
-			if(account.icon)
+			if(account.icon) {
 				document.getElementById('favicon').href = account.icon;
+			}
 
 			document.title = account.name;
 		}
@@ -163,8 +173,9 @@ class Page {
 
 		document.on('keyup', async (e) => {
 
-			if(!e.altKey)
+			if(!e.altKey) {
 				return;
+			}
 
 			// Alt + K
 			if(e.keyCode == 75 && document.querySelector('html > head link[href^="/css/custom.css"]')) {
@@ -180,12 +191,14 @@ class Page {
 			}
 
 			// Alt + L
-			if(e.keyCode == 76)
+			if(e.keyCode == 76) {
 				User.logout();
+			}
 
 			// Alt + O
-			if(e.keyCode == 79)
+			if(e.keyCode == 79) {
 				await Page.clearCache();
+			}
 
 		});
 
@@ -214,11 +227,13 @@ class Page {
 
 		document.on('keyup', e => {
 
-			if(e.keyCode != 18)
+			if(e.keyCode != 18) {
 				return;
+			}
 
-			if(!this.keyboardShortcutsLastTap || Date.now() - this.keyboardShortcutsLastTap > 500)
+			if(!this.keyboardShortcutsLastTap || Date.now() - this.keyboardShortcutsLastTap > 500) {
 				return this.keyboardShortcutsLastTap = Date.now();
+			}
 
 			if(!this.keyboardShortcutsDialogBox) {
 
@@ -241,10 +256,13 @@ class Page {
 				}
 			}
 
-			if(this.keyboardShortcutsDialogBox.status)
+			if(this.keyboardShortcutsDialogBox.status) {
 				this.keyboardShortcutsDialogBox.hide();
+			}
 
-			else this.keyboardShortcutsDialogBox.show();
+			else  {
+				this.keyboardShortcutsDialogBox.show();
+			}
 		});
 	}
 
@@ -3520,14 +3538,26 @@ class SearchColumnFilter {
 		`;
 
 		const
-			searchType = container.querySelector('select.searchType'),
+			searchType = container.querySelector('.searchType'),
 			searchQuery = container.querySelector('.searchQuery');
 
 		searchQuery.on('keyup', () => this.searchColumns.changeCallback());
 		searchQuery.on('search', () => this.searchColumns.changeCallback());
 
-		for(const select of container.querySelectorAll('select'))
+		for(const select of container.querySelectorAll('select')) {
 			select.on('change', () => this.searchColumns.changeCallback());
+		}
+
+		searchType.on('change', () => {
+
+			const disabled = ['empty', 'notempty'].includes(searchType.value);
+
+			searchQuery.disabled = disabled;
+
+			if(disabled) {
+				searchQuery.value = '';
+			}
+		});
 
 		for(const filter of DataSourceColumnFilter.types) {
 
@@ -3565,23 +3595,27 @@ class SearchColumnFilter {
 
 		const values = this.json;
 
-		if(!values.query)
+		if(!values.query) {
 			return true;
+		}
 
 		const [columnValue] = this.searchColumns.filters.filter(f => f.key == values.columnName).map(m => m.rowValue(row));
 
-		if(!columnValue || !columnValue.length)
+		if(!columnValue || !columnValue.length) {
 			return false;
+		}
 
 		for(const column of DataSourceColumnFilter.types) {
 
-			if(values.functionName != column.slug)
+			if(values.functionName != column.slug) {
 				continue;
+			}
 
 			for(const value of columnValue) {
 
-				if(value != null && column.apply(values.query, value))
+				if(value != null && column.apply(values.query, value)) {
 					return true;
+				}
 			}
 
 			return false;
@@ -3617,14 +3651,15 @@ class GlobalColumnSearchFilter extends SearchColumnFilter {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = super.container;
 
 		container.classList.add('global-filter');
-		container.querySelector('select.searchValue').classList.add('hidden');
-		container.querySelector('select.searchType').classList.add('hidden');
+		container.querySelector('.searchValue').classList.add('hidden');
+		container.querySelector('.searchType').classList.add('hidden');
 		container.querySelector('.delete').classList.add('hidden');
 
 		if(this.advancedSearch) {

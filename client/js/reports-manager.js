@@ -6018,12 +6018,12 @@ ConfigureVisualization.types.set('pie', class PieOptions extends ReportVisualiza
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="body">
 					<div class="form subform">
-					
+
 						<label>
 							<span>Name Column</span>
 							<select name="nameColumn">${selectOptions}</select>
 						</label>
-						
+
 						<label>
 							<span>Value Column</span>
 							<select name="valueColumn">${selectOptions}</select>
@@ -6224,14 +6224,6 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 						<label>
 							<span>Font Size <span class="NA right">percentage</span></span>
 							<input type="number" name="fontSize" min="0.1" max="3000" step="0.01" placeholder="815">
-						</label>
-
-						<label>
-							<span>Format<span class="right" data-tooltip="This format takes precedence over column's type format.">?</span></span>
-							<select name="format">
-								<option value="">None</option>
-								<option value="s">SI</option>
-							</select>
 						</label>
 					</div>
 				</div>
@@ -7192,8 +7184,9 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 
 		container.textContent = null;
 
-		for(const filter of this.options.filters || [])
+		for(const filter of this.options.filters || []) {
 			container.appendChild(this.filter(filter));
+		}
 
 		const addFilter = document.createElement('button');
 
@@ -7244,8 +7237,9 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 
 			select.textContent = null;
 
-			for(const column of this.incoming.columns.values())
+			for(const column of this.incoming.columns.values()) {
 				select.insertAdjacentHTML('beforeend', `<option value="${column.key}">${column.name}</option>`);
+			}
 
 			select.value = value || select.dataset.value;
 		}
@@ -7271,14 +7265,38 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 
 		columnSelect.dataset.value = filter.column;
 
-		for(const filter of DataSourceColumnFilter.types)
+		for(const filter of DataSourceColumnFilter.types) {
 			functionSelect.insertAdjacentHTML('beforeend', `<option value="${filter.slug}">${filter.name}</option>`);
+		}
 
-		if(filter.function)
+		if(filter.function) {
 			functionSelect.value = filter.function;
+		}
 
-		if(filter.value)
+		{
+			const disabled = ['empty', 'notempty'].includes(functionSelect.value);
+
+			valueInput.disabled = disabled;
+
+			if(disabled) {
+				valueInput.value = '';
+			}
+		}
+
+		functionSelect.on('change', () => {
+
+			const disabled = ['empty', 'notempty'].includes(functionSelect.value);
+
+			valueInput.disabled = disabled;
+
+			if(disabled) {
+				valueInput.value = '';
+			}
+		});
+
+		if(filter.value) {
 			valueInput.value = filter.value;
+		}
 
 		container.querySelector('.remove').on('click', e => {
 			e.stopPropagation();
