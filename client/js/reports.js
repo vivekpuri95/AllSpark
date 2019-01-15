@@ -3762,9 +3762,7 @@ class DataSourceColumnFilters extends Set {
 		const json = [];
 
 		for(const filter of this) {
-			if(filter.json.value != '') {
-				json.push(filter.json);
-			}
+			json.push(filter.json);
 		}
 
 		return json;
@@ -3795,6 +3793,16 @@ class DataSourceColumnFilter {
 				slug: 'endswith',
 				name: 'Ends With',
 				apply: (q, v) => v.toString().toLowerCase().endsWith(q.toString().toLowerCase()),
+			},
+			{
+				slug: 'empty',
+				name: 'Is Empty',
+				apply: (q, v) => ['', null].includes(v.trim()),
+			},
+			{
+				slug: 'notempty',
+				name: 'Is Not Empty',
+				apply: (q, v) => !['', null].includes(v.trim()),
 			},
 			{
 				slug: 'equalto',
@@ -6496,8 +6504,9 @@ Visualization.list.set('table', class Table extends Visualization {
 				}
 			}
 
-			if(column.filters && column.filters.length && !column.filters.some(f => f.value == ''))
+			if(column.filters && column.filters.length) {
 				container.classList.add('has-filter');
+			}
 
 			headings.appendChild(container);
 		}
