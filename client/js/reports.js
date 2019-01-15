@@ -10163,13 +10163,20 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 		if((this.options.nameColumn in dataRow) || (this.options.valueColumn in dataRow)) {
 
-			this.options.transformations.push({
-				type: 'pivot', options:{
-					rows: [],
-					values: [{column: this.options.valueColumn, function: "sum"}],
-					columns: [{column: this.options.nameColumn}]
-				}
-			});
+			const [pivotPresent] = this.options.transformations.filter(x => x.type == 'pivot' && x.implied);
+
+			if(!pivotPresent) {
+
+				this.options.transformations.push({
+					type: 'pivot',
+					options: {
+						rows: [],
+						values: [{column: this.options.valueColumn, function: 'sum'}],
+						columns: [{column: this.options.nameColumn}],
+					},
+					implied: true,
+				});
+			}
 		}
 
 		await this.render(options);
