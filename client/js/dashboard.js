@@ -1777,7 +1777,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 				<input type="search" placeholder="Global Filters" class="global-filter-search">
 			</div>
 			<div class="head">
-				<button class="reload icon" title="Force Refresh"><i class="fas fa-sync"></i></button>
+				<button class="reload icon" title="Apply the filters and reload the dashboard without cache."><i class="fas fa-sync"></i></button>
 			</div>
 			<div class="NA no-results hidden">No filters found!</div>
 		`;
@@ -1814,7 +1814,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 		});
 
 		container.querySelector('button.reload').on('click', () => {
-			this.apply({cached: 0})
+			this.apply({cached: 0, userApplied: true})
 		});
 	}
 
