@@ -3827,7 +3827,7 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 					<span>Key</span>
 					<span>Value</span>
 				</div>
-				<div class="list"></div>
+				<div class="list"><span class="NA">No parameters added.</div>
 			</label>
 
 			<label class="add-parameter">
@@ -3850,7 +3850,7 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 					<span>Key</span>
 					<span>Value</span>
 				</div>
-				<div class="list"></div>
+				<div class="list"><span class="NA">No headers added.</div>
 			</label>
 
 			<label class="add-headers">
