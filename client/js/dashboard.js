@@ -161,6 +161,12 @@ Page.class = class Dashboards extends Page {
 
 				this.loadedVisualizations.clear();
 
+				if(!this.list.has(dashboardId)) {
+					this.container.querySelector('section#reports h1').innerHTML = 'Dashboard not found!';
+					Sections.show('reports');
+					return;
+				}
+
 				history.pushState({
 					filter: dashboardId,
 					type: 'dashboard'
@@ -537,6 +543,13 @@ Page.class = class Dashboards extends Page {
 					report = source;
 				}
 			}
+		}
+
+		if(!report) {
+
+			this.container.querySelector('section#reports h1').innerHTML = (visualization ? 'Visualization' : 'Report') + ' not found!';
+			Sections.show('reports');
+			return;
 		}
 
 		report = new DataSource(report);

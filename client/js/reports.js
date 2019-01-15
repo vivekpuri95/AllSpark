@@ -701,19 +701,21 @@ class DataSource {
 
 		menu.insertBefore(this.postProcessors.container, menu.querySelector('.change-visualization').parentElement);
 
-		menu.querySelector('.csv-download').on('click', (e) => this.download(e, {mode: 'csv'}));
-		menu.querySelector('.filtered-csv-download').on('click', (e) => this.download(e, {mode: 'filtered-csv'}));
-		menu.querySelector('.json-download').on('click', (e) => this.download(e, {mode: 'json'}));
-		menu.querySelector('.filtered-json-download').on('click', (e) => this.download(e, {mode: 'filtered-json'}));
-		menu.querySelector('.xlsx-download').on('click', (e) => this.download(e, {mode: 'xlsx'}));
-		menu.querySelector('.expand-toggle').on('click', () => {
+		menu.querySelector('.csv-download').on('click', e => this.download(e, {mode: 'csv'}));
+		menu.querySelector('.filtered-csv-download').on('click', e => this.download(e, {mode: 'filtered-csv'}));
+		menu.querySelector('.json-download').on('click', e => this.download(e, {mode: 'json'}));
+		menu.querySelector('.filtered-json-download').on('click', e => this.download(e, {mode: 'filtered-json'}));
+		menu.querySelector('.xlsx-download').on('click', e => this.download(e, {mode: 'xlsx'}));
+
+		menu.querySelector('.expand-toggle').on('click', e => {
+
+			let url = '/report/' + this.query_id;
 
 			if(this.visualizations.selected.visualization_id) {
-				window.location = `/visualization/${this.visualizations.selected.visualization_id}`
+				url = '/visualization/' + this.visualizations.selected.visualization_id;
 			}
-			else {
-				window.location = `/report/${this.query_id}`;
-			}
+
+			window.open(url, e.ctrlKey || e.metaKey ? '_blank' : '_self')
 		});
 
 		if(this.visualizations.length) {
@@ -2314,6 +2316,7 @@ class DataSourceColumn {
 
 			this.customNumberType.value = this.type.formatNumber;
 		}
+
 		this.dialogueBox.show();
 	}
 
@@ -3760,9 +3763,7 @@ class DataSourceColumnFilters extends Set {
 		const json = [];
 
 		for(const filter of this) {
-			if(filter.json.value != '') {
-				json.push(filter.json);
-			}
+			json.push(filter.json);
 		}
 
 		return json;
@@ -3793,6 +3794,16 @@ class DataSourceColumnFilter {
 				slug: 'endswith',
 				name: 'Ends With',
 				apply: (q, v) => v.toString().toLowerCase().endsWith(q.toString().toLowerCase()),
+			},
+			{
+				slug: 'empty',
+				name: 'Is Empty',
+				apply: (q, v) => ['', null].includes(v.toString().trim()),
+			},
+			{
+				slug: 'notempty',
+				name: 'Is Not Empty',
+				apply: (q, v) => !['', null].includes(v.toString().trim()),
 			},
 			{
 				slug: 'equalto',
@@ -3836,7 +3847,7 @@ class DataSourceColumnFilter {
 
 		Object.assign(this, filter);
 
-		 this.filters = filters;
+		this.filters = filters;
 	}
 
 	get container() {
@@ -3857,21 +3868,47 @@ class DataSourceColumnFilter {
 			</div>
 		`;
 
+		const
+			searchType = container.querySelector('.searchType'),
+			searchQuery = container.querySelector('.searchQuery');
+
 		for(const filter of DataSourceColumnFilter.types) {
-			container.querySelector('select.searchType').insertAdjacentHTML('beforeend', `
+
+			searchType.insertAdjacentHTML('beforeend', `
 				<option value="${filter.slug}">
 					${filter.name}
 				</option>
 			`);
 		}
 
-		if(this.slug)
-			container.querySelector('select').value = this.slug;
+		searchType.on('change', () => {
 
-		container.querySelector('input').value = this.value;
+			const disabled = ['empty', 'notempty'].includes(searchType.value);
+
+			searchQuery.disabled = disabled;
+
+			if(disabled) {
+				searchQuery.value = '';
+			}
+		});
+
+		if(this.slug) {
+			container.querySelector('.searchType').value = this.slug;
+		}
+
+		container.querySelector('.searchQuery').value = this.value;
+
+		{
+			const disabled = ['empty', 'notempty'].includes(searchType.value);
+
+			searchQuery.disabled = disabled;
+
+			if(disabled) {
+				searchQuery.value = '';
+			}
+		}
 
 		container.querySelector('.delete').on('click', () => {
-
 			this.filters.delete(this);
 			this.filters.render();
 		});
@@ -6494,8 +6531,9 @@ Visualization.list.set('table', class Table extends Visualization {
 				}
 			}
 
-			if(column.filters && column.filters.length && !column.filters.some(f => f.value == ''))
+			if(column.filters && column.filters.length) {
 				container.classList.add('has-filter');
+			}
 
 			headings.appendChild(container);
 		}
@@ -8543,6 +8581,10 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					continue;
 				}
 
+				if(!row.has(key) || row.get(key) == '' || row.get(key) == null) {
+					continue;
+				}
+
 				tooltip.push(`
 					<li class="${row.size > 2 && that.hoverColumn && that.hoverColumn.key == key ? 'hover' : ''}">
 						<span class="circle" style="background:${column.color}"></span>
@@ -10163,13 +10205,20 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 		if((this.options.nameColumn in dataRow) || (this.options.valueColumn in dataRow)) {
 
-			this.options.transformations.push({
-				type: 'pivot', options:{
-					rows: [],
-					values: [{column: this.options.valueColumn, function: "sum"}],
-					columns: [{column: this.options.nameColumn}]
-				}
-			});
+			const [pivotPresent] = this.options.transformations.filter(x => x.type == 'pivot' && x.implied);
+
+			if(!pivotPresent) {
+
+				this.options.transformations.push({
+					type: 'pivot',
+					options: {
+						rows: [],
+						values: [{column: this.options.valueColumn, function: 'sum'}],
+						columns: [{column: this.options.nameColumn}],
+					},
+					implied: true,
+				});
+			}
 		}
 
 		await this.render(options);
@@ -10901,14 +10950,7 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 			return this.source.error();
 		}
 
-		let value = response[0].get(this.options.column);
-
-		if(this.options.format) {
-			value = d3.format('.4' + this.options.format)(value) || 0;
-		}
-		else {
-			value = response[0].getTypedValue(this.options.column);
-		}
+		let value = response[0].getTypedValue(this.options.column);
 
 		this.container.querySelector('.container').innerHTML = `<div class="value">${value}</div>`;
 

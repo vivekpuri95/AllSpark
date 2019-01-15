@@ -761,10 +761,12 @@ class APIRequest {
 
 		for (const filter in requestBody) {
 
+			const value = requestBody[filter] || requestBody[constants.filterPrefix + filter];
+
 			this.filters.push({
 				placeholder: filterSet.has(filter) ? `allspark_${filter}` : filter,
-				value: requestBody[filter] || requestBody[constants.filterPrefix + filter],
-				default_value: requestBody[filter] || requestBody[constants.filterPrefix + filter],
+				value: value == undefined ? '' : value,
+				default_value: value == undefined ? '' : value,
 			});
 		}
 	}
