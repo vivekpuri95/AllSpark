@@ -2316,6 +2316,7 @@ class DataSourceColumn {
 
 			this.customNumberType.value = this.type.formatNumber;
 		}
+
 		this.dialogueBox.show();
 	}
 
@@ -3797,12 +3798,12 @@ class DataSourceColumnFilter {
 			{
 				slug: 'empty',
 				name: 'Is Empty',
-				apply: (q, v) => ['', null].includes(v.trim()),
+				apply: (q, v) => ['', null].includes(v.toString().trim()),
 			},
 			{
 				slug: 'notempty',
 				name: 'Is Not Empty',
-				apply: (q, v) => !['', null].includes(v.trim()),
+				apply: (q, v) => !['', null].includes(v.toString().trim()),
 			},
 			{
 				slug: 'equalto',
@@ -3867,16 +3868,33 @@ class DataSourceColumnFilter {
 			</div>
 		`;
 
+		const
+			searchType = container.querySelector('.searchType'),
+			searchQuery = container.querySelector('.searchQuery');
+
 		for(const filter of DataSourceColumnFilter.types) {
-			container.querySelector('select.searchType').insertAdjacentHTML('beforeend', `
+
+			searchType.insertAdjacentHTML('beforeend', `
 				<option value="${filter.slug}">
 					${filter.name}
 				</option>
 			`);
 		}
 
-		if(this.slug)
+		searchType.on('change', () => {
+
+			const disabled = ['empty', 'notempty'].includes(searchType.value);
+
+			searchQuery.disabled = disabled;
+
+			if(disabled) {
+				searchQuery.value = '';
+			}
+		});
+
+		if(this.slug) {
 			container.querySelector('select').value = this.slug;
+		}
 
 		container.querySelector('input').value = this.value;
 

@@ -3538,14 +3538,26 @@ class SearchColumnFilter {
 		`;
 
 		const
-			searchType = container.querySelector('select.searchType'),
+			searchType = container.querySelector('.searchType'),
 			searchQuery = container.querySelector('.searchQuery');
 
 		searchQuery.on('keyup', () => this.searchColumns.changeCallback());
 		searchQuery.on('search', () => this.searchColumns.changeCallback());
 
-		for(const select of container.querySelectorAll('select'))
+		for(const select of container.querySelectorAll('select')) {
 			select.on('change', () => this.searchColumns.changeCallback());
+		}
+
+		searchType.on('change', () => {
+
+			const disabled = ['empty', 'notempty'].includes(searchType.value);
+
+			searchQuery.disabled = disabled;
+
+			if(disabled) {
+				searchQuery.value = '';
+			}
+		});
 
 		for(const filter of DataSourceColumnFilter.types) {
 
@@ -3581,25 +3593,25 @@ class SearchColumnFilter {
 
 	checkRow(row) {
 
-		const values = this.json;
+		const
+			values = this.json,
+			[columnValue] = this.searchColumns.filters.filter(f => f.key == values.columnName).map(m => m.rowValue(row));
 
-		if(!values.query)
-			return true;
-
-		const [columnValue] = this.searchColumns.filters.filter(f => f.key == values.columnName).map(m => m.rowValue(row));
-
-		if(!columnValue || !columnValue.length)
+		if(!columnValue) {
 			return false;
+		}
 
 		for(const column of DataSourceColumnFilter.types) {
 
-			if(values.functionName != column.slug)
+			if(values.functionName != column.slug) {
 				continue;
+			}
 
 			for(const value of columnValue) {
 
-				if(value != null && column.apply(values.query, value))
+				if(value != null && column.apply(values.query, value)) {
 					return true;
+				}
 			}
 
 			return false;
@@ -3635,14 +3647,15 @@ class GlobalColumnSearchFilter extends SearchColumnFilter {
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = super.container;
 
 		container.classList.add('global-filter');
-		container.querySelector('select.searchValue').classList.add('hidden');
-		container.querySelector('select.searchType').classList.add('hidden');
+		container.querySelector('.searchValue').classList.add('hidden');
+		container.querySelector('.searchType').classList.add('hidden');
 		container.querySelector('.delete').classList.add('hidden');
 
 		if(this.advancedSearch) {
