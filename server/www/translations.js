@@ -187,6 +187,8 @@ class Translations extends API {
 				AND (phrase = ? OR "" = ?)
 				AND (locale_id = ? OR '0' = ?)
 				AND account_id = ?
+			ORDER BY
+				id
 			`,
 			[owner, owner, owner_id, owner_id, phrase, phrase, locale_id, locale_id, this.account.account_id]
 		);
