@@ -373,7 +373,7 @@ class report extends API {
 				continue;
 			}
 
-			if(!Object.keys(filter.offset).length) {
+			if(!filter.offset || !Object.keys(filter.offset).length) {
 
 				continue;
 			}
