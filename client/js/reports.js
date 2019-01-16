@@ -3627,6 +3627,7 @@ class DataSourceColumnDrilldownParameter {
 		const container = this.containerElement = document.createElement('div');
 
 		container.innerHTML = `
+
 			<label>
 				<span>Destination Filter</span>
 				<select name="placeholder" value="${this.placeholder || ''}"></select>
@@ -3660,13 +3661,11 @@ class DataSourceColumnDrilldownParameter {
 		container.querySelector('select[name=type]').on('change', () => this.update(true));
 
 		container.querySelector('.delete').on('click', () => {
-
 			this.columnDrilldown.delete(this);
 			this.columnDrilldown.load();
 		});
 
 		return container;
-
 	}
 
 	update(updatingType) {

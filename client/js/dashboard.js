@@ -1822,7 +1822,10 @@ class DashboardGlobalFilters extends DataSourceFilters {
 		});
 
 		container.querySelector('button.reload').on('click', () => {
-			this.apply({cached: 0, userApplied: true})
+
+			Dashboard.filtersAppliedByUser = true;
+
+			this.apply({cached: 0, userApplied: true});
 		});
 	}
 
