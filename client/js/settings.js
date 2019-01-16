@@ -531,7 +531,7 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 			await this.bodyEditior.setup();
 
-			this.bodyEditior.on('change', () => {
+			this.bodyEditior.on('keyup', () => {
 				bodyEditor.querySelector('.preview').innerHTML = this.bodyEditior.value;
 			});
 		}
@@ -1964,7 +1964,7 @@ class Documentation {
 
 			await this.bodyEditior.setup();
 
-			this.bodyEditior.on('change', () => {
+			this.bodyEditior.on('keyup', () => {
 				bodyEditior.querySelector('.preview').innerHTML = this.bodyEditior.value;
 			});
 		}
