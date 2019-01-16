@@ -109,6 +109,8 @@ exports.insertNewPrivileges = class extends API {
 
 		const privilegeNameIdMapping = {};
 
+		const adminPrivileges = new Set(['admin']);
+
 		const newPrivileges = [
 			"user", "user.insert", "user.update", "user.delete", "user.list",
 			"connection.insert", "connection.update", "connection.delete", "connection.list", "connection",
@@ -116,6 +118,7 @@ exports.insertNewPrivileges = class extends API {
 			"report", "report.insert", "report.update", "report.delete",
 			"visualization", "visualization.insert", "visualization.update", "visualization.delete", "visualization.list",
 			"category", "category.insert", "category.update", "category.list", "category.delete",
+			"admin"
 		];
 
 		const notInTable = [];
@@ -135,7 +138,11 @@ exports.insertNewPrivileges = class extends API {
 
 		if(notInTable.length) {
 
-			await this.mysql.query('insert into ?? (name, account_id, is_admin, status) values ?', [privilegeTable, notInTable.map(x => [x, 0, 0, 1])], "write");
+			await this.mysql.query(
+				'insert into ?? (name, account_id, is_admin, status) values ?',
+				[privilegeTable, notInTable.map(x => [x, 0, +adminPrivileges.has(x), 1])],
+				"write"
+			);
 
 			privileges = await this.mysql.query("select * from ?? where account_id = 0 and status = 1", [privilegeTable]);
 		}
@@ -167,6 +174,11 @@ exports.insertNewPrivileges = class extends API {
 			if(privTreeMap[parseInt(privilege)].size) {
 
 				insertObj = [...([...privTreeMap[parseInt(privilege)]]).map(x => [privilege, x]), ...insertObj];
+			}
+
+			else {
+
+				privTreeMap[parseInt(privilege)] = new Set([privilege]);
 			}
 
 			insertObj = [...([...privTreeMap[parseInt(privilege)]]).map(x => [x, 0]), ...insertObj];

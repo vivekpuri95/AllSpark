@@ -79,10 +79,20 @@ class DataSource {
 				for(const value of filter.multiSelect.value) {
 					parameters.append(DataSourceFilter.placeholderPrefix + filter.placeholder, value);
 				}
+
+				filter.submittedValue = filter.multiSelect.value;
 			}
 
 			else {
 				parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, filter.value);
+				filter.submittedValue = filter.value;
+			}
+
+			if(_parameters.userApplied) {
+				filter.changed({state: 'submitted'});
+			}
+			else if(_parameters.clearFilterChanged) {
+				filter.changed({state: 'clear'});
 			}
 		}
 
@@ -1340,11 +1350,11 @@ class DataSourceFilters extends Map {
 			container.appendChild(filter.label);
 		}
 
-		container.on('submit', window.globalFilterSubmitListener =  e => {
+		container.on('submit', this.submitListener = e => {
 
 			e.preventDefault();
 
-			this.apply();
+			this.apply({userApplied: true});
 
 			if(this.source) {
 				this.source.container.querySelector('.filters-toggle').click()
@@ -1422,7 +1432,7 @@ class DataSourceFilters extends Map {
 			return;
 		}
 
-		this.source.visualizations.selected.load();
+		this.source.visualizations.selected.load({userApplied: true});
 
 		const toggle = this.source.container.querySelector('.filters-toggle.selected');
 
@@ -1550,6 +1560,7 @@ class DataSourceFilter {
 
 		if(this.multiSelect) {
 			input = this.multiSelect.container;
+			this.multiSelect.on('change', () => this.changed({state: 'changed'}));
 		}
 
 		else if(this.type == 'daterange') {
@@ -1562,7 +1573,10 @@ class DataSourceFilter {
 
 			input.value = this.value;
 
-			input.on('change', () => this.dateRangeUpdate());
+			input.on('change', () => {
+				this.dateRangeUpdate();
+				this.changed({state: 'changed'});
+			});
 		}
 
 		else {
@@ -1574,6 +1588,8 @@ class DataSourceFilter {
 			input.name = this.placeholder;
 
 			input.value = this.value;
+
+			input.on('change', () => this.changed({state: 'changed'}));
 		}
 
 		container.innerHTML = `<span>${this.name}</span>`;
@@ -1872,6 +1888,27 @@ class DataSourceFilter {
 			} else {
 				return new Date(Date.UTC(base.getFullYear() + offsetValue, base.getMonth(), base.getDate())).toISOString().substring(0, 10);
 			}
+		}
+	}
+
+	changed({state} = {}) {
+
+		if(!this.labelContainer) {
+			return;
+		}
+
+		this.labelContainer.classList.remove('submitted');
+
+		if(state == 'clear') {
+			this.labelContainer.classList.remove('changed');
+		}
+
+		if(state == 'changed' && (!('submittedValue' in this) || JSON.stringify(this.submittedValue) != JSON.stringify(this.value))) {
+			this.labelContainer.classList.add('changed');
+		}
+
+		if(state == 'submitted') {
+			this.labelContainer.classList.add('submitted');
 		}
 	}
 }
@@ -3593,6 +3630,7 @@ class DataSourceColumnDrilldownParameter {
 		const container = this.containerElement = document.createElement('div');
 
 		container.innerHTML = `
+
 			<label>
 				<span>Destination Filter</span>
 				<select name="placeholder" value="${this.placeholder || ''}"></select>
@@ -3626,13 +3664,11 @@ class DataSourceColumnDrilldownParameter {
 		container.querySelector('select[name=type]').on('change', () => this.update(true));
 
 		container.querySelector('.delete').on('click', () => {
-
 			this.columnDrilldown.delete(this);
 			this.columnDrilldown.load();
 		});
 
 		return container;
-
 	}
 
 	update(updatingType) {

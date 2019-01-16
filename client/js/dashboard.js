@@ -349,7 +349,6 @@ Page.class = class Dashboards extends Page {
 	 * 0 parent means root, ie any dashboard with 0 parent means that dashboard is root dashboard.
 	 flattens dashboard hierarchy and checks if there is single node cycle found.
 	 */
-
 	cycle() {
 
 		const simplifiedTreeMapping = new Map;
@@ -1789,9 +1788,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 			<div class="head heading">
 				<i class="fas fa-filter"></i>
 				<input type="search" placeholder="Global Filters" class="global-filter-search">
-			</div>
-			<div class="head">
-				<button class="reload icon" title="Fore Refresh"><i class="fas fa-sync"></i></button>
+				<button class="reload icon" title="Apply the filters and reload the dashboard without cache."><i class="fas fa-sync"></i></button>
 			</div>
 			<div class="NA no-results hidden">No filters found!</div>
 		`;
@@ -1800,18 +1797,19 @@ class DashboardGlobalFilters extends DataSourceFilters {
 			this.container.removeEventListener('submit', Dashboard.globalFilterSubmitListener);
 		}
 
-		this.container.on('submit', (e) => {
+		this.container.removeEventListener('submit', this.submitListener);
+
+		this.container.on('submit', e => {
 
 			e.preventDefault();
 
 			Dashboard.filtersAppliedByUser = true;
 
-			this.apply();
+			this.apply({userApplied: true});
 
 			if(this.source) {
 				this.source.container.querySelector('.filters-toggle').click()
 			}
-
 		});
 
 		container.appendChild(this.container);
@@ -1835,7 +1833,10 @@ class DashboardGlobalFilters extends DataSourceFilters {
 		});
 
 		container.querySelector('button.reload').on('click', () => {
-			this.apply({cached: 0})
+
+			Dashboard.filtersAppliedByUser = true;
+
+			this.apply({cached: 0, userApplied: true});
 		});
 	}
 
@@ -1860,6 +1861,12 @@ class DashboardGlobalFilters extends DataSourceFilters {
 				filter.value = matchingFilter.value;
 
 				found = true;
+
+				if(options.userApplied) {
+					matchingFilter.changed({state: 'submitted'});
+				} else {
+					matchingFilter.changed({state: 'clear'});
+				}
 			}
 
 			if (options.dontLoad) {
@@ -1867,8 +1874,9 @@ class DashboardGlobalFilters extends DataSourceFilters {
 			}
 
 			if (found && Array.from(this.page.loadedVisualizations).some(v => v.query == report)) {
-				report.visualizations.selected.load(options);
+				report.visualizations.selected.load({clearFilterChanged: true});
 			}
+
 			report.visualizations.selected.subReportDialogBox = null;
 			report.container.style.opacity = found ? 1 : 0.4;
 		}
@@ -1881,7 +1889,6 @@ class DashboardGlobalFilters extends DataSourceFilters {
 				Dashboard.selectedValues.set(placeholder, filter.value);
 			}
 		}
-
 	}
 }
 
