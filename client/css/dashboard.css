@@ -371,7 +371,7 @@ main #reports > .global-filters.top.scrolled {
 				background: var(--color-background);
 				color: var(--color-background-text);
 			}
-			main #reports > .global-filters > .head.heading i {
+			main #reports > .global-filters > .head.heading i.fa-filter {
 				color: #999;
 			}
 			main #reports > .global-filters > .head .reload {

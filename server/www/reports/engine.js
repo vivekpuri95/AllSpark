@@ -251,10 +251,10 @@ class report extends API {
 
 			const date = new Date();
 
-			// if (isNaN(parseFloat(filter.offset))) {
-			//
-			// 	continue;
-			// }
+			if (isNaN(parseFloat(filter.offset))) {
+
+				continue;
+			}
 
 			if (filter.type == 'time') {
 
