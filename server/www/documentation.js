@@ -29,32 +29,38 @@ class Documentation extends API {
 		return await this.mysql.query('SELECT * FROM tb_documentation WHERE slug = ? or parent = ?', [slug, row.id]);
 	}
 
-	constructTree(data) {
+	async constructTree(response) {
 
-		const xx = new Map;
-		const finalResult = [];
+		const dataMap = new Map;
 
-		for(const x of data) {
+		for(const data of response) {
 
-			if(!xx.has(x.parent)) {
-				xx.set(x.parent, []);
+			const parent = data.parent || 'root';
+
+			if(!dataMap.has(parent)) {
+				dataMap.set(parent, []);
 			}
 
-			xx.get(x.parent).push(x);
+			dataMap.get(parent).push(data);
 		}
-	}
 
-	ddd(parent, arr) {
+		for(const [key, value] of dataMap) {
 
+		    for(const _val of value) {
+				_val.childs = dataMap.get(_val.id);
+			}
+		}
+
+		return dataMap;
 	}
 
 	async getEnitreDocumentation() {
 
 		const response = await this.mysql.query('SELECT id, parent, chapter FROM tb_documentation');
 
-		this.constructTree(response);
+		const tree = this.constructTree(response);
 
-		return response;
+		return tree.get('root');
 	}
 
 	async insert({slug, heading, body = null, parent, chapter, added_by} = {}) {

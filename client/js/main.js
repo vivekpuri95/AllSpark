@@ -3938,8 +3938,8 @@ class Documnetation extends Map {
 	constructor(slug) {
 
 		super();
-this.constructTree();
-		// this.load(slug);
+
+		this.load(slug);
 	}
 
 	async load(slug) {
@@ -3951,34 +3951,6 @@ this.constructTree();
 		this.response = await API.call('documentation/getDocumentation', {slug});
 
 		this.set(slug, this.response);
-	}
-
-	async constructTree() {
-
-		const data = await API.call('documentation/getEnitreDocumentation');
-
-		const xx = new Map;
-		const finalResult = new Map;
-
-		for(const x of data) {
-
-			if(!xx.has(x.parent)) {
-				xx.set(x.parent, []);
-			}
-
-			xx.get(x.parent).push(x);
-		}
-
-		const traversed = new Set;
-
-		for(const [key, value] of xx) {
-
-		    for(const x of value) {
-				x.childs = xx.get(x.id);
-			}
-		}
-
-		debugger;
 	}
 
 	process(response) {
