@@ -1385,6 +1385,8 @@ class AccountsFeatures {
 			feature.status = this.account.features.includes(key.toString());
 			this.totalFeatures.set(key, new AccountsFeature(feature, this.account));
 		}
+
+		this.sortTable = new SortTable();
 	}
 
 	get container() {
@@ -1421,7 +1423,7 @@ class AccountsFeatures {
 							<th>Type</th>
 							<th>Name</th>
 							<th>Slug</th>
-							<th>Status</th>
+							<th data-no-sort>Status</th>
 						</tr>
 					</thead>
 					<tbody></tbody>
@@ -1446,6 +1448,9 @@ class AccountsFeatures {
 		this.featureType.on('change', () => this.render());
 
 		this.render();
+
+		this.sortTable.table = container.querySelector('.table-container table');
+		this.sortTable.sort();
 
 		return container;
 	}
