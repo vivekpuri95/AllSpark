@@ -4437,10 +4437,10 @@ class ObjectTranslationRow {
 		container.classList.add('translation-row');
 
 		this.formContainer = document.createElement('div');
-		this.formContainer.classList.add('transactions-expanded-form');
+		this.formContainer.classList.add('translations-expanded-form');
 
 		this.formContainer.innerHTML = `
-			<div class="transactions-expanded-form">
+			<div class="translations-expanded-form">
 				<div class="toolbar translations-list-view">
 					<label>
 						<button class="back"><i class="fa fa-arrow-left"></i>Back</button>
