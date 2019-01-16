@@ -2862,6 +2862,8 @@ class ObjectRoles {
 
 		this.alreadyVisible = [];
 		this.allowedTargets = [...this.allowedTargets];
+
+		this.sortTable = new SortTable();
 	}
 
 	async load() {
@@ -3081,7 +3083,6 @@ class ObjectRoles {
 				<td title="Delete" class="action red"><i class="far fa-trash-alt"></i></td>
 			`;
 
-
 			if (this.targets[row.target].multiple) {
 
 				const targetMultiSelect = new MultiSelect({
@@ -3119,6 +3120,10 @@ class ObjectRoles {
 
 			tbody.innerHTML = '<tr class="NA"><td colspan="4">Not shared with anyone yet!</td></tr>'
 		}
+
+		this.sortTable.table = table;
+
+		this.sortTable.sort();
 
 		return table;
 	}
@@ -3776,6 +3781,62 @@ class NotificationBar {
 		}
 
 		this.container.on('click', () => callback());
+	}
+}
+
+class SortTable {
+
+	constructor({table} = {}) {
+
+		this.table = table;
+	}
+
+	sort() {
+
+		const headers = this.table.querySelectorAll('thead th');
+
+		for(const [index, header] of headers.entries()) {
+
+			if(header.clickListener) {
+				header.removeEventListener('click', header.clickListener);
+			}
+
+			if(header.classList.contains('action') || header.attributes['data-no-sort']) {
+				continue;
+			}
+
+			header.classList.add('tableHeaders');
+
+			header.on('click', header.clickListener = () => {
+
+				header.order = !header.order;
+
+				const
+					tbody = this.table.querySelector('tbody'),
+					rows = Array.from(this.table.querySelectorAll('tbody tr'));
+
+				rows.sort((a, b) => {
+
+					a = a.children[index].attributes['data-sort-by'] ? a.children[index].attributes['data-sort-by'].value : a.children[index].textContent;
+					b = b.children[index].attributes['data-sort-by'] ? b.children[index].attributes['data-sort-by'].value : b.children[index].textContent;
+
+					if(a == b) {
+						return 0;
+					}
+
+					if(!header.order) {
+						[a, b] = [b, a];
+					}
+
+					return a.localeCompare(b, undefined, { ignorePunctuation: true, numeric: true });
+				});
+
+				for(const row of rows) {
+
+					tbody.appendChild(row);
+				}
+			});
+		}
 	}
 }
 

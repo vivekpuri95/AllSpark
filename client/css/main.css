@@ -1428,3 +1428,7 @@ body#tinymce table tr {
 	background: transparent !important;
 	color: initial !important;
 }
+
+.tableHeaders {
+	cursor: pointer;
+}

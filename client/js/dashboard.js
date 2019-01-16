@@ -51,7 +51,12 @@ Page.class = class Dashboards extends Page {
 
 		this.reports.querySelector('.toolbar #back').on('click', async () => {
 
+			this.sortTable = new SortTable({
+				table: this.container.querySelector('#list table.block'),
+			});
+
 			this.renderList();
+
 			await Sections.show('list');
 			history.pushState(null, '', window.location.pathname.slice(0, window.location.pathname.lastIndexOf('/')));
 		});
@@ -122,6 +127,10 @@ Page.class = class Dashboards extends Page {
 		this.container.querySelector('.section#list .toolbar').appendChild(this.searchBarFilter.globalSearch.container);
 
 		this.searchBarFilter.on('change', () => this.renderList());
+
+		this.sortTable = new SortTable({
+			table: this.container.querySelector('#list table.block'),
+		});
 
 		this.renderList();
 
@@ -343,6 +352,8 @@ Page.class = class Dashboards extends Page {
 
 		if (!tbody.children.length)
 			tbody.innerHTML = `<tr class="NA no-reports"><td colspan="6">No Visualizations Found!</td></tr>`;
+
+		this.sortTable.sort();
 	}
 
 	/**

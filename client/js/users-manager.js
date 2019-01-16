@@ -15,6 +15,10 @@ class Users extends Page {
 			Users.loadState();
 		})();
 
+		this.sortTable = new SortTable({
+			table: this.container.querySelector('section#list table'),
+		});
+
 		window.on('popstate', e => Users.loadState(e.state));
 	}
 
@@ -120,6 +124,8 @@ class Users extends Page {
 		if(!list.length) {
 			Users.container.innerHTML = '<td colspan="5" class="NA">No rows found</td>'
 		}
+
+		page.sortTable.sort();
 	}
 
 	static loadState(state) {

@@ -9,6 +9,8 @@ class SettingsManager {
 
 		this.profiles = new Map;
 		this.callbacks = new Map;
+
+		this.sortTable = new SortTable();
 	}
 
 	async load() {
@@ -16,6 +18,9 @@ class SettingsManager {
 		await this.fetch();
 		this.process();
 		this.render();
+
+		this.sortTable.table = this.container.querySelector('table');
+		this.sortTable.sort();
 	}
 
 	async fetch() {

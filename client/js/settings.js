@@ -120,6 +120,10 @@ Settings.list.set('accounts', class Accounts extends SettingPage {
 
 		this.container.querySelector('#accounts-list #add-account').on('click', () => SettingsAccount.add(this));
 		this.container.querySelector('#accounts-form #cancel-form').on('click', () => Sections.show('accounts-list'));
+
+		this.sortTable = new SortTable({
+			table: this.container.querySelector('#accounts-list table'),
+		});
 	}
 
 	async load() {
@@ -148,6 +152,8 @@ Settings.list.set('accounts', class Accounts extends SettingPage {
 		for(const account of this.list.values()) {
 			container.appendChild(account.row);
 		}
+
+		this.sortTable.sort();
 
 		await Sections.show('accounts-list');
 	}
@@ -194,6 +200,10 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 		for(const type of MetaData.filterTypes.values()) {
 			select.insertAdjacentHTML('beforeend', `<option value="${type.name.toLowerCase()}">${type.name}</option>`);
 		}
+
+		this.sortTable = new SortTable({
+			table: this.container.querySelector('#global-filters-list table'),
+		});
 	}
 
 	async load() {
@@ -227,6 +237,8 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 			container.appendChild(globalFilter.row);
 		}
 
+		this.sortTable.sort();
+
 		await Sections.show('global-filters-list');
 	}
 });
@@ -244,6 +256,10 @@ Settings.list.set('privileges', class Privileges extends SettingPage {
 
 		this.container.querySelector('#privileges-list #add-privilege').on('click', () => SettingsPrivilege.add(this));
 		this.container.querySelector('#privileges-form #cancel-form').on('click', () => Sections.show('privileges-list'));
+
+		this.sortTable = new SortTable({
+			table: this.container.querySelector('#privileges-list table'),
+		});
 	}
 
 	async load() {
@@ -273,6 +289,8 @@ Settings.list.set('privileges', class Privileges extends SettingPage {
 			container.appendChild(dataset.row);
 		}
 
+		this.sortTable.sort();
+
 		await Sections.show('privileges-list');
 	}
 });
@@ -290,6 +308,10 @@ Settings.list.set('roles', class Roles extends SettingPage {
 
 		this.container.querySelector('#roles-list #add-role').on('click', () => SettingsRole.add(this));
 		this.container.querySelector('#roles-form #back').on('click', () => Sections.show('roles-list'));
+
+		this.sortTable = new SortTable({
+			table: this.container.querySelector('#roles-list table'),
+		});
 	}
 
 	async load() {
@@ -319,6 +341,8 @@ Settings.list.set('roles', class Roles extends SettingPage {
 			container.appendChild(role.row);
 		}
 
+		this.sortTable.sort();
+
 		await Sections.show('roles-list');
 	}
 });
@@ -339,6 +363,10 @@ Settings.list.set('categories', class Categories extends SettingPage {
 		} else {
 			this.container.querySelector('#category-list #add-category').disabled = true;
 		}
+
+		this.sortTable = new SortTable({
+			table: this.container.querySelector('#category-list table'),
+		});
 
 		this.container.querySelector('#category-edit #back').on('click', () => Sections.show('category-list'));
 	}
@@ -370,6 +398,8 @@ Settings.list.set('categories', class Categories extends SettingPage {
 			container.appendChild(category.row);
 		}
 
+		this.sortTable.sort();
+
 		await Sections.show('category-list');
 	}
 });
@@ -391,6 +421,10 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 		this.container = this.page.querySelector('.documentation-page');
 		this.container.appendChild(this.addForm);
+
+		this.sortTable = new SortTable({
+			table: this.section.querySelector('table'),
+		});
 	}
 
 	async load(force) {
@@ -410,7 +444,6 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 				node.remove();
 			}
 		}
-
 
 		await this.render();
 	}
@@ -434,6 +467,8 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 		for(const documentation of this.list.values()) {
 			this.container.appendChild(documentation.form);
 		}
+
+		this.sortTable.sort();
 
 		await Sections.show('documentation-list');
 	}
@@ -608,8 +643,8 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 					<th>Parent</th>
 					<th>Chapter</th>
 					<th>Added by</th>
-					<th>Edit</th>
-					<th>Delete</th>
+					<th class="action">Edit</th>
+					<th class="action">Delete</th>
 				</thead>
 				<tbody></tbody>
 			</table>
@@ -633,6 +668,10 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 		if(this.page.querySelector('.executing-reports')) {
 			this.page.querySelector('.executing-reports').remove();
 		}
+
+		this.sortTable = new SortTable({
+			table: this.container.querySelector('#executing-reports table'),
+		});
 
 		this.page.appendChild(this.container);
 	}
@@ -735,6 +774,8 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 			tbody.appendChild(report.row);
 		}
 
+		this.sortTable.sort();
+
 		await Sections.show('executing-reports');
 	}
 });
@@ -756,6 +797,10 @@ Settings.list.set('cachedReports', class CachedReports extends SettingPage {
 		if(this.page.querySelector('.cached-reports')) {
 			this.page.querySelector('.cached-reports').remove();
 		}
+
+		this.sortTable = new SortTable({
+			table: this.container.querySelector('#cached-reports table'),
+		});
 
 		this.page.appendChild(this.container);
 	}
@@ -825,6 +870,8 @@ Settings.list.set('cachedReports', class CachedReports extends SettingPage {
 		for(const report of this.reports.values()) {
 			tbody.appendChild(report.row);
 		}
+
+		this.sortTable.sort();
 
 		Sections.show('cached-reports');
 	}
@@ -1348,6 +1395,8 @@ class AccountsFeatures {
 			feature.status = this.account.features.includes(key.toString());
 			this.totalFeatures.set(key, new AccountsFeature(feature, this.account));
 		}
+
+		this.sortTable = new SortTable();
 	}
 
 	get container() {
@@ -1380,7 +1429,7 @@ class AccountsFeatures {
 				<table>
 					<thead>
 						<tr>
-							<th class="action">ID</th>
+							<th>ID</th>
 							<th>Type</th>
 							<th>Name</th>
 							<th>Slug</th>
@@ -1409,6 +1458,9 @@ class AccountsFeatures {
 		this.featureType.on('change', () => this.render());
 
 		this.render();
+
+		this.sortTable.table = container.querySelector('.table-container table');
+		this.sortTable.sort();
 
 		return container;
 	}
@@ -1463,7 +1515,7 @@ class AccountsFeature {
 			<td>${this.type}</td>
 			<td>${this.name}</td>
 			<td>${this.slug}</td>
-			<td class="feature-toggle">
+			<td class="feature-toggle" data-sort-by="${this.status}">
 				<div>
 					<label><input type="radio" name="status-${this.feature_id}" value="1"> Enabled</label>
 					<label><input type="radio" name="status-${this.feature_id}" value="0"> Disabled</label>
@@ -1476,7 +1528,10 @@ class AccountsFeature {
 			if(parseInt(input.value) == this.status)
 				input.checked = true;
 
-			input.on('change', e => this.update(e, parseInt(input.value)));
+			input.on('change', e => {
+				tr.querySelector('.feature-toggle').dataset.sortBy = input.value;
+				this.update(e, parseInt(input.value));
+			});
 		}
 
 		return tr;
@@ -2901,7 +2956,7 @@ class CachedReport {
 		this.rowElement = document.createElement('tr');
 		this.rowElement.innerHTML = `
 			<td>${this.report_id}</td>
-			<td>${Format.number(this.size)}</td>
+			<td data-sort-by = ${this.size}>${Format.number(this.size)}</td>
 			<td title="${Format.dateTime(this.created_at)}">${Format.ago(this.created_at)}</td>
 		`;
 
