@@ -3877,7 +3877,7 @@ class FormatSQL {
 	}
 }
 
-class TranslationsManager extends Map{
+class TranslationsManager extends Map {
 
 	constructor({owner, owner_id, phrase, expanded}) {
 
@@ -3891,7 +3891,7 @@ class TranslationsManager extends Map{
 
 	get container() {
 
-		if(this.getContainer) {
+		if (this.getContainer) {
 
 			return this.getContainer;
 		}
@@ -3963,14 +3963,14 @@ class TranslationsManager extends Map{
 
 		const fields = ['Id', 'From', 'Locale', 'To', 'Save', 'Delete'];
 
-		if(this.owner != 'phrase') {
+		if (this.owner != 'phrase') {
 
 			fields.splice(0, 2);
 			const node = container.querySelector('input[name=phrase]').parentElement;
 			node.parentNode.removeChild(node);
 		}
 
-		for(const header of fields) {
+		for (const header of fields) {
 
 			translationList.insertAdjacentHTML('beforeend',
 				`<div class="translation-headers">${header}</div>`
@@ -4068,11 +4068,11 @@ class TranslationsManager extends Map{
 
 		const fields = ['Locale', 'Edit', 'Delete'];
 
-		for(const header of fields) {
+		for (const header of fields) {
 
 			translationList.insertAdjacentHTML('beforeend',
 				`<div class="translation-headers">${header}</div>`
-				);
+			);
 		}
 
 		this.translationRowGridTemplateColumns = new Array(fields.length - 2).fill('1fr').concat('100px', '100px').join(' ');
@@ -4097,14 +4097,14 @@ class TranslationsManager extends Map{
 
 			node.parentNode.style.maxWidth = 'unset';
 
-			if(this.editor && this.editor[type]) {
+			if (this.editor && this.editor[type]) {
 
 				return;
 			}
 
-			if(this.expanded.editor == 'html') {
+			if (this.expanded.editor == 'html') {
 
-				const editor =  new HTMLEditor();
+				const editor = new HTMLEditor();
 
 				node.appendChild(editor.container);
 				await editor.setup();
@@ -4128,7 +4128,7 @@ class TranslationsManager extends Map{
 
 			const parameters = {};
 
-			if(this.editor && this.editor.translation) {
+			if (this.editor && this.editor.translation) {
 
 				parameters.translation = this.editor.translation.value;
 			}
@@ -4155,14 +4155,14 @@ class TranslationsManager extends Map{
 
 		parameters.owner = this.owner || 'phrase';
 
-		if(this.owner_id) {
+		if (this.owner_id) {
 
 			parameters.owner_id = this.owner_id;
 		}
 
 		this.response = await API.call('translations/list', parameters);
 
-		for(const row of this.response) {
+		for (const row of this.response) {
 
 			this.set(row.id, new ObjectTranslationRow(row, this));
 		}
@@ -4174,25 +4174,25 @@ class TranslationsManager extends Map{
 
 		const rows = listContainer.querySelectorAll('.translation-row');
 
-		for(const element of rows) {
+		for (const element of rows) {
 
 			element.parentNode.removeChild(element);
 		}
 
 		let response = JSON.parse(JSON.stringify(this.response));
 
-		if(this.searchBar) {
+		if (this.searchBar) {
 
 			this.searchBarFilter.data = this.response;
 			response = this.searchBar.filterData;
 		}
 
-		for(const row of response) {
+		for (const row of response) {
 
 			listContainer.appendChild(this.get(row.id).container);
 		}
 
-		if(!this.size) {
+		if (!this.size) {
 
 			this.container.querySelector('#list-container > .NA').classList.remove('hidden');
 			this.container.querySelector('#phrases-translations-existing').classList.add('hidden');
@@ -4216,12 +4216,12 @@ class TranslationsManager extends Map{
 			parameters.owner = this.owner;
 		}
 
-		if(this.owner_id) {
+		if (this.owner_id) {
 
 			parameters.owner_id = this.owner_id;
 		}
 
-		if(this.phrase) {
+		if (this.phrase) {
 
 			parameters.phrase = this.phrase;
 		}
@@ -4288,7 +4288,7 @@ class TranslationsManager extends Map{
 
 	get searchBar() {
 
-		if(this.searchBarFilter) {
+		if (this.searchBarFilter) {
 
 			return this.searchBarFilter;
 		}
@@ -4343,7 +4343,7 @@ class ObjectTranslationRow {
 
 		if (this.getContainer) {
 
-			if(this.getExpandedContainer) {
+			if (this.getExpandedContainer) {
 
 				return this.getExpandedContainer;
 			}
@@ -4351,7 +4351,7 @@ class ObjectTranslationRow {
 			return this.getContainer;
 		}
 
-		if(this.page.expanded) {
+		if (this.page.expanded) {
 
 			this.getContainer = this.expandedContainer;
 		}
@@ -4393,7 +4393,7 @@ class ObjectTranslationRow {
 			</div>
 		`;
 
-		if(this.page.owner != 'phrase') {
+		if (this.page.owner != 'phrase') {
 
 			let node = container.querySelector('input[name=phrase]').parentNode;
 			node.parentNode.removeChild(node);
@@ -4426,7 +4426,7 @@ class ObjectTranslationRow {
 
 	get expandedContainer() {
 
-		if(this.getExpandedContainer) {
+		if (this.getExpandedContainer) {
 
 			return this.getExpandedContainer
 		}
@@ -4497,7 +4497,7 @@ class ObjectTranslationRow {
 			this.page.container.querySelector('#list-container').classList.add('hidden');
 			this.formContainer.classList.remove('hidden');
 
-			if(!this.page.container.querySelector(`#${this.formId}`)) {
+			if (!this.page.container.querySelector(`#${this.formId}`)) {
 
 				this.page.container.appendChild(this.formContainer);
 			}
@@ -4508,12 +4508,12 @@ class ObjectTranslationRow {
 
 			await this.expanded(this.formContainer.querySelector('.translation-editor-label > div'), 'translation');
 		});
--
-		this.formContainer.querySelector('.translations-list-view .back').addEventListener('click', () => {
+		-
+			this.formContainer.querySelector('.translations-list-view .back').addEventListener('click', () => {
 
-			this.page.container.querySelector(`#${this.formId}`).classList.add('hidden');
-			this.page.container.querySelector('#list-container').classList.remove('hidden');
-		});
+				this.page.container.querySelector(`#${this.formId}`).classList.add('hidden');
+				this.page.container.querySelector('#list-container').classList.remove('hidden');
+			});
 
 		this.form = this.formContainer.querySelector('form');
 
@@ -4537,19 +4537,19 @@ class ObjectTranslationRow {
 
 	async expanded(node, type) {
 
-		if(!this.page.expanded) {
+		if (!this.page.expanded) {
 
 			return;
 		}
 
-		if(this.editor && this.editor[type]) {
+		if (this.editor && this.editor[type]) {
 
 			return;
 		}
 
-		if(this.page.expanded.editor == 'html') {
+		if (this.page.expanded.editor == 'html') {
 
-			const editor =  new HTMLEditor();
+			const editor = new HTMLEditor();
 
 			node.appendChild(editor.container);
 			await editor.setup();
