@@ -3955,7 +3955,6 @@ class Documnetation extends Map {
 
 	process(response) {
 
-
 	}
 
 	async open() {
