@@ -479,6 +479,8 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 				<div class="body">
 					<span>Body</span>
+					<span>Preview</span>
+					<div class="preview"></div>
 				</div>
 			</form>
 		`;
@@ -521,14 +523,22 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 		this.parentMultiSelect.value = '';
 
-		if(!this.form.querySelector('.body .html-editor')) {
+		const bodyEditor = this.form.querySelector('.body');
 
-			this.form.querySelector('.body').appendChild(this.bodyEditior.container);
+		if(!bodyEditor.querySelector('.html-editor')) {
+
+			bodyEditor.appendChild(this.bodyEditior.container);
 
 			await this.bodyEditior.setup();
+
+			this.bodyEditior.on('keyup', () => {
+				bodyEditor.querySelector('.preview').innerHTML = this.bodyEditior.value;
+			});
 		}
 
 		this.bodyEditior.value = '';
+
+		bodyEditor.querySelector('.preview').innerHTML = this.bodyEditior.value;
 
 		this.form.heading.focus();
 	}
@@ -1893,6 +1903,8 @@ class Documentation {
 
 				<div class="body">
 					<span>Body</span>
+					<span>Preview</span>
+					<div class="preview"></div>
 				</div>
 			</form>
 		`;
@@ -1944,14 +1956,22 @@ class Documentation {
 
 		this.parentMultiSelect.value = [this.parent];
 
-		if(!this.form.querySelector('.body .html-editor')) {
+		const bodyEditior = this.form.querySelector('.body');
 
-			this.form.querySelector('.body').appendChild(this.bodyEditior.container);
+		if(!bodyEditior.querySelector('.html-editor')) {
+
+			bodyEditior.appendChild(this.bodyEditior.container);
 
 			await this.bodyEditior.setup();
+
+			this.bodyEditior.on('keyup', () => {
+				bodyEditior.querySelector('.preview').innerHTML = this.bodyEditior.value;
+			});
 		}
 
 		this.bodyEditior.value = this.body;
+
+		bodyEditior.querySelector('.preview').innerHTML = this.bodyEditior.value;
 	}
 
 	async update(e) {
