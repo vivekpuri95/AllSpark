@@ -387,7 +387,7 @@ class report extends API {
 			filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
 
 			const today = new Date();
-			const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+			const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
 			if(new Date(filter.value) >= +startOfDay) {
 
