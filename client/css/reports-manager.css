@@ -183,7 +183,7 @@ main.preview-left #stages {
 	color: var(--color-surface-text);
 	box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 }
-	#stage-pick-report table thead tr th {
+	#stage-pick-report table thead tr th.sort {
 		position: sticky;
 		cursor: pointer;
 	}

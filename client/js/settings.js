@@ -633,8 +633,8 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 					<th>Parent</th>
 					<th>Chapter</th>
 					<th>Added by</th>
-					<th>Edit</th>
-					<th>Delete</th>
+					<th class="action">Edit</th>
+					<th class="action">Delete</th>
 				</thead>
 				<tbody></tbody>
 			</table>
@@ -2928,7 +2928,7 @@ class CachedReport {
 		this.rowElement = document.createElement('tr');
 		this.rowElement.innerHTML = `
 			<td>${this.report_id}</td>
-			<td data-sortBy = ${this.size}>${Format.number(this.size)}</td>
+			<td data-sort-by = ${this.size}>${Format.number(this.size)}</td>
 			<td title="${Format.dateTime(this.created_at)}">${Format.ago(this.created_at)}</td>
 		`;
 

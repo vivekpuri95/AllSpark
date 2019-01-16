@@ -3801,11 +3801,13 @@ class SortTable {
 				header.removeEventListener('click', header.clickListener);
 			}
 
-			header.on('click', header.clickListener = () => {
+			if(header.classList.contains('action') || header.attributes['data-no-sort']) {
+				continue;
+			}
 
-				if(header.classList.contains('action')) {
-					return;
-				}
+			header.classList.add('tableHeaders');
+
+			header.on('click', header.clickListener = () => {
 
 				header.order = !header.order;
 
@@ -3815,8 +3817,12 @@ class SortTable {
 
 				rows.sort((a, b) => {
 
-					a = a.children[index].attributes['data-sortby'] ? a.children[index].attributes['data-sortby'].value : a.children[index].textContent;
-					b = b.children[index].attributes['data-sortby'] ? b.children[index].attributes['data-sortby'].value : b.children[index].textContent;
+					a = a.children[index].attributes['data-sort-by'] ? a.children[index].attributes['data-sort-by'].value : a.children[index].textContent;
+					b = b.children[index].attributes['data-sort-by'] ? b.children[index].attributes['data-sort-by'].value : b.children[index].textContent;
+
+					if(a == b) {
+						return 0;
+					}
 
 					if(header.order) {
 						return a.localeCompare(b, undefined, { ignorePunctuation: true, numeric: true });

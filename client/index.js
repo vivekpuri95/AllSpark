@@ -843,7 +843,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 									<th class="sort search" data-key="filters">Filters</th>
 									<th class="sort search" data-key="visualizations">Visualizations</th>
 									<th class="sort search" data-key="is_enabled">Enabled</th>
-									<th class="action">Configue</th>
+									<th class="action">Configure</th>
 									<th class="action">Define</th>
 									<th class="action">Delete</th>
 								</tr>
@@ -967,9 +967,9 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 									<th>Name</th>
 									<th>Type</th>
 									<th>Tags</th>
-									<th>Preview</th>
-									<th>Edit</th>
-									<th>Delete</th>
+									<th class="action">Preview</th>
+									<th class="action">Edit</th>
+									<th class="action">Delete</th>
 								</tr>
 							</thead>
 							<tbody></tbody>
@@ -1290,10 +1290,10 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 							<th>Id</th>
 							<th>Name</th>
 							<th>URL</th>
-							<th>Icon</th>
-							<th>Logo</th>
-							<th>Edit</th>
-							<th>Delete</th>
+							<th data-no-sort>Icon</th>
+							<th data-no-sort>Logo</th>
+							<th class="action">Edit</th>
+							<th class="action">Delete</th>
 						</thead>
 						<tbody></tbody>
 					</table>
