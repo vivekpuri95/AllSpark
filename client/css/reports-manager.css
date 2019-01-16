@@ -1116,3 +1116,6 @@ main.preview-left #preview {
 	#preview .data-source {
 		max-height: 600px;
 	}
+	.add-translation-button {
+		margin-left: calc(var(--gap) * 2);
+	}

@@ -488,6 +488,41 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 	}
 });
 
+Settings.list.set('phrasesTranslations', class PhrasesTranslations extends SettingPage {
+
+	get name() {
+
+		return `Phrases Translations`;
+	}
+
+	setup() {
+
+		this.container = this.page.querySelector('.translations-page');
+
+		this.titleTranslations =  new TranslationsManager({
+				owner: 'phrase'
+			});
+	}
+
+	async load() {
+
+		await this.render();
+	}
+
+	async render() {
+
+		await this.titleTranslations.load();
+		await Sections.show('translations-list');
+
+		if(this.container.querySelector('#phrases-translations')) {
+
+			this.container.querySelector('#phrases-translations').remove();
+		}
+
+		this.container.appendChild(this.titleTranslations.container);
+	}
+});
+
 Settings.list.set('cachedReports', class CachedReports extends SettingPage {
 
 	constructor(...params) {

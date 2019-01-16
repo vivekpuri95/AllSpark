@@ -416,3 +416,26 @@ CREATE TABLE `tb_visualizations` (
 	 `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	 PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+CREATE TABLE `tb_object_translations` (
+  `id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `locale_id` INT(11) NOT NULL,
+  `owner` ENUM('query','visualization','phrase') DEFAULT NULL,
+  `owner_id` INT(11) NOT NULL DEFAULT '0',
+  `phrase` VARCHAR(100) NOT NULL DEFAULT '',
+  `translation` VARCHAR(100) NOT NULL DEFAULT '',
+  `added_by` INT(11) DEFAULT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `locale_id` (`locale_id`,`owner`,`owner_id`,`phrase`)
+) ENGINE=INNODB DEFAULT CHARSET=latin1;
+
+CREATE TABLE `tb_locales` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `locale` varchar(30) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `name` varchar(50) DEFAULT '',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1
