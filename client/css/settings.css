@@ -178,7 +178,7 @@ main .documentation-page form .body {
 	main .documentation-page form .body .preview {
 		grid-row: 2;
 		grid-column: 2;
-		background: #fff;
+		background: var(--color-background);
 		max-height: 400px;
 		overflow: auto;
 		padding: calc(var(--gap) * 2);
