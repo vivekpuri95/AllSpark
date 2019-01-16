@@ -29,6 +29,34 @@ class Documentation extends API {
 		return await this.mysql.query('SELECT * FROM tb_documentation WHERE slug = ? or parent = ?', [slug, row.id]);
 	}
 
+	constructTree(data) {
+
+		const xx = new Map;
+		const finalResult = [];
+
+		for(const x of data) {
+
+			if(!xx.has(x.parent)) {
+				xx.set(x.parent, []);
+			}
+
+			xx.get(x.parent).push(x);
+		}
+	}
+
+	ddd(parent, arr) {
+
+	}
+
+	async getEnitreDocumentation() {
+
+		const response = await this.mysql.query('SELECT id, parent, chapter FROM tb_documentation');
+
+		this.constructTree(response);
+
+		return response;
+	}
+
 	async insert({slug, heading, body = null, parent, chapter, added_by} = {}) {
 
 		this.user.privilege.needs('documentation');
@@ -121,6 +149,7 @@ class Documentation extends API {
 
 exports.list = Documentation;
 exports.getDocumentation = Documentation;
+exports.getEnitreDocumentation = Documentation;
 exports.insert = Documentation;
 exports.update = Documentation;
 exports.delete = Documentation;
