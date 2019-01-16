@@ -480,7 +480,7 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 				<div class="body">
 					<span>Body</span>
 					<span>Preview</span>
-					<div class="preview">
+					<div class="preview"></div>
 				</div>
 			</form>
 		`;
@@ -530,18 +530,15 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 			bodyEditor.appendChild(this.bodyEditior.container);
 
 			await this.bodyEditior.setup();
+
+			this.bodyEditior.on('change', () => {
+				bodyEditor.querySelector('.preview').innerHTML = this.bodyEditior.value;
+			});
 		}
 
 		this.bodyEditior.value = '';
 
 		bodyEditor.querySelector('.preview').innerHTML = this.bodyEditior.value;
-
-		if(!this.bodyChangeListener) {
-
-			this.bodyEditior.on('change', this.bodyChangeListener = () => {
-				bodyEditor.querySelector('.preview').innerHTML = this.bodyEditior.value;
-			});
-		}
 
 		this.form.heading.focus();
 	}
@@ -1907,8 +1904,7 @@ class Documentation {
 				<div class="body">
 					<span>Body</span>
 					<span>Preview</span>
-					<div class="preview">
-					</div>
+					<div class="preview"></div>
 				</div>
 			</form>
 		`;
@@ -1967,18 +1963,15 @@ class Documentation {
 			bodyEditior.appendChild(this.bodyEditior.container);
 
 			await this.bodyEditior.setup();
+
+			this.bodyEditior.on('change', () => {
+				bodyEditior.querySelector('.preview').innerHTML = this.bodyEditior.value;
+			});
 		}
 
 		this.bodyEditior.value = this.body;
 
 		bodyEditior.querySelector('.preview').innerHTML = this.bodyEditior.value;
-
-		if(!this.bodyChangeListener) {
-
-			this.bodyEditior.on('change', this.bodyChangeListener = () => {
-				bodyEditior.querySelector('.preview').innerHTML = this.bodyEditior.value;
-			});
-		}
 	}
 
 	async update(e) {
