@@ -854,8 +854,10 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 				if(typeof a == 'string')
 					a = a.toUpperCase();
-				else if(typeof b == 'string')
+
+				if(typeof b == 'string')
 					b = b.toUpperCase();
+
 				else if(a instanceof Array) {
 					a = a.length;
 					b = b.length;

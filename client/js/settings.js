@@ -1419,7 +1419,7 @@ class AccountsFeatures {
 				<table>
 					<thead>
 						<tr>
-							<th class="action">ID</th>
+							<th>ID</th>
 							<th>Type</th>
 							<th>Name</th>
 							<th>Slug</th>
