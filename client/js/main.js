@@ -3827,8 +3827,9 @@ class SortTable {
 					if(header.order) {
 						return a.localeCompare(b, undefined, { ignorePunctuation: true, numeric: true });
 					}
-
-					return -1;
+					else {
+						return b.localeCompare(a, undefined, { ignorePunctuation: true, numeric: true });
+					}
 				});
 
 				for(const row of rows) {
