@@ -3928,6 +3928,8 @@ class TranslationsManager extends Map{
 					<div id="translations-advanced-search"></div>
 					<div id="translations-headers"></div>
 				</div>
+				<br>
+				<span class="NA">No translations found, click on the add button to create new Translations</span>
 			</div>
 			
 			<div class="hidden" id="add-translation-form-container">
@@ -4031,6 +4033,8 @@ class TranslationsManager extends Map{
 					<div id="translations-advanced-search"></div>
 					<div id="translations-headers"></div>
 				</div>
+				<br>
+				<span class="NA">No translations found, click on the add button to create new Translations</span>
 			</div>
 			
 			<div class="hidden" id="add-translation-form-container">
@@ -4186,6 +4190,17 @@ class TranslationsManager extends Map{
 		for(const row of response) {
 
 			listContainer.appendChild(this.get(row.id).container);
+		}
+
+		if(!this.size) {
+
+			this.container.querySelector('#list-container > .NA').classList.remove('hidden');
+			this.container.querySelector('#phrases-translations-existing').classList.add('hidden');
+		}
+		else {
+
+			this.container.querySelector('#list-container > .NA').classList.add('hidden');
+			this.container.querySelector('#phrases-translations-existing').classList.remove('hidden');
 		}
 	}
 

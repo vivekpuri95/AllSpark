@@ -771,9 +771,9 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 			phrase: 'name',
 			owner: 'query',
 			owner_id: this.selectedReport.query_id,
-			expanded: {
-				editor: 'html',
-			},
+			// expanded: {
+			// 	editor: 'html',
+			// },
 		});
 
 		await titleTranslations.load();
@@ -784,7 +784,6 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 		dialougeBox.body.appendChild(titleTranslations.container);
 
 		this.form.querySelector('.add-translation-button').addEventListener('click', e => {
-
 			dialougeBox.show();
 		})
 
