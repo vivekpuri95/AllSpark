@@ -1423,7 +1423,7 @@ class AccountsFeatures {
 							<th>Type</th>
 							<th>Name</th>
 							<th>Slug</th>
-							<th data-no-sort>Status</th>
+							<th>Status</th>
 						</tr>
 					</thead>
 					<tbody></tbody>
@@ -1505,7 +1505,7 @@ class AccountsFeature {
 			<td>${this.type}</td>
 			<td>${this.name}</td>
 			<td>${this.slug}</td>
-			<td class="feature-toggle">
+			<td class="feature-toggle" data-sort-by="${this.status}">
 				<div>
 					<label><input type="radio" name="status-${this.feature_id}" value="1"> Enabled</label>
 					<label><input type="radio" name="status-${this.feature_id}" value="0"> Disabled</label>
@@ -1518,7 +1518,10 @@ class AccountsFeature {
 			if(parseInt(input.value) == this.status)
 				input.checked = true;
 
-			input.on('change', e => this.update(e, parseInt(input.value)));
+			input.on('change', e => {
+				tr.querySelector('.feature-toggle').dataset.sortBy = input.value;
+				this.update(e, parseInt(input.value));
+			});
 		}
 
 		return tr;

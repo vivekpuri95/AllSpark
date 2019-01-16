@@ -3824,12 +3824,11 @@ class SortTable {
 						return 0;
 					}
 
-					if(header.order) {
-						return a.localeCompare(b, undefined, { ignorePunctuation: true, numeric: true });
+					if(!header.order) {
+						[a, b] = [b, a];
 					}
-					else {
-						return b.localeCompare(a, undefined, { ignorePunctuation: true, numeric: true });
-					}
+
+					return a.localeCompare(b, undefined, { ignorePunctuation: true, numeric: true });
 				});
 
 				for(const row of rows) {
