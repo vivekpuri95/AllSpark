@@ -420,11 +420,20 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 	async setup() {
 
 		this.container = this.page.querySelector('.documentation-page');
+
 		this.container.appendChild(this.addForm);
 
 		this.sortTable = new SortTable({
 			table: this.section.querySelector('table'),
 		});
+
+		if(this.container.querySelector('#documentation-list')) {
+			this.container.querySelector('#documentation-list').remove();
+		}
+
+		for(const node of this.container.querySelectorAll('.edit-form')) {
+			node.remove();
+		}
 	}
 
 	async load(force) {
@@ -619,7 +628,7 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 			const response = await API.call('documentation/insert', parameters, options);
 
-			await this.load();
+			await this.load(true);
 
 			new SnackBar({
 				message: `Documentation for ${this.form.heading.value} Added`,
@@ -2135,7 +2144,7 @@ class Documentation {
 
 			await API.call('documentation/delete', parameter, options);
 
-			await this.page.load();
+			await this.page.load(true);
 
 			new SnackBar({
 				message: `Documentation for ${this.heading} Deleted`,

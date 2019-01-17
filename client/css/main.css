@@ -1116,12 +1116,11 @@ body {
 		grid-template-columns: max-content max-content;
 		grid-gap: calc(var(--gap) * 2);
 		position: absolute;
-		right: var(--gap);
+		right: 0;
 		top: var(--gap);
 		z-index: 2;
 		color: var(--color-secondary-text);
 		font-size: 90%;
-		cursor: pointer;
 		border-radius: 3px;
 		letter-spacing: 1px;
 		transition: box-shadow var(--transition-duration);
