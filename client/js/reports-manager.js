@@ -6984,7 +6984,7 @@ class ReportTransformation {
 			this.stage.container.querySelector('.transformations .body').classList.remove('hidden');
 
 			new SnackBar({
-				message: `${this.type} transformation moved up`,
+				message: `${this.name} Transformation Moved Up`,
 				icon: 'far fa-save',
 			});
 		}
@@ -7030,7 +7030,7 @@ class ReportTransformation {
 			this.stage.container.querySelector('.transformations .body').classList.remove('hidden');
 
 			new SnackBar({
-				message: `${this.type} transformation moved down`,
+				message: `${this.name} Transformation Moved Down`,
 				icon: 'far fa-save',
 			});
 		}
