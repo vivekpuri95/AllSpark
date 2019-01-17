@@ -177,8 +177,8 @@ class Filters extends API {
 				],
 				queryString: this.account.settings.get("external_parameters").map(x => {
 					return {
-						name: x,
-						value: this.request.body[constants.filterPrefix + x],
+						name: x.name,
+						value: this.request.body[constants.filterPrefix + x.name] || x.value,
 					}
 				})
 			},

@@ -130,14 +130,14 @@ class report extends API {
 
 		if (preReportApi && commonFun.isJson(preReportApi.value)) {
 
-			for (const key of this.account.settings.get("external_parameters")) {
+			for (const parameter of this.account.settings.get("external_parameters") || []) {
 
-				if ((constants.filterPrefix + key) in this.request.body) {
+				if ((constants.filterPrefix + parameter.name) in this.request.body) {
 
 					this.filters.push({
-						placeholder: key.replace(constants.filterPrefix),
-						value: this.request.body[constants.filterPrefix + key],
-						default_value: this.request.body[constants.filterPrefix + key],
+						placeholder: parameter.name,
+						value: this.request.body[constants.filterPrefix + parameter.name] || parameter.value,
+						default_value: this.request.body[constants.filterPrefix + parameter.name] || parameter.value,
 					})
 				}
 			}
@@ -160,8 +160,8 @@ class report extends API {
 						],
 						queryString: this.account.settings.get("external_parameters").map(x => {
 							return {
-								name: x,
-								value: this.request.body[constants.filterPrefix + x],
+								name: x.name,
+								value: this.request.body[constants.filterPrefix + x.name] || x.value,
 							}
 						})
 					},

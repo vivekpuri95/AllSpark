@@ -253,10 +253,12 @@ router.get('/login', API.serve(class extends HTMLAPI {
 
 			for(const key of this.account.settings.get('external_parameters') || []) {
 
-				if(key in this.request.query)
-					this.request.body['ext_' + key] = this.request.query[key];
+				if(key.name in this.request.query) {
 
-				external_parameters[key] = this.request.query[key];
+					this.request.body['ext_' + key.name] = this.request.query[key.name] || key.value;
+				}
+
+				external_parameters[key.name] = this.request.query[key.name] || key.value;
 			}
 
 			this.request.body.account_id = this.account.account_id;
