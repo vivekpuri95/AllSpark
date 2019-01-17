@@ -842,13 +842,22 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 			reports = reports.sort((a, b) => {
 
-				a = a[this.sort.column] || '';
-				b = b[this.sort.column] || '';
+				if(this.sort.column == 'connection') {
+					a = this.page.connections.get(parseInt(a.connection_name)).connection_name;
+					b = this.page.connections.get(parseInt(b.connection_name)).connection_name;
+				}
+
+				else {
+					a = a[this.sort.column] || '';
+					b = b[this.sort.column] || '';
+				}
 
 				if(typeof a == 'string')
 					a = a.toUpperCase();
-				else if(typeof b == 'string')
+
+				if(typeof b == 'string')
 					b = b.toUpperCase();
+
 				else if(a instanceof Array) {
 					a = a.length;
 					b = b.length;
@@ -2098,6 +2107,10 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 		this.container.querySelector('#visualization-list .toolbar').appendChild(this.searchBar.globalSearch.container);
 
 		this.searchBar.on('change', () => this.load());
+
+		this.sortTable = new SortTable({
+			table: this.container.querySelector('table'),
+		});
 	}
 
 	get url() {
@@ -2280,6 +2293,8 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 			tbody.appendChild(row);
 		}
+
+		this.sortTable.sort();
 
 		if(!this.visualizations.length)
 			tbody.innerHTML = '<tr class="NA"><td colspan="6">No Visualization Found!</td></tr>';
@@ -2544,6 +2559,8 @@ class ReportsManagerFilters extends Map {
 			this.set(filter.placeholder, new ReportsManagerFilter(filter, stage));
 
 		this.addForm = new DataSourceFilterForm({}, this.page);
+
+		this.sortTable = new SortTable();
 	}
 
 	get container() {
@@ -2685,6 +2702,9 @@ class ReportsManagerFilters extends Map {
 
 		this.externalParameters();
 		this.suggestions();
+
+		this.sortTable.table = container.querySelector('#filters-list table');
+		this.sortTable.sort();
 
 		return container;
 	}

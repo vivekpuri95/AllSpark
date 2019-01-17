@@ -185,8 +185,10 @@ main.preview-left #stages {
 }
 	#stage-pick-report table thead tr th {
 		position: sticky;
-		cursor: pointer;
 	}
+		#stage-pick-report table thead tr th.sort {
+			cursor: pointer;
+		}
 	#stage-pick-report table thead tr.search th {
 		padding: calc(var(--gap) * 2) var(--gap);
 		top: 0;

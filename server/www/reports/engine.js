@@ -243,110 +243,156 @@ class report extends API {
 		this.assert(!authResponse.error, "user not authorised to get the report");
 	}
 
+	parseOffset(offset, base = null) {
+
+		if (Array.isArray(offset)) {
+
+			let value = null;
+
+			for (const entry of offset) {
+
+				entry.filterType = offset.filterType;
+				value = this.parseOffset(entry, value);
+			}
+
+			return value;
+		}
+
+		if (base) {
+
+			base = new Date(base);
+		}
+
+		else {
+
+			base = new Date();
+		}
+
+		const offsetValue = offset.value * offset.direction;
+
+		if (offset.unit == 'second') {
+			return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours(), base.getMinutes(), base.getSeconds() + offsetValue)).toISOString().substring(0, 19);
+		}
+
+		else if (offset.unit == 'minute') {
+
+			if (offset.snap) {
+
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours(), base.getMinutes() + offsetValue, 0)).toISOString().substring(0, 19);
+			}
+			else {
+
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours(), base.getMinutes() + offsetValue, base.getSeconds())).toISOString().substring(0, 19);
+			}
+		}
+
+		else if (offset.unit == 'hour') {
+
+			if (offset.snap) {
+
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours() + offsetValue, 0, 0)).toISOString().substring(0, 19);
+			}
+			else {
+
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours() + offsetValue, base.getMinutes(), base.getSeconds())).toISOString().substring(0, 19);
+			}
+		}
+
+		else if (offset.unit == 'day') {
+
+			if (offset.snap) {
+
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate() + offsetValue)).toISOString().substring(0, 10);
+			}
+			else {
+
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate() + offsetValue, base.getHours(), base.getMinutes(), base.getSeconds())).toISOString().substring(0, 19)
+			}
+		}
+
+		else if (offset.unit == 'week') {
+
+			if (offset.snap) {
+
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate() - base.getDay() + (offsetValue * 7))).toISOString().substring(0, 10);
+			}
+			else {
+
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate() + (offsetValue * 7))).toISOString().substring(0, 10);
+			}
+		}
+
+		else if (offset.unit == 'month') {
+
+			if (offset.snap) {
+
+				if (offset.filterType == 'month') {
+
+					return new Date(Date.UTC(base.getFullYear(), base.getMonth() + offsetValue, 1)).toISOString().substring(0, 7);
+				}
+				else {
+
+					return new Date(Date.UTC(base.getFullYear(), base.getMonth() + offsetValue, 1)).toISOString().substring(0, 10);
+				}
+			}
+
+			else {
+
+				return new Date(Date.UTC(base.getFullYear(), base.getMonth() + offsetValue, base.getDate())).toISOString().substring(0, 10);
+			}
+		}
+
+		else if (offset.unit == 'year') {
+
+			if (offset.snap) {
+
+				if (offset.filterType == 'year') {
+					return new Date(Date.UTC(base.getFullYear() + offsetValue, 0, 1)).toISOString().substring(0, 4);
+				} else {
+					return new Date(Date.UTC(base.getFullYear() + offsetValue, 0, 1)).toISOString().substring(0, 10);
+				}
+			} else {
+				return new Date(Date.UTC(base.getFullYear() + offsetValue, base.getMonth(), base.getDate())).toISOString().substring(0, 10);
+			}
+		}
+	}
+
 	prepareFiltersForOffset() {
 
 		//filter fields required = offset, placeholder, default_value
 
 		for (const filter of this.filters) {
 
-			const date = new Date();
+			let date = new Date();
 
-			if (isNaN(parseFloat(filter.offset))) {
+			try {
+				filter.offset = JSON.parse(filter.offset);
+			}
+			catch(e) {
+				console.error(e);
+				continue;
+			}
+
+			if(!filter.offset || !Object.keys(filter.offset).length) {
 
 				continue;
 			}
 
-			if (filter.type == 'time') {
+			for(const offsetRule of filter.offset) {
 
-				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
-
-				try {
-					filter.default_value = new Date(date.getTime() + (1000 * filter.offset)).toTimeString().substring(0, 8);
-				}
-
-				catch(e) {
-					filter.default_value = filter.value;
-				}
-
-				if (filter.value >= new Date().toISOString().slice(11, 19)) {
-
-					this.has_today = true;
-				}
+				date = this.parseOffset(offsetRule, date);
 			}
 
-			else if (filter.type == 'date') {
+			filter.default_value = date;
+			filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
 
-				try {
-					filter.default_value = new Date(Date.now() + filter.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
-				}
-				catch(e) {
-					filter.default_value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
-				}
-				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
+			const today = new Date();
+			const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-				if (filter.value >= new Date().toISOString().slice(0, 10)) {
-					this.has_today = true;
+			if(new Date(filter.value) >= +startOfDay) {
 
-				}
+				this.has_today = true;
 			}
-
-			else if (filter.type == 'month') {
-
-				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
-
-				try {
-
-					filter.default_value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + filter.offset, 1)).toISOString().substring(0, 7);
-				}
-				catch(e) {
-
-					filter.default_value = filter.value;
-				}
-
-				if (filter.value >= new Date().toISOString().slice(0, 7)) {
-
-					this.has_today = true;
-				}
-			}
-
-			else if (filter.type == 'year') {
-
-				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
-
-				try {
-					filter.default_value = filter.default_value = date.getFullYear() + parseFloat(filter.offset);
-				}
-
-				catch(e) {
-
-					filter.default_value = filter.value;
-				}
-
-				if (filter.value >= new Date().toISOString().slice(0, 4)) {
-
-					this.has_today = true;
-				}
-			}
-
-			else if (filter.type == 'datetime') {
-
-				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
-
-				try {
-					filter.default_value = new Date(Date.now() + filter.offset * 60 * 1000).toISOString().replace('T', ' ').substring(0, 19);
-
-				}
-				catch(e) {
-
-					filter.default_value = filter.value;
-				}
-
-				if (filter.value >= new Date().toISOString().slice(0, 10)) {
-
-					this.has_today = true;
-				}
-			}
-
 		}
 
 		for (const filter of this.filters) {
