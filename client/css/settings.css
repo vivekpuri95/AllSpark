@@ -178,10 +178,18 @@ main .documentation-page form .body {
 	main .documentation-page form .body .html-editor {
 		grid-column: 1;
 	}
+	main .documentation-page form .body .preview-label,
+	main .documentation-page form .body .preview {
+		display: none;
+	}
 main .documentation-page form .body.preview-mode {
 	grid-template-columns: 1fr 1fr;
 }
+	main .documentation-page form .body.preview-mode .preview-label {
+		display: initial;
+	}
 	main .documentation-page form .body.preview-mode .preview {
+		display: initial;
 		grid-row: 2;
 		grid-column: 2;
 		background: var(--color-background);
@@ -189,19 +197,3 @@ main .documentation-page form .body.preview-mode {
 		overflow: auto;
 		padding: calc(var(--gap) * 2);
 	}
-	main .documentation-page form .body .html-editor .preview-toggle {
-		background: var(--color-secondary);
-		color: var(--color-secondary-text);
-		font-size: 90%;
-		cursor: pointer;
-		border-radius: 3px;
-		letter-spacing: 1px;
-		padding: 5px 15px;
-		transition: box-shadow var(--transition-duration);
-	}
-		main .documentation-page form .body .html-editor .preview-toggle span > span {
-			display: none;
-		}
-		main .documentation-page form .body .html-editor .preview-toggle:hover span > span {
-			display: initial;
-		}

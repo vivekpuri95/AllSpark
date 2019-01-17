@@ -2158,16 +2158,21 @@ class HTMLEditor {
 		container.classList.add('html-editor');
 
 		container.innerHTML = `
-			<div class="toggle">
-				<span class="editor-toggle">
-					<span class="code-toggle hidden"><i class="fas fa-code"></i> <span>Code Editor</span></span>
-					<span class="wysiwyg-toggle hidden"><i class="fas fa-paint-brush"></i> <span>Visual Editor</span></span>
-				</span>
-			</div>
+			<span class="editor-toggle">
+				<button type="button" class="code-toggle hidden"><i class="fas fa-code"></i> <span>Code Editor</span></button>
+				<button type="button" class="wysiwyg-toggle hidden"><i class="fas fa-paint-brush"></i> <span>Visual Editor</span></button>
+			</span>
 			<div class="wysiwyg"><div id="code-editor-${this.id}"></div></div>
 		`;
 
-		container.querySelector('.editor-toggle').on('click', () => {
+		container.querySelector('.code-toggle').on('click', () => {
+
+			this.visualEditor = !this.visualEditor;
+
+			this.render();
+		});
+
+		container.querySelector('.wysiwyg-toggle').on('click', () => {
 
 			this.visualEditor = !this.visualEditor;
 

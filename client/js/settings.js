@@ -514,8 +514,8 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 				<div class="body">
 					<span>Body</span>
-					<span class="preview-label hidden">Preview</span>
-					<div class="preview hidden documentation"></div>
+					<span class="preview-label">Preview</span>
+					<div class="preview documentation"></div>
 				</div>
 			</form>
 		`;
@@ -539,7 +539,7 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 		form.querySelector('.parent').appendChild(this.parentMultiSelect.container);
 
-		this.bodyEditior = new HTMLEditor();
+		this.bodyEditor = new HTMLEditor();
 
 		form.on('submit', e => this.insert(e));
 
@@ -562,39 +562,41 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 		if(!bodyEditor.querySelector('.html-editor')) {
 
-			this.bodyEditior.container.querySelector('.toggle').insertAdjacentHTML('beforeend', `
-				<span class="preview-toggle">
-					<span class="enable">
-						<i class="far fa-eye"></i>
-						<span>Preview</span>
-					</span>
-					<span class="disable hidden">
-						<i class="far fa-eye-slash"></i>
-						<span>Exit Preview</span>
-					</span>
-				</span>
+			bodyEditor.appendChild(this.bodyEditor.container);
+
+			await this.bodyEditor.setup();
+
+			this.bodyEditor.container.querySelector('.editor-toggle').insertAdjacentHTML('beforeend', `
+				<button type="button" class="preview-enable">
+					<i class="far fa-eye"></i>
+					<span>Preview</span>
+				</button>
+				<button type="button" class="preview-disable hidden">
+					<i class="far fa-eye-slash"></i>
+					<span>Exit Preview</span>
+				</button>
 			`);
 
-			bodyEditor.appendChild(this.bodyEditior.container);
-
-			await this.bodyEditior.setup();
-
-			this.bodyEditior.on('keyup', () => {
-				bodyEditor.querySelector('.preview').innerHTML = this.bodyEditior.value;
+			this.bodyEditor.on('keyup', () => {
+				bodyEditor.querySelector('.preview').innerHTML = this.bodyEditor.value;
 			});
 
-			this.bodyEditior.container.querySelector('.preview-toggle').on('click', () => {
-				this.form.querySelector('.body').classList.toggle('preview-mode');
-				this.form.querySelector('.body .preview').classList.toggle('hidden');
-				this.form.querySelector('.body .preview-label').classList.toggle('hidden');
-				this.form.querySelector('.body .preview-toggle .enable').classList.toggle('hidden');
-				this.form.querySelector('.body .preview-toggle .disable').classList.toggle('hidden');
+			this.bodyEditor.container.querySelector('.preview-enable').on('click', () => {
+				this.form.querySelector('.body').classList.add('preview-mode');
+				this.bodyEditor.container.querySelector('.preview-disable').classList.remove('hidden');
+				this.bodyEditor.container.querySelector('.preview-enable').classList.add('hidden');
+			});
+
+			this.bodyEditor.container.querySelector('.preview-disable').on('click', () => {
+				this.form.querySelector('.body').classList.remove('preview-mode');
+				this.bodyEditor.container.querySelector('.preview-enable').classList.remove('hidden');
+				this.bodyEditor.container.querySelector('.preview-disable').classList.add('hidden');
 			});
 		}
 
-		this.bodyEditior.value = '';
+		this.bodyEditor.value = '';
 
-		bodyEditor.querySelector('.preview').innerHTML = this.bodyEditior.value;
+		bodyEditor.querySelector('.preview').innerHTML = this.bodyEditor.value;
 
 		this.form.heading.focus();
 	}
@@ -606,7 +608,7 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 		const
 			parameters = {
 				parent: this.parentMultiSelect.value[0] || '',
-				body: this.bodyEditior.value || '',
+				body: this.bodyEditor.value || '',
 			},
 			options = {
 				method: 'POST',
@@ -1979,8 +1981,8 @@ class Documentation {
 
 				<div class="body">
 					<span>Body</span>
-					<span class="preview-label hidden">Preview</span>
-					<div class="preview hidden documentation"></div>
+					<span class="preview-label">Preview</span>
+					<div class="preview documentation"></div>
 				</div>
 			</form>
 		`;
@@ -2002,7 +2004,7 @@ class Documentation {
 
 		container.querySelector('.parent').appendChild(this.parentMultiSelect.container);
 
-		this.bodyEditior = new HTMLEditor();
+		this.bodyEditor = new HTMLEditor();
 
 		container.querySelector('.form').on('submit', e => {
 			this.update(e);
@@ -2036,39 +2038,41 @@ class Documentation {
 
 		if(!bodyEditior.querySelector('.html-editor')) {
 
-			bodyEditior.appendChild(this.bodyEditior.container);
+			bodyEditior.appendChild(this.bodyEditor.container);
 
-			this.bodyEditior.container.querySelector('.toggle').insertAdjacentHTML('beforeend', `
-				<span class="preview-toggle">
-					<span class="enable">
-						<i class="far fa-eye"></i>
-						<span>Preview</span>
-					</span>
-					<span class="disable hidden">
-						<i class="far fa-eye-slash"></i>
-						<span>Exit Preview</span>
-					</span>
-				</span>
+			await this.bodyEditor.setup();
+
+			this.bodyEditor.container.querySelector('.editor-toggle').insertAdjacentHTML('beforeend', `
+				<button type="button" class="preview-enable">
+					<i class="far fa-eye"></i>
+					<span>Preview</span>
+				</button>
+				<button type="button" class="preview-disable hidden">
+					<i class="far fa-eye-slash"></i>
+					<span>Exit Preview</span>
+				</button>
 			`);
 
-			await this.bodyEditior.setup();
-
-			this.bodyEditior.on('keyup', () => {
-				bodyEditior.querySelector('.preview').innerHTML = this.bodyEditior.value;
+			this.bodyEditor.on('keyup', () => {
+				bodyEditior.querySelector('.preview').innerHTML = this.bodyEditor.value;
 			});
 
-			this.bodyEditior.container.querySelector('.preview-toggle').on('click', () => {
-				this.form.querySelector('.body').classList.toggle('preview-mode');
-				this.form.querySelector('.body .preview').classList.toggle('hidden');
-				this.form.querySelector('.body .preview-label').classList.toggle('hidden');
-				this.form.querySelector('.body .preview-toggle .enable').classList.toggle('hidden');
-				this.form.querySelector('.body .preview-toggle .disable').classList.toggle('hidden');
+			this.bodyEditor.container.querySelector('.preview-enable').on('click', () => {
+				this.form.querySelector('.body').classList.add('preview-mode');
+				this.bodyEditor.container.querySelector('.preview-disable').classList.remove('hidden');
+				this.bodyEditor.container.querySelector('.preview-enable').classList.add('hidden');
+			});
+
+			this.bodyEditor.container.querySelector('.preview-disable').on('click', () => {
+				this.form.querySelector('.body').classList.remove('preview-mode');
+				this.bodyEditor.container.querySelector('.preview-enable').classList.remove('hidden');
+				this.bodyEditor.container.querySelector('.preview-disable').classList.add('hidden');
 			});
 		}
 
-		this.bodyEditior.value = this.body;
+		this.bodyEditor.value = this.body;
 
-		bodyEditior.querySelector('.preview').innerHTML = this.bodyEditior.value;
+		bodyEditior.querySelector('.preview').innerHTML = this.bodyEditor.value;
 	}
 
 	async update(e) {
@@ -2079,7 +2083,7 @@ class Documentation {
 			parameter = {
 				id: this.id,
 				parent: this.parentMultiSelect.value[0] || '',
-				body: this.bodyEditior.value || '',
+				body: this.bodyEditor.value || '',
 			},
 			options = {
 				method: 'POST',
