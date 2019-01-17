@@ -154,6 +154,14 @@ class report extends API {
 
 		const datasetsPromiseList = [];
 
+		const filtersWithDatasets = this.filters.filter(x => x.dataset).map(x => x.placeholder);
+
+		filtersWithDatasets.forEach(x => {
+			if(!this.request.body.hasOwnProperty(constants.filterPrefix + x)) {
+				this.autodetectDatasets.add(x);
+			}
+		});
+
 		for(const filter of this.filters) {
 
 			if(this.autodetectDatasets.has(filter.placeholder)) {
@@ -720,7 +728,9 @@ class report extends API {
 			body: {},
 			query: {},
 		};
+
 		reportObj.request.body.query_id = filter.dataset;
+		reportObj.request.query.query_id = filter.dataset;
 
 		let response = await reportObj.report();
 
