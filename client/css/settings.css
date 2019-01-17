@@ -175,22 +175,8 @@ main .documentation-page form .body {
 	main .documentation-page form .body > span {
 		grid-row: 1;
 	}
-	main .documentation-page form .body > button {
-		transition: background var(--transition-duration);
-	}
-	main .documentation-page form .body > button.selected {
-		background: var(--color-secondary);
-	}
 	main .documentation-page form .body .html-editor {
 		grid-column: 1;
-	}
-	main .documentation-page form .body > button {
-		grid-row: 3;
-		max-width: 150px;
-	}
-	main .documentation-page form .body > button:hover {
-		background: var(--color-secondary);
-		cursor: pointer;
 	}
 main .documentation-page form .body.preview-mode {
 	grid-template-columns: 1fr 1fr;
