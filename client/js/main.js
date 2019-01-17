@@ -2522,14 +2522,16 @@ class MultiSelect {
 
 		document.body.on('click', () => {
 
-			if(this.mode != 'stretch' && this.optionsContainer) {
+			search.value = '';
+			this.setPlaceholderText();
 
-				this.options.classList.add('hidden');
+			if(!this.optionsContainer) {
+
+				return;
 			}
 
+			this.options.classList.toggle('hidden', this.mode != 'stretch');
 			this.options.querySelector('.modes-drop-down').classList.add('hidden');
-
-			search.value = '';
 		});
 
 		return container;
@@ -2848,6 +2850,20 @@ class MultiSelect {
 		this.recalculate();
 	}
 
+	setPlaceholderText() {
+
+		const search = this.container.querySelector('input[type=search]');
+
+		if(!this.selectedValues.size) {
+
+			return search.placeholder = 'Search...';
+		}
+
+		const [first] =  this.datalist.filter(x => x.value == this.selectedValues.values().next().value);
+		search.placeholder = first ? this.selectedValues.size > 1 ? `${first.name} and ${this.selectedValues.size - 1} more` : first.name : 'Search...';
+
+	}
+
 	/**
 	 * Recalculate shown items from the datalist based on any value in search box and their summary numbers in the footer.
 	 */
@@ -2863,9 +2879,7 @@ class MultiSelect {
 
 		if(!this.optionsContainer) {
 
-			const [first] =  this.datalist.filter(x => x.value == this.selectedValues.values().next().value);
-			search.placeholder = first ? this.selectedValues.size > 1 ? `${first.name} and ${this.selectedValues.size - 1} more` : first.name : 'Search...';
-
+			this.setPlaceholderText();
 			return;
 		}
 
