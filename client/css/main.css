@@ -1111,17 +1111,23 @@ body {
 .html-editor {
 	position: relative;
 }
+
+	.html-editor .toggle {
+		display: grid;
+		grid-template-columns: max-content max-content;
+		grid-gap: calc(var(--gap) * 2);
+		position: absolute;
+		right: var(--gap);
+		top: var(--gap);
+		z-index: 2;
+	}
 	.html-editor .editor-toggle {
 		background: var(--color-secondary);
 		color: var(--color-secondary-text);
 		font-size: 90%;
-		position: absolute;
 		cursor: pointer;
 		border-radius: 3px;
-		right: var(--gap);
-		top: var(--gap);
 		letter-spacing: 1px;
-		z-index: 2;
 		transition: box-shadow var(--transition-duration);
 	}
 		.html-editor .editor-toggle > span {

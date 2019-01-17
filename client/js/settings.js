@@ -499,7 +499,7 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 				</label>
 
 				<label>
-					<span>Slug <span class="red">*</span><a class="generate-slug">Generate</a></span>
+					<span>Slug <span class="red">*</span><a data-tooltip="Auto generate the slug from heading." class="generate-slug">Generate</a></span>
 					<input type="text" name="slug" required>
 				</label>
 
@@ -514,8 +514,8 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 				<div class="body">
 					<span>Body</span>
-					<span>Preview</span>
-					<div class="preview"></div>
+					<span class="preview-label hidden">Preview</span>
+					<div class="preview hidden documentation"></div>
 				</div>
 			</form>
 		`;
@@ -562,12 +562,33 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 		if(!bodyEditor.querySelector('.html-editor')) {
 
+			this.bodyEditior.container.querySelector('.toggle').insertAdjacentHTML('beforeend', `
+				<span class="preview-toggle">
+					<span class="enable">
+						<i class="far fa-eye"></i>
+						<span>Preview</span>
+					</span>
+					<span class="disable hidden">
+						<i class="far fa-eye-slash"></i>
+						<span>Exit Preview</span>
+					</span>
+				</span>
+			`);
+
 			bodyEditor.appendChild(this.bodyEditior.container);
 
 			await this.bodyEditior.setup();
 
 			this.bodyEditior.on('keyup', () => {
 				bodyEditor.querySelector('.preview').innerHTML = this.bodyEditior.value;
+			});
+
+			this.bodyEditior.container.querySelector('.preview-toggle').on('click', () => {
+				this.form.querySelector('.body').classList.toggle('preview-mode');
+				this.form.querySelector('.body .preview').classList.toggle('hidden');
+				this.form.querySelector('.body .preview-label').classList.toggle('hidden');
+				this.form.querySelector('.body .preview-toggle .enable').classList.toggle('hidden');
+				this.form.querySelector('.body .preview-toggle .disable').classList.toggle('hidden');
 			});
 		}
 
@@ -1958,8 +1979,8 @@ class Documentation {
 
 				<div class="body">
 					<span>Body</span>
-					<span>Preview</span>
-					<div class="preview"></div>
+					<span class="preview-label hidden">Preview</span>
+					<div class="preview hidden documentation"></div>
 				</div>
 			</form>
 		`;
@@ -2017,10 +2038,31 @@ class Documentation {
 
 			bodyEditior.appendChild(this.bodyEditior.container);
 
+			this.bodyEditior.container.querySelector('.toggle').insertAdjacentHTML('beforeend', `
+				<span class="preview-toggle">
+					<span class="enable">
+						<i class="far fa-eye"></i>
+						<span>Preview</span>
+					</span>
+					<span class="disable hidden">
+						<i class="far fa-eye-slash"></i>
+						<span>Exit Preview</span>
+					</span>
+				</span>
+			`);
+
 			await this.bodyEditior.setup();
 
 			this.bodyEditior.on('keyup', () => {
 				bodyEditior.querySelector('.preview').innerHTML = this.bodyEditior.value;
+			});
+
+			this.bodyEditior.container.querySelector('.preview-toggle').on('click', () => {
+				this.form.querySelector('.body').classList.toggle('preview-mode');
+				this.form.querySelector('.body .preview').classList.toggle('hidden');
+				this.form.querySelector('.body .preview-label').classList.toggle('hidden');
+				this.form.querySelector('.body .preview-toggle .enable').classList.toggle('hidden');
+				this.form.querySelector('.body .preview-toggle .disable').classList.toggle('hidden');
 			});
 		}
 
