@@ -421,7 +421,7 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 		this.container = this.page.querySelector('.documentation-page');
 
-		this.container.appendChild(this.addForm);
+		this.list.clear();
 
 		this.sortTable = new SortTable({
 			table: this.section.querySelector('table'),
@@ -431,9 +431,13 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 			this.container.querySelector('#documentation-list').remove();
 		}
 
-		for(const node of this.container.querySelectorAll('.edit-form')) {
-			node.remove();
+		this.container.textContent = null;
+
+		if(this.addFormElement) {
+			this.addFormElement = null;
 		}
+
+		this.container.appendChild(this.addForm);
 	}
 
 	async load(force) {
@@ -557,7 +561,7 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 
 	async add() {
 
-		this.form.reset();
+		this.addForm.querySelector('form').reset();
 
 		Sections.show('documentation-form-add');
 
@@ -638,7 +642,7 @@ Settings.list.set('documentation', class Documentations extends SettingPage {
 		} catch(e) {
 
 			if(e.message.includes('ER_DUP_ENTRY')) {
-				e.message = 'Duplicate entry for chapter found.';
+				e.message = 'Duplicate entry for slug found.';
 			}
 
 			new SnackBar({
