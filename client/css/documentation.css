@@ -1,0 +1,23 @@
+h1,
+h3 {
+	border-bottom: 1px dashed #999;
+}
+.container {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	border: 1px solid #999;
+}
+	.container .list {
+		padding: calc(var(--gap) * 2);
+		border-right: 1px solid #999;
+		max-width: 300px;
+	}
+	.container .content {
+		padding: calc(var(--gap) * 2);
+		min-height: 800px;
+		max-height: 800px;
+		overflow: scroll;
+	}
+.children {
+	padding: 5px 20px;
+}

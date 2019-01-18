@@ -106,9 +106,15 @@ class Documentation extends API {
 			'write'
 		);
 	}
+
+	async getEnitreDocumentation() {
+
+		return await this.mysql.query('SELECT * FROM tb_documentation');
+	}
 }
 
 exports.list = Documentation;
+exports.getEnitreDocumentation = Documentation;
 exports.insert = Documentation;
 exports.update = Documentation;
 exports.delete = Documentation;
