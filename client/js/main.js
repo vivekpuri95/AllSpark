@@ -2440,7 +2440,7 @@ class MultiSelect {
 	 */
 	constructor({datalist = [], multiple = true, expand = false, dropDownPosition = 'bottom'} = {}) {
 
-		this.datalist = datalist;
+		this.datalist = new Map(datalist.map(x => [x.value, x]));
 		this.multiple = multiple;
 		this.expand = expand;
 		this.dropDownPosition = ['top', 'bottom'].includes(dropDownPosition) ? dropDownPosition : 'bottom';
@@ -2532,6 +2532,11 @@ class MultiSelect {
 	 */
 	set value(values = []) {
 
+		if(!this.datalist) {
+
+			return;
+		}
+
 		this.selectedValues.clear();
 
 		if(!Array.isArray(values))
@@ -2539,15 +2544,16 @@ class MultiSelect {
 
 		for(const value of values) {
 
-			if(this.datalist && this.datalist.some(r => r.value == value)) {
+			if(!this.datalist.has(value)) {
 
-				this.selectedValues.add(value.toString());
+				continue;
+			}
 
-				if (!this.multiple) {
+			this.selectedValues.add(value.toString());
 
-					break;
-				}
+			if (!this.multiple) {
 
+				break;
 			}
 		}
 
@@ -2619,7 +2625,12 @@ class MultiSelect {
 
 		this.container.querySelector('input[type=search]').disabled = this.disabled || false;
 
-		if(!this.optionsContainer) {
+		if(this.datalist && Array.isArray(this.datalist)) {
+
+			this.datalist = new Map(this.datalist.map(x => [x.value, x]));
+		}
+
+		if(!this.optionsContainer || !this.datalist || !this.datalist.size) {
 
 			return this.recalculate();
 		}
@@ -2630,13 +2641,7 @@ class MultiSelect {
 
 		optionList.textContent = null;
 
-		if(!this.datalist || !this.datalist.length)
-			return this.recalculate();
-
-		if(this.datalist.length != (new Set(this.datalist.map(x => x.value))).size)
-			throw new Error('Invalid datalist format. Datalist values must be unique.');
-
-		for(const row of this.datalist) {
+		for(const row of this.datalist.values()) {
 
 			const
 				label = document.createElement('label'),
@@ -2701,23 +2706,22 @@ class MultiSelect {
 	 */
 	recalculate() {
 
-		if(!this.containerElement)
+		if(!this.containerElement || !this.datalist || Array.isArray(this.datalist)) {
+
 			return;
+		}
 
 		const search = this.container.querySelector('input[type=search]');
 
-		if(!this.datalist && !this.datalist.length)
-			return;
-
 		if(!this.optionsContainer) {
 
-			const [first] =  this.datalist.filter(x => x.value == this.selectedValues.values().next().value);
+			const first =  this.datalist.get(this.selectedValues.values().next().value);
 			search.placeholder = first ? this.selectedValues.size > 1 ? `${first.name} and ${this.selectedValues.size - 1} more` : first.name : 'Search...';
 
 			return;
 		}
 
-		for(const row of this.datalist) {
+		for(const row of this.datalist.values()) {
 
 			row.input.checked = this.selectedValues.has(row.input.value);
 
@@ -2790,7 +2794,7 @@ class MultiSelect {
 		if(!this.multiple || this.disabled || !this.datalist)
 			return;
 
-		for(const data of this.datalist) {
+		for(const data of this.datalist.values()) {
 
 			if(data.value != null && !data.hide)
 				this.selectedValues.add(data.value.toString())

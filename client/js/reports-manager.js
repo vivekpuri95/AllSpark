@@ -8004,7 +8004,7 @@ ReportTransformation.types.set('linear-regression', class ReportTransformationRe
 
 		this.multiSelectX.render();
 
-		if (this.options.columns.x && this.multiSelectX.datalist.filter(x => x.value == this.options.columns.x)) {
+		if (this.options.columns.x && this.multiSelectX.datalist.get(this.options.columns.x)) {
 
 			this.multiSelectX.value = this.options.columns.x;
 		}
@@ -8013,7 +8013,7 @@ ReportTransformation.types.set('linear-regression', class ReportTransformationRe
 
 		this.multiSelectY.render();
 
-		if (this.options.columns.y && this.multiSelectY.datalist.filter(x => x.value == this.options.columns.y)) {
+		if (this.options.columns.y && this.multiSelectY.datalist.get(this.options.columns.y)) {
 
 			this.multiSelectY.value = this.options.columns.y;
 		}
@@ -8026,7 +8026,7 @@ ReportTransformation.types.set('linear-regression', class ReportTransformationRe
 			}
 
 			const multiselectXValue = this.multiSelectX.value;
-			this.multiSelectY.datalist = this.multiSelectX.datalist.filter(x => x.value != multiselectXValue);
+			this.multiSelectY.datalist = [...this.multiSelectX.datalist.values()].filter(x => x.value != multiselectXValue);
 
 			this.multiSelectY.render();
 			this.multiSelectY.value = this.multiSelectY.value || this.options.columns.y;
@@ -8044,7 +8044,7 @@ ReportTransformation.types.set('linear-regression', class ReportTransformationRe
 			columns: {
 				x: this.multiSelectX.value[0],
 				y: this.multiSelectY.value[0],
-				name: value ? (this.multiSelectY.datalist.filter(x => value == x.value))[0].name : '',
+				name: value ? this.multiSelectY.datalist.get(value).name : '',
 				extrapolate: this.extrapolateUnits.value
 			},
 		};
