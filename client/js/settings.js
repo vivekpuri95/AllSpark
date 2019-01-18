@@ -922,11 +922,6 @@ Settings.list.set('internalAnalytics', class InternalAnalytics extends SettingPa
 
 	setup() {
 
-		if(this.page.querySelector('#analytics')) {
-
-			this.page.querySelector('#analytics').remove();
-		}
-
 		this.page.appendChild(this.container);
 
 	}

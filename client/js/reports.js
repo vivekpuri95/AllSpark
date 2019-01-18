@@ -5928,11 +5928,6 @@ class Visualization {
 		for(const key in this.options) {
 			this[key] = this.options[key];
 		}
-
-		if(this.related_visualizations && this.related_visualizations.length) {
-
-			this.owner_name = 'visualization';
-		}
 	}
 
 	render() {
@@ -13858,6 +13853,9 @@ class Canvas extends VisualizationsCanvas {
 
 				if(this.addVisualizationForm) {
 
+					this.addVisualizationForm.reset();
+					this.addVisualizationsMultiselect.clear();
+
 					this.addVisualizationForm.classList.toggle('hidden');
 					return;
 				}
@@ -13875,7 +13873,7 @@ class Canvas extends VisualizationsCanvas {
 
 				this.addVisualizationForm.innerHTML = `
 					<label class="visualization">
-						<span>Visualization</span>
+						<span>Visualization <span class="red">*</span></span>
 					</label>
 					
 					<label>
@@ -13964,8 +13962,8 @@ class Canvas extends VisualizationsCanvas {
 			warning.classList.toggle('blur', this.editing);
 		}
 
-		report.container.querySelector('header h2').classList.toggle('edit');
-		report.container.querySelector('.menu-toggle').classList.toggle('hidden');
+		report.container.querySelector('header h2').classList.toggle('edit', this.editing);
+		report.container.querySelector('.menu-toggle').classList.toggle('hidden', this.editing);
 		report.container.querySelector('.visualization').classList.toggle('blur', this.editing);
 		report.container.querySelector('.columns').classList.toggle('blur', this.editing);
 
@@ -14402,7 +14400,7 @@ class Canvas extends VisualizationsCanvas {
 
 		const
 			parameters = {
-				owner: this.owner.owner_name,
+				owner: this.owner.owner,
 				owner_id: this.owner.visualization_id,
 				visualization_id: visualization_id,
 				format: JSON.stringify({
@@ -14441,7 +14439,7 @@ class Canvas extends VisualizationsCanvas {
 
 	async loadVisualizations() {
 
-		if(this.owner.owner_name == 'visualization') {
+		if(this.owner.owner == 'visualization') {
 
 			await DataSource.load(true);
 
