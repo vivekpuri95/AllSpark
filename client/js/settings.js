@@ -922,8 +922,12 @@ Settings.list.set('internalAnalytics', class InternalAnalytics extends SettingPa
 
 	setup() {
 
-		this.page.appendChild(this.container);
+		if(this.page.querySelector('.analytics')) {
 
+			this.page.querySelector('.analytics').remove();
+		}
+
+		this.page.appendChild(this.container);
 	}
 
 	async load() {
@@ -962,7 +966,7 @@ Settings.list.set('internalAnalytics', class InternalAnalytics extends SettingPa
 			return this.containerElement;
 
 		const container = this.containerElement = document.createElement('div');
-		container.classList.add('setting-page', 'hidden');
+		container.classList.add('setting-page', 'analytics', 'hidden');
 
 		container.innerHTML = `
 			<section class="section show" id="analytics">
